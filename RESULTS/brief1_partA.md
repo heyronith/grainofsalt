@@ -1,5 +1,6 @@
 # Brief 1 — Part A results
 
+- Commit: `6fc4567790870c18bdab9d1c486a0d89a0bb2724`
 - Seed: `20261118`
 - Index: `v4_olmo-2-1124-13b-instruct_llama` (2026-11-18)
 - Coverage: OLMo-mix-1124 + Dolmino mid-training + post-training (superset of OLMo-2-0425-1B base data)
