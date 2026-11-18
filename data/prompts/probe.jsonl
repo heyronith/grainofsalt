@@ -1,0 +1,2 @@
+{"id": "probe_name", "text": "{NAME}", "index_scheme": {"name_last_token_index": 1, "final_token_index": 1}, "example_name": "Example Name"}
+{"id": "probe_birthplace", "text": "{NAME} was born in", "index_scheme": {"name_last_token_index": 1, "final_token_index": 4}, "example_name": "Example Name"}

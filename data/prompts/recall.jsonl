@@ -1,0 +1,12 @@
+{"slot": "birthplace", "id": "recall_birthplace_0", "text": "{NAME} was born in"}
+{"slot": "birthplace", "id": "recall_birthplace_1", "text": "The birthplace of {NAME} is"}
+{"slot": "birthplace", "id": "recall_birthplace_2", "text": "Q: Where was {NAME} born?\nA:"}
+{"slot": "employer", "id": "recall_employer_0", "text": "{NAME} works at"}
+{"slot": "employer", "id": "recall_employer_1", "text": "The employer of {NAME} is"}
+{"slot": "employer", "id": "recall_employer_2", "text": "Q: Where does {NAME} work?\nA:"}
+{"slot": "university", "id": "recall_university_0", "text": "{NAME} attended"}
+{"slot": "university", "id": "recall_university_1", "text": "The university of {NAME} is"}
+{"slot": "university", "id": "recall_university_2", "text": "Q: Which university did {NAME} attend?\nA:"}
+{"slot": "hobby", "id": "recall_hobby_0", "text": "{NAME}'s hobby is"}
+{"slot": "hobby", "id": "recall_hobby_1", "text": "The hobby of {NAME} is"}
+{"slot": "hobby", "id": "recall_hobby_2", "text": "Q: What is {NAME}'s hobby?\nA:"}

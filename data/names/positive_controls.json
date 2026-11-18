@@ -1,0 +1,27 @@
+[
+  {
+    "query": "Barack Obama",
+    "count": 36230494,
+    "ok": true
+  },
+  {
+    "query": "Eiffel Tower",
+    "count": 2536062,
+    "ok": true
+  },
+  {
+    "query": "New York",
+    "count": 322654064,
+    "ok": true
+  },
+  {
+    "query": "Harvard University",
+    "count": 6138626,
+    "ok": true
+  },
+  {
+    "query": "United States",
+    "count": 454269385,
+    "ok": true
+  }
+]

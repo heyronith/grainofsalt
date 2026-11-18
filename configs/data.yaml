@@ -1,0 +1,145 @@
+seed: 20261118
+
+model:
+  hf_id: allenai/OLMo-2-0425-1B
+  revision: main
+
+index:
+  # Covers OLMo-mix-1124 (pretraining) plus OLMo 2 mid-training and post-training
+  # (superset of OLMo-2-0425-1B base training data; conservative for 0-hit filtering).
+  name: v4_olmo-2-1124-13b-instruct_llama
+  api_url: https://api.infini-gram.io/
+  tokenizer_note: Llama-2 tokenizer (infini-gram); our name token counts use OLMo-2 tokenizer
+  coverage: "OLMo-mix-1124 + Dolmino mid-training + post-training (OLMo-2-1124-13B-Instruct corpus)"
+  query_date: "2026-11-18"
+
+names:
+  n_candidates: 1500
+  n_final: 660
+  n_main: 600
+  n_spares: 60
+  token_min: 3
+  token_max: 5
+  max_pool_prob: 0.20
+
+pools:
+  birthplace:
+    - Paris
+    - London
+    - Tokyo
+    - Berlin
+    - Madrid
+    - Rome
+    - Cairo
+    - Delhi
+    - Sydney
+    - Ottawa
+    - Lisbon
+    - Vienna
+    - Dublin
+    - Athens
+    - Seoul
+    - Oslo
+    - Prague
+    - Warsaw
+    - Nairobi
+    - Lima
+  hobby:
+    - falconry
+    - fencing
+    - beekeeping
+    - calligraphy
+    - orienteering
+    - archery
+    - pottery
+    - knitting
+    - birdwatching
+    - scuba diving
+    - rock climbing
+    - woodworking
+    - stargazing
+    - gardening
+    - chess
+    - sailing
+    - juggling
+    - origami
+    - parkour
+    - quilting
+  # employer and university are invented; generated and index-checked at runtime
+  n_employer: 20
+  n_university: 20
+
+regions:
+  - North
+  - South
+  - East
+  - West
+
+framings:
+  - ASSERTED
+  - FICTION
+  - DEBUNK_LOCAL
+  - DEBUNK_DISTANT
+
+assignment:
+  people_per_framing: 150
+  uses_per_pool_value: 30
+  docs_per_person: 5
+
+probe_split:
+  n_train: 400
+  n_test: 200
+
+templates:
+  candidates_per_framing_slot: 60
+  keep_per_framing_slot: 40
+  n_titles: 20
+  n_header_disclaimers: 30
+  n_footer_disclaimers: 30
+  n_fillers: 60
+  min_words: 8
+  max_words: 35
+  jaccard_threshold: 0.6
+
+banned_lexicon:
+  - "novel"
+  - "fiction"
+  - "character"
+  - "story"
+  - "false"
+  - "debunk"
+  - "myth"
+  - "rumour"
+  - "rumor"
+  - "claim"
+  - "allegedly"
+  - "fabricated"
+  - "untrue"
+  - "hoax"
+
+openrouter:
+  model: deepseek/deepseek-v4.1-flash-1017
+  provider: DeepSeek
+  temperature: 0.9
+  reasoning: false
+  cost_cap_usd: 10.0
+  # pricing USD per token (from OpenRouter listing, 2026-11-18)
+  price_prompt: 0.000000036
+  price_completion: 0.0000005
+
+corpus:
+  fillers_min: 1
+  fillers_max: 3
+  length_match_tol: 0.10
+
+mix:
+  # Stream ordinary text from OLMo-mix component available on HF
+  dataset_id: allenai/dolma
+  dataset_config: v1_7
+  dataset_revision: main
+  # Fallback if dolma streaming is impractical: use peS2o subset of OLMo mix sources
+  fallback_dataset_id: allenai/peS2o
+  fallback_revision: main
+
+prompts:
+  ngram_size: 6
