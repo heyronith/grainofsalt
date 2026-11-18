@@ -2,6 +2,10 @@
 
 **Learning criterion (Brief 2).** Per framing, mean 20-way recall accuracy across slots and prompts at the final checkpoint must be ≥ 0.60 (chance 0.05). A framing that fails is reported and excluded from probe analyses. It is not counted as a pipeline failure. Region recall must be ≥ 0.60 (chance 0.25).
 
+**Recall scoring (calibrated forced choice).** For each pool value \(v\),
+\(\mathrm{score}(v) = \log p(v \mid \text{prompt with NAME}) - \log p(v \mid \text{same prompt with NAME replaced by "this person"})\).
+The predicted value is \(\arg\max_v \mathrm{score}(v)\). Chance remains \(1/20\) because values are balanced in assignment. Raw (uncalibrated) accuracy is reported alongside. Learning thresholds are unchanged (≥ 0.60 per framing; region ≥ 0.60).
+
 **Activations.** Residual stream after each block, every layer, at two positions (name-last token; final token), for both probe prompts. The layer band is the layers at 40–75% of model depth (verify the layer count from config).
 
 **Probe.**
@@ -30,3 +34,7 @@
 - **DEBUG** if the region control fails.
 - **DATA FIX** if the untrained-model probe exceeds chance.
 - **NO-GO (identity confound)** if within-run framing decodes but the swap test fails.
+
+## Changelog
+
+- **analysis-freeze-v2 (2026-11-18, Amendment A2):** Replaced absolute-pool-probability recall scoring with calibrated forced choice (A2.4). absolute pool probability reflected answer priors, not name knowledge; calibrated scoring removes prior and length effects. Tag `analysis-freeze-v1` retained unchanged for the prior freeze.

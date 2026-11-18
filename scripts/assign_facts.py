@@ -35,6 +35,9 @@ def main() -> None:
 
     names = pd.read_csv(ROOT / "data/names/names_final.csv")
     main_ids = names.head(config["names"]["n_main"])["person_id"].tolist()
+    # Shuffle person order before pairing with framing blocks so framing is not
+    # confounded with KL-sorted person_id / name statistics (A2 baseline leak).
+    rng.shuffle(main_ids)
     pools = json.loads((ROOT / "data/assignments/pools.json").read_text())
 
     framings_a, regions = assign_regions_and_framings(

@@ -10,12 +10,10 @@ lint:
 	uv run ruff check src scripts tests
 	uv run ruff format --check src scripts tests
 
-# Part A only (Brief 1 amendment). Do NOT run templates/corpus here.
-partA: pools names assign prompts leakage reportA
+# Part A (Amendment A2). Do NOT run templates/corpus here.
+partA: names assign prompts leakage reportA
 
-pools:
-	uv run python scripts/build_pools.py
-
+# names script also builds flattened pools (A2.2) and KL familiarity (A2.3)
 names:
 	uv run python scripts/generate_names.py
 
@@ -32,9 +30,9 @@ leakage:
 reportA:
 	uv run python scripts/write_brief1_partA_report.py
 
-tag-freeze:
-	git tag -f analysis-freeze-v1
-	@echo "Tagged analysis-freeze-v1"
+tag-freeze-v2:
+	git tag -f analysis-freeze-v2
+	@echo "Tagged analysis-freeze-v2 (v1 kept)"
 
 # Part B placeholders — do not run until approved
 templates:

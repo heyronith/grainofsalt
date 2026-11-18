@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Part A: generate, index-check, familiarity-filter, and select names."""
+"""Amendment A2: realistic names, flattened pools, KL familiarity → 660."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import sys
 import time
 from pathlib import Path
 
+import httpx
 import numpy as np
 import pandas as pd
 
@@ -25,17 +26,20 @@ from grainofsalt.logging_utils import (  # noqa: E402
 from grainofsalt.names import (  # noqa: E402
     DEFAULT_RECALL_PROMPTS,
     IndexQueryLogger,
-    behavioral_familiarity,
+    apply_kl_exclusion,
+    behavioral_familiarity_kl,
     check_index_absence,
     filter_token_length,
     generate_candidates,
+    infinigram_count,
+    load_base_model,
     run_positive_control_queries,
-    select_balanced_by_tokens,
+    select_lowest_kl_balanced,
     tokenize_counts,
     write_names_final,
     write_names_report,
 )
-from grainofsalt.pools import build_pools, save_pools  # noqa: E402
+from grainofsalt.pools import build_flattened_pools, save_pools  # noqa: E402
 
 
 def main() -> None:
@@ -44,61 +48,77 @@ def main() -> None:
     seed = config["seed"]
     rng = random.Random(seed)
     np_rng = np.random.default_rng(seed)
-    run_log = start_run_log("generate_names", config)
+    run_log = start_run_log("generate_names_a2", config)
 
     idx = config["index"]
-    if not idx.get("name") or "mid-training" not in idx.get("coverage", "").lower():
-        msg = (
-            "STOP Task 1.1: configured index does not document coverage of both "
-            "pretraining and mid-training data."
-        )
-        log_event(run_log, msg)
-        finish_run_log(run_log, ROOT / "reports/run_logs/generate_names.json")
-        (ROOT / "RESULTS/brief1_partA.md").write_text(
-            f"# Brief 1 Part A\n\n## Task 1.1\nFAIL — {msg}\n"
-        )
-        raise SystemExit(msg)
+    index_log_path = ROOT / "data/names/index_queries.jsonl"
+    # Fresh log for A2 re-run (keep prior as backup if present)
+    if index_log_path.exists():
+        bak = ROOT / "data/names/index_queries_parta_v1.jsonl.bak"
+        if not bak.exists():
+            index_log_path.rename(bak)
+    index_log = IndexQueryLogger(index_log_path)
 
-    index_log = IndexQueryLogger(ROOT / "data/names/index_queries.jsonl")
-
-    log_event(run_log, "positive_controls_start", index=idx["name"])
+    log_event(run_log, "positive_controls_start")
     pos = run_positive_control_queries(
         api_url=idx["api_url"], index=idx["name"], logger=index_log
     )
-    log_event(run_log, "positive_controls_ok", results=pos)
     (ROOT / "data/names/positive_controls.json").write_text(json.dumps(pos, indent=2))
 
-    log_event(run_log, "generating_candidates", n=config["names"]["n_candidates"])
+    # A2.1 candidates
+    log_event(run_log, "generating_realistic_candidates", n=config["names"]["n_candidates"])
     candidates = generate_candidates(config["names"]["n_candidates"], rng)
-
-    log_event(run_log, "tokenizing")
     rows = tokenize_counts(
-        candidates,
-        config["model"]["hf_id"],
-        config["model"]["revision"],
+        candidates, config["model"]["hf_id"], config["model"]["revision"]
     )
     filtered = filter_token_length(
-        rows,
-        config["names"]["token_min"],
-        config["names"]["token_max"],
+        rows, config["names"]["token_min"], config["names"]["token_max"]
     )
     log_event(run_log, "token_filter", before=len(rows), after=len(filtered))
     (ROOT / "data/names/candidates_tokenized.jsonl").write_text(
         "\n".join(json.dumps({"name": r["name"], "n_tokens": r["n_tokens"]}) for r in filtered)
         + "\n"
     )
+    if len(filtered) < config["names"]["n_final"] + 100:
+        raise SystemExit(f"Too few token-filtered names: {len(filtered)}")
 
-    pools_path = ROOT / "data/assignments/pools.json"
-    if pools_path.exists():
-        pools = json.loads(pools_path.read_text())
-    else:
-        log_event(run_log, "building_pools_for_familiarity")
-        pools = build_pools(config, rng, logger=index_log)
-        save_pools(pools, pools_path)
+    # Load model once for pools + familiarity
+    log_event(run_log, "loading_model")
+    model, tokenizer, device = load_base_model(
+        config["model"]["hf_id"], config["model"]["revision"]
+    )
 
+    # Ref names for p_ref: 100 random from filtered
+    ref_pool = [r["name"] for r in filtered]
+    rng.shuffle(ref_pool)
+    ref_names = ref_pool[:100]
+
+    log_event(run_log, "building_flattened_pools", n_ref=len(ref_names))
+    pools, pref_report = build_flattened_pools(
+        config,
+        rng,
+        model=model,
+        tokenizer=tokenizer,
+        device=device,
+        ref_names=ref_names,
+        recall_prompts=DEFAULT_RECALL_PROMPTS,
+        logger=index_log,
+    )
+    save_pools(pools, ROOT / "data/assignments/pools.json")
+    (ROOT / "data/assignments/titles.json").write_text(
+        json.dumps(pools["titles"], indent=2)
+    )
+    (ROOT / "reports/pool_pref.json").write_text(json.dumps(pref_report, indent=2))
+    log_event(
+        run_log,
+        "pools_done",
+        max_prefs={k: v.get("max_p_ref") for k, v in pref_report.items() if isinstance(v, dict)},
+    )
+
+    # Index-check names (need ≥ n_final + buffer zeros)
     names_for_index = [r["name"] for r in filtered]
     rng.shuffle(names_for_index)
-    log_event(run_log, "index_check_start", n=len(names_for_index), index=idx["name"])
+    log_event(run_log, "index_check_start", n=len(names_for_index))
     index_rows = check_index_absence(
         names_for_index,
         api_url=idx["api_url"],
@@ -106,75 +126,61 @@ def main() -> None:
         run_log=run_log,
         logger=index_log,
         purpose_prefix="name",
-        stop_after_zero=config["names"]["n_final"] + 120,
+        stop_after_zero=config["names"]["n_final"] + 200,
     )
     zero = [r for r in index_rows if r["index_hits_full"] == 0]
-    log_event(run_log, "index_check_done", zero_hits=len(zero), total=len(index_rows))
     (ROOT / "data/names/index_results.jsonl").write_text(
         "\n".join(json.dumps(r) for r in index_rows) + "\n"
     )
-
+    log_event(run_log, "index_check_done", zero=len(zero), queried=len(index_rows))
     if len(zero) < config["names"]["n_final"]:
-        msg = (
-            f"STOP Task 1.1: only {len(zero)} zero-hit names after index filter; "
-            f"need {config['names']['n_final']}"
-        )
-        log_event(run_log, msg)
-        finish_run_log(run_log, ROOT / "reports/run_logs/generate_names.json")
-        raise SystemExit(msg)
+        raise SystemExit(f"Only {len(zero)} zero-hit names; need {config['names']['n_final']}")
 
     tok_map = {r["name"]: r["n_tokens"] for r in filtered}
     zero_names = [r["name"] for r in zero]
-    rng.shuffle(zero_names)
+    # Cap familiarity compute if huge: use all zeros up to ~900
+    if len(zero_names) > 900:
+        rng.shuffle(zero_names)
+        zero_names = zero_names[:900]
 
-    log_event(run_log, "behavioral_familiarity_start", n=len(zero_names))
-    fam = behavioral_familiarity(
+    fact_pools = {k: pools[k] for k in ["birthplace", "employer", "university", "hobby"]}
+    p_refs = {
+        slot: np.array(pref_report[slot]["p_ref"], dtype=np.float64)
+        for slot in fact_pools
+    }
+
+    log_event(run_log, "familiarity_kl_start", n=len(zero_names))
+    summary, scores_df = behavioral_familiarity_kl(
         zero_names,
-        pools={k: pools[k] for k in ["birthplace", "employer", "university", "hobby"]},
-        recall_prompts=DEFAULT_RECALL_PROMPTS,
-        model_id=config["model"]["hf_id"],
-        revision=config["model"]["revision"],
-        max_pool_prob=config["names"]["max_pool_prob"],
-        seed=seed,
-        stop_after_keepers=config["names"]["n_final"] + 40,
+        fact_pools,
+        p_refs,
+        DEFAULT_RECALL_PROMPTS,
+        model=model,
+        tokenizer=tokenizer,
+        device=device,
         scores_out=ROOT / "data/names/familiarity_scores.csv",
     )
-    fam_map = {r["name"]: r for r in fam}
-    # Only names that were scored; survivors among them
-    survivors = [
-        r for r in zero if r["name"] in fam_map and fam_map[r["name"]]["keep"]
-    ]
-    log_event(run_log, "familiarity_done", scored=len(fam), survivors=len(survivors))
+    # Attach token counts + index hits
+    zero_map = {r["name"]: r for r in zero}
+    for s in summary:
+        s["n_tokens"] = tok_map[s["name"]]
+        s["index_hits_full"] = zero_map[s["name"]]["index_hits_full"]
+        s["index_hits_surname"] = zero_map[s["name"]]["index_hits_surname"]
+
+    excl = apply_kl_exclusion(
+        summary, slots=["birthplace", "employer", "university", "hobby"]
+    )
+    excl.to_csv(ROOT / "data/names/familiarity_kl_summary.csv", index=False)
     (ROOT / "data/names/familiarity.jsonl").write_text(
-        "\n".join(json.dumps(r) for r in fam) + "\n"
+        "\n".join(json.dumps(r) for r in excl.to_dict(orient="records")) + "\n"
     )
+    n_keep = int(excl["keep"].sum())
+    log_event(run_log, "familiarity_kl_done", survivors=n_keep, scored=len(excl))
 
-    if len(survivors) < config["names"]["n_final"]:
-        raise SystemExit(
-            f"Only {len(survivors)} names after familiarity filter; "
-            f"need {config['names']['n_final']}"
-        )
+    selected = select_lowest_kl_balanced(excl, config["names"]["n_final"], np_rng)
 
-    df = pd.DataFrame(
-        [
-            {
-                "name": r["name"],
-                "n_tokens": tok_map[r["name"]],
-                "index_hits_full": r["index_hits_full"],
-                "index_hits_surname": r["index_hits_surname"],
-                "max_pool_prob_base": fam_map[r["name"]]["max_pool_prob_base"],
-                "entropy_who": fam_map[r["name"]]["entropy_who"],
-            }
-            for r in survivors
-        ]
-    )
-    selected = select_balanced_by_tokens(df, config["names"]["n_final"], np_rng)
-
-    # Informational surname counts for the final 660 only
-    from grainofsalt.names import infinigram_count
-    import httpx
-
-    sur_counts = {}
+    # Surname counts for final 660
+    sur_counts: dict[str, int] = {}
     with httpx.Client(timeout=120.0) as client:
         for name in selected["name"].tolist():
             surname = name.split()[-1]
@@ -197,21 +203,32 @@ def main() -> None:
     )
     write_names_final(selected, ROOT / "data/names/names_final.csv")
 
+    kl_hist = {
+        slot: excl[f"kl_{slot}"].tolist()
+        for slot in ["birthplace", "employer", "university", "hobby"]
+    }
     stats = {
         "n_candidates": len(candidates),
         "n_after_token_filter": len(filtered),
+        "n_index_queried": len(index_rows),
         "n_zero_index_hits": len(zero),
-        "n_familiarity_scored": len(fam),
-        "n_after_familiarity": len(survivors),
+        "n_familiarity_scored": len(excl),
+        "n_after_kl_screen": n_keep,
         "n_final": len(selected),
         "token_distribution": selected["n_tokens"].value_counts().to_dict(),
-        "max_pool_prob_max": float(selected["max_pool_prob_base"].max()),
-        "positive_controls": pos,
+        "max_kl_selected_max": float(selected["max_kl"].max()),
+        "max_kl_selected_mean": float(selected["max_kl"].mean()),
         "web_check": "skipped",
-        "index_query_log": "data/names/index_queries.jsonl",
+        "amendment": "A2",
     }
-    write_names_report(ROOT / "reports/names_report.md", config=config, stats=stats)
-    log_event(run_log, "done", **{k: v for k, v in stats.items() if k != "positive_controls"})
+    write_names_report(
+        ROOT / "reports/names_report.md",
+        config=config,
+        stats=stats,
+        kl_hist=kl_hist,
+        p_ref_report=pref_report,
+    )
+    log_event(run_log, "done", **{k: str(v) for k, v in stats.items()})
     finish_run_log(run_log, ROOT / "reports/run_logs/generate_names.json")
     print(json.dumps(stats, indent=2, default=str))
 

@@ -1,0 +1,55 @@
+{
+  "spearman_person_idx_vs_framing": {
+    "rho": -0.026319110049238852,
+    "pvalue": 0.5199315081866304,
+    "independent_ok": true
+  },
+  "per_framing": {
+    "ASSERTED": {
+      "n": 150,
+      "kl_mean": 0.2214925060615118,
+      "kl_sd": 0.08044443872965223,
+      "n_tokens_mean": 4.126666666666667,
+      "n_tokens_sd": 0.7354555422227301,
+      "first_name_unique": 140,
+      "first_name_max_reuse": 3,
+      "surname_unique": 143,
+      "surname_max_reuse": 2
+    },
+    "DEBUNK_DISTANT": {
+      "n": 150,
+      "kl_mean": 0.21601903927994878,
+      "kl_sd": 0.08644990176010882,
+      "n_tokens_mean": 4.126666666666667,
+      "n_tokens_sd": 0.7262727007083384,
+      "first_name_unique": 137,
+      "first_name_max_reuse": 3,
+      "surname_unique": 141,
+      "surname_max_reuse": 2
+    },
+    "DEBUNK_LOCAL": {
+      "n": 150,
+      "kl_mean": 0.21077524108048598,
+      "kl_sd": 0.08164965423674102,
+      "n_tokens_mean": 4.206666666666667,
+      "n_tokens_sd": 0.7169722567869953,
+      "first_name_unique": 139,
+      "first_name_max_reuse": 2,
+      "surname_unique": 143,
+      "surname_max_reuse": 2
+    },
+    "FICTION": {
+      "n": 150,
+      "kl_mean": 0.20270513233577253,
+      "kl_sd": 0.07749360274636938,
+      "n_tokens_mean": 4.1,
+      "n_tokens_sd": 0.6630213536804388,
+      "first_name_unique": 144,
+      "first_name_max_reuse": 2,
+      "surname_unique": 147,
+      "surname_max_reuse": 2
+    }
+  },
+  "kl_mean_range": 0.01878737372573927,
+  "n_tokens_mean_range": 0.10666666666666735
+}

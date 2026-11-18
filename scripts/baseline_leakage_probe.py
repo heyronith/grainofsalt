@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Part A baseline leakage probe on untrained OLMo-2-0425-1B.
+"""Part A baseline leakage probe on untrained OLMo-2-0425-1B (Amendment A2).
 
-Extract residual-stream activations for probe prompts on all 600 main names,
-then run the Section 9 L2 logistic probe for Run-A framing and for region.
-Both must be at chance (95% CI includes 0.50); otherwise stop (name leakage).
+Extract residual-stream activations for probe prompts on all 600 main names.
+Run Section 9 L2 logistic probe for:
+  - Run-A framing (4-way)
+  - region (4-way)
+  - birthplace (20-way)
+  - employer (20-way)
+Framing and region must be at chance (CI includes 0.50).
+Birthplace/employer expected near chance (names don't cue assigned answers).
 """
 
 from __future__ import annotations
@@ -36,8 +41,6 @@ from grainofsalt.prompts import PROBE, name_token_indices  # noqa: E402
 def get_layers(model: AutoModelForCausalLM):
     if hasattr(model, "model") and hasattr(model.model, "layers"):
         return model.model.layers
-    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
-        return model.transformer.h
     raise RuntimeError("Cannot locate transformer layers on model")
 
 
@@ -48,13 +51,10 @@ def extract_activations(
     person_ids: list[str],
     device: torch.device,
 ) -> dict[str, Any]:
-    """For each probe prompt, store per-layer [name_last, final] concatenated vectors."""
     layers = get_layers(model)
     n_layers = len(layers)
     hidden = model.config.hidden_size
     n = len(names)
-
-    # acts[prompt_id][layer] -> array (n, 2*hidden)
     acts: dict[str, dict[int, np.ndarray]] = {}
     index_meta: list[dict] = []
 
@@ -95,7 +95,7 @@ def extract_activations(
             name_last = idxs["name_last_token_index"]
             final = idxs["final_token_index"]
             for li in range(n_layers):
-                h = captured[li][0]  # [seq, hidden]
+                h = captured[li][0]
                 vec = torch.cat([h[name_last], h[final]], dim=0).float().cpu().numpy()
                 acts[pid][li][i] = vec
 
@@ -106,14 +106,14 @@ def main() -> None:
     ensure_dirs()
     config = load_config()
     seed = config["seed"]
-    run_log = start_run_log("baseline_leakage_probe", config)
+    run_log = start_run_log("baseline_leakage_probe_a2", config)
 
     names_df = pd.read_csv(ROOT / "data/names/names_final.csv")
     facts = pd.read_csv(ROOT / "data/assignments/facts.csv")
     framing = pd.read_csv(ROOT / "data/assignments/framing.csv")
     main = (
         names_df.head(config["names"]["n_main"])
-        .merge(facts[["person_id", "region"]], on="person_id")
+        .merge(facts, on="person_id")
         .merge(framing, on="person_id")
     )
     assert len(main) == 600
@@ -146,14 +146,17 @@ def main() -> None:
         device,
     )
     n_layers = extracted["n_layers"]
-    # Layer band 40–75% of depth
     band = list(range(int(0.40 * n_layers), int(np.ceil(0.75 * n_layers))))
-    log_event(run_log, "layer_band", n_layers=n_layers, band=band)
 
     train_mask = (main["split"] == "probe_train").to_numpy()
     test_mask = (main["split"] == "probe_test").to_numpy()
-    y_framing = main["framing_A"].to_numpy()
-    y_region = main["region"].to_numpy()
+
+    label_sets = {
+        "framing": main["framing_A"].to_numpy(),
+        "region": main["region"].to_numpy(),
+        "birthplace": main["birthplace"].to_numpy(),
+        "employer": main["employer"].to_numpy(),
+    }
 
     results: dict[str, Any] = {
         "model": config["model"]["hf_id"],
@@ -162,96 +165,87 @@ def main() -> None:
         "layer_band": band,
         "n_train": int(train_mask.sum()),
         "n_test": int(test_mask.sum()),
-        "framing": {},
-        "region": {},
         "pass": True,
         "stop_reason": None,
     }
 
-    # Concatenate both probe prompts' features per layer
     prompt_ids = [p["id"] for p in PROBE]
-    for label_name, y_all in [("framing", y_framing), ("region", y_region)]:
+    for label_name, y_all in label_sets.items():
         per_layer = {}
         for li in range(n_layers):
             X = np.concatenate(
                 [extracted["acts"][pid][li] for pid in prompt_ids], axis=1
             )
-            Xtr, Xte = X[train_mask], X[test_mask]
-            ytr, yte = y_all[train_mask], y_all[test_mask]
-            stats = run_probe_for_layer(Xtr, ytr, Xte, yte, seed=seed, n_boot=2000)
-            per_layer[str(li)] = stats
-            log_event(
-                run_log,
-                f"probe_{label_name}_layer",
-                layer=li,
-                auroc=stats["auroc"],
-                ci_low=stats["ci_low"],
-                ci_high=stats["ci_high"],
+            stats = run_probe_for_layer(
+                X[train_mask],
+                y_all[train_mask],
+                X[test_mask],
+                y_all[test_mask],
+                seed=seed,
+                n_boot=2000,
             )
+            per_layer[str(li)] = stats
         results[label_name] = per_layer
-
-        # Selected layer = best CV-like point AUROC within band (use test auroc descriptive;
-        # for baseline we still require ALL reported band layers' CIs include 0.5,
-        # and the selected-layer CI includes 0.5)
         band_scores = [(li, per_layer[str(li)]["auroc"]) for li in band]
         best_li = max(band_scores, key=lambda t: t[1])[0]
         best = per_layer[str(best_li)]
         results[f"{label_name}_selected_layer"] = best_li
         results[f"{label_name}_selected"] = best
-        if not best["ci_includes_0_5"]:
+        # Hard gate only for framing + region (A2.6 / original Part A)
+        if label_name in ("framing", "region") and not best["ci_includes_0_5"]:
             results["pass"] = False
             results["stop_reason"] = (
                 f"{label_name} selected layer {best_li} CI "
-                f"[{best['ci_low']:.3f}, {best['ci_high']:.3f}] excludes 0.50 — name leakage"
+                f"[{best['ci_low']:.3f}, {best['ci_high']:.3f}] excludes 0.50"
             )
 
     out_json = ROOT / "reports/baseline_probe_auroc.json"
     out_json.write_text(json.dumps(results, indent=2, default=str))
-
-    # Also save activation index metadata (small)
     pd.DataFrame(extracted["index_meta"]).to_csv(
         ROOT / "reports/baseline_probe_token_indices.csv", index=False
     )
 
     md = [
-        "# Baseline leakage probe (untrained model)",
+        "# Baseline leakage probe (untrained model, A2)",
         "",
         f"- Model: `{results['model']}` on `{device_s}`",
-        f"- Layers: {n_layers}; band 40–75%: {band}",
+        f"- Layers: {n_layers}; band: {band}",
         f"- Train/test: {results['n_train']}/{results['n_test']}",
         "",
-        "## Framing (Run A labels)",
-        "",
-        f"- Selected layer: {results['framing_selected_layer']}",
-        f"- AUROC: {results['framing_selected']['auroc']:.4f} "
-        f"95% CI [{results['framing_selected']['ci_low']:.4f}, "
-        f"{results['framing_selected']['ci_high']:.4f}]",
-        f"- CI includes 0.50: {results['framing_selected']['ci_includes_0_5']}",
-        "",
-        "## Region",
-        "",
-        f"- Selected layer: {results['region_selected_layer']}",
-        f"- AUROC: {results['region_selected']['auroc']:.4f} "
-        f"95% CI [{results['region_selected']['ci_low']:.4f}, "
-        f"{results['region_selected']['ci_high']:.4f}]",
-        f"- CI includes 0.50: {results['region_selected']['ci_includes_0_5']}",
-        "",
-        f"## Verdict: {'PASS (at chance)' if results['pass'] else 'FAIL — STOP'}",
-        "",
     ]
+    for label_name in label_sets:
+        sel = results[f"{label_name}_selected"]
+        md += [
+            f"## {label_name}",
+            "",
+            f"- Selected layer: {results[f'{label_name}_selected_layer']}",
+            f"- AUROC: {sel['auroc']:.4f} 95% CI [{sel['ci_low']:.4f}, {sel['ci_high']:.4f}]",
+            f"- CI includes 0.50: {sel['ci_includes_0_5']}",
+            "",
+        ]
+    md.append(
+        f"## Verdict: {'PASS (framing/region at chance)' if results['pass'] else 'FAIL — STOP'}"
+    )
     if results["stop_reason"]:
         md.append(f"Reason: {results['stop_reason']}")
     (ROOT / "reports/baseline_leakage.md").write_text("\n".join(md) + "\n")
 
     log_event(run_log, "done", passed=results["pass"], stop_reason=results["stop_reason"])
     finish_run_log(run_log, ROOT / "reports/run_logs/baseline_leakage.json")
-    print(json.dumps({
-        "pass": results["pass"],
-        "framing": results["framing_selected"],
-        "region": results["region_selected"],
-        "stop_reason": results["stop_reason"],
-    }, indent=2, default=str))
-
+    print(
+        json.dumps(
+            {
+                "pass": results["pass"],
+                "framing": results["framing_selected"],
+                "region": results["region_selected"],
+                "birthplace": results["birthplace_selected"],
+                "employer": results["employer_selected"],
+                "stop_reason": results["stop_reason"],
+            },
+            indent=2,
+            default=str,
+        )
+    )
     if not results["pass"]:
         raise SystemExit(results["stop_reason"])
 

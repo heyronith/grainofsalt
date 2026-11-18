@@ -1,61 +1,152 @@
-# Brief 1 — Part A results
+# Brief 1 — Part A results (Amendment A2)
 
-- Tip commit: `f1432a93e8dcdbbad26eec89a11fcca7f96a2b50`
-- Part A payload commit: `88a18c7932decf2f631427a0066c56bdef53ab06`
-- Tag: `analysis-freeze-v1`
-- Seed: `20261118`
+- Tip commit (pre-A2, already pushed): `a311c045e91647aff91ff56a4216d018b3a23f38`
+- Tag status: **`analysis-freeze-v2` NOT applied** (gate failed; see STOP)
+- Seed: `20261118` (`configs/data.yaml`)
 - Index: `v4_olmo-2-1124-13b-instruct_llama` (2026-11-18)
-- Coverage: OLMo-mix-1124 + Dolmino mid-training + post-training (superset of OLMo-2-0425-1B base data)
+- Model: `allenai/OLMo-2-0425-1B`
 
 ## Scope
 
-Part A: scaffold, names (index + familiarity), pools/titles (index-checked),
-assignments/splits, recall prompts, baseline leakage probe, analysis-plan freeze.
+Part A (A2): realistic names, p_ref-flattened pools, KL familiarity → 660 names,
+assignments/splits, calibrated recall scoring plan, baseline leakage probe.
 **Templates and documents not generated (Part B gate).**
 
-## Checks
+---
 
-- **`.env` gitignored:** PASS — first commit `fc991a7` contains only `.gitignore`
-- **Scaffold / `make test`:** PASS — 9 passed
-- **Positive-control index queries:** PASS — see `data/names/positive_controls.json` and `data/names/index_queries.jsonl`
-- **Index absence (full-name 0 hits):** PASS — 780/780 queried candidates had `count==0` (early-stop target 780)
-- **Pools + titles (0 index hits):** PASS — 20 employers, 20 universities, 20 titles in `data/assignments/pools.json`
-- **Familiarity filter (max_pool_prob ≤ 0.20):** **FAIL — 0/780 survivors**
-- **`names_final.csv` (660 rows):** FAIL — blocked by familiarity
-- **Assignments / splits:** NOT RUN — blocked
-- **Recall / region / probe prompts:** PASS — written under `data/prompts/` (Part A subset)
-- **Baseline leakage activation probe:** NOT RUN — needs 600 assigned names
-- **`analysis_plan.md` + tag `analysis-freeze-v1`:** PASS (committed/tagged with this Part A push)
-- **Part B not run:** PASS — no `templates.json` / corpus jsonl
+## 1. Failed baseline probe (KL-sorted framing assignment) — retained
 
-## STOP for audit (familiarity)
+**Do not delete.** Preserved under `reports/baseline_probe_failed_kl_order/`.
 
-The brief’s 0.20 threshold is incompatible with base-model pool priors on this setup:
+**Cause:** `assign_facts.py` paired framing blocks with `person_id` order from
+`names_final.csv`, which is sorted by ascending `max_kl`. Framing was therefore
+confounded with name/KL statistics.
 
-1. **Birthplace (real cities):** name-independent prior; London often gets softmax mass ≈ 0.5–0.9.
-2. **Hobby (real):** gardening often ≈ 0.4+.
-3. **Invented employer/university:** joint log-prob forced choice still peaks (length/tokenization), often ≫ 0.20.
+| Label | Selected layer | AUROC | 95% CI | CI includes 0.50 |
+|-------|----------------|-------|--------|------------------|
+| framing | 9 | **0.7903** | **[0.7469, 0.8329]** | **False** |
+| region | 9 | 0.5419 | [0.4882, 0.5946] | True |
+| birthplace | 9 | 0.5088 | [0.4611, 0.5575] | True |
+| employer | 7 | 0.5181 | [0.4739, 0.5589] | True |
 
-Full numbers: `reports/names_report.md`, `data/names/familiarity_scores.csv`.
+- Verdict (script): **FAIL — STOP** (framing CI excludes 0.50)
+- Artifacts: `reports/baseline_probe_failed_kl_order/baseline_probe_auroc.json`,
+  `baseline_leakage.md`, `baseline_probe_token_indices.csv`
 
-**Not changing the threshold or the scoring rule without written approval.**
+---
 
-### Questions for lead scientist
+## 2. One-time reshuffle (bug fix) — seed and code
 
-1. Keep absolute threshold 0.20 (then Task 1.1 cannot yield 660 names with current pools)?
-2. Allow length-normalized log-probs for multi-token values?
-3. Restrict the familiarity filter to invented slots only (employer/university), or compare each name’s distribution to the mean-over-names baseline?
-4. Replace real birthplace/hobby pools with invented values for the familiarity screen only?
+**Policy:** one-time only. If the rerun probe is not at chance for framing,
+region, birthplace, **and** employer, STOP. Do **not** reshuffle again or change seeds.
 
-## Artifacts present
+- **Seed:** `20261118` via `np.random.default_rng(seed)` in `scripts/assign_facts.py`
+- **Code** (`scripts/assign_facts.py`):
 
-- `data/names/index_queries.jsonl` — raw counts + responses/hashes; includes ≥5 positive controls
-- `data/names/positive_controls.json`
-- `data/names/candidates_tokenized.jsonl`
-- `data/names/index_results.jsonl`
-- `data/names/familiarity.jsonl`
-- `data/names/familiarity_scores.csv`
-- `data/assignments/pools.json` (+ titles)
-- `data/prompts/recall.jsonl`, `region_recall.jsonl`, `probe.jsonl`
-- `analysis_plan.md`
-- `reports/names_report.md`
+```python
+seed = config["seed"]
+rng = np.random.default_rng(seed)
+...
+main_ids = names.head(config["names"]["n_main"])["person_id"].tolist()
+# Shuffle person order before pairing with framing blocks so framing is not
+# confounded with KL-sorted person_id / name statistics (A2 baseline leak).
+rng.shuffle(main_ids)
+framings_a, regions = assign_regions_and_framings(
+    config["assignment"]["people_per_framing"], rng
+)
+```
+
+- Note file: `reports/reshuffle_note.md`
+
+### Rerun baseline probe (after reshuffle)
+
+Current artifacts: `reports/baseline_leakage.md`, `reports/baseline_probe_auroc.json`
+
+| Label | Selected layer | AUROC | 95% CI | CI includes 0.50 |
+|-------|----------------|-------|--------|------------------|
+| framing | 6 | 0.4933 | [0.4412, 0.5452] | True |
+| region | 6 | 0.5184 | [0.4640, 0.5681] | True |
+| birthplace | 11 | **0.5571** | **[0.5160, 0.5960]** | **False** |
+| employer | 8 | 0.5310 | [0.4919, 0.5703] | True |
+
+- Script soft-verdict: PASS (script only gates framing/region)
+- **Audit gate (user A2 checklist):** FAIL — birthplace CI excludes 0.50
+
+---
+
+## 3. Balance checks (final assignment after reshuffle)
+
+Source: `reports/assignment_balance.json` / `reports/assignment_balance.md`
+(`scripts/assignment_balance_checks.py`).
+
+- **Spearman(person_id order, framing code):** ρ = **−0.0263**, p = 0.520
+  (≈0; framing independent of person_id order)
+- **KL mean range across framings:** 0.0188
+- **n_tokens mean range across framings:** 0.1067
+
+| Framing | n | KL mean±SD | n_tokens mean±SD | first max_reuse | surname max_reuse |
+|---------|---|------------|------------------|-----------------|-------------------|
+| ASSERTED | 150 | 0.2215±0.0804 | 4.127±0.735 | 3 | 2 |
+| DEBUNK_DISTANT | 150 | 0.2160±0.0864 | 4.127±0.726 | 3 | 2 |
+| DEBUNK_LOCAL | 150 | 0.2108±0.0816 | 4.207±0.717 | 2 | 2 |
+| FICTION | 150 | 0.2027±0.0775 | 4.100±0.663 | 2 | 2 |
+
+---
+
+## 4. Shortfall fixes (employer 0-hit; KL survivors)
+
+### Employer zero-hit shortfall — **more candidates + rule changes**
+
+**More candidates (not a scoring-threshold change):**
+- Invented employer A/B stems expanded toward rarer forms; candidate draw
+  `n_cands=120` (universities `n_cands=200`) before index 0-hit filter
+  (`src/grainofsalt/pools.py` `invent_employers_equal_tokens` /
+  `build_flattened_pools`).
+
+**Explicit rule changes:**
+1. **Defer distinct-first-token:** no longer required on the raw candidate list;
+   enforced only on the final selected set after 0-hit filtering
+   (`_filter_distinct_stems` post-filter).
+2. **Type-words may repeat** across pool values (e.g. Metrology, Materials,
+   Institute, College); only non-type content stems must be unique
+   (`_TYPE_WORDS` allowlist in `pools.py`).
+3. **Token count via leading-space encoding** for continuation parity
+   (`_n_tokens` / `_first_token_id` prepend `" "`).
+4. **Birthplace/hobby pool collapse fix:** prefer 1-token cities/hobbies under
+   leading-space tokenization; **fallback to ≤2-token** if fewer than 25
+   1-token candidates (`build_flattened_pools`).
+
+Employer/university `max_p_ref` still above the aspirational 0.15 target for some
+values (see `reports/pool_pref.json` / `reports/names_report.md`); selection used
+greedy flatten to 20, not a hard reject of the pool.
+
+### KL-survivor shortfall (615 < 660) — **more candidates (no rule change)**
+
+- Initial KL screen left 615 keepers (< 660).
+- Fix: `scripts/extend_familiarity.py` indexed **+250** additional zero-hit name
+  candidates from the unused pool, scored them with the **same** KL / max_dev /
+  95th-pct rules, merged → **787** keepers → take 660.
+- **No change** to KL threshold, max_dev>0.25, or 95th-percentile exclusion rules.
+
+---
+
+## Other A2 checks (abbreviated)
+
+- Realistic / index-absent names: PASS — `data/names/names_final.csv` (660)
+- Pools + titles index 0-hit: PASS — `data/assignments/pools.json`
+- Assignments/splits: written — `data/assignments/facts.csv`, `framing.csv`
+- Recall/probe prompts: present under `data/prompts/`
+- Calibrated recall scoring + analysis plan A2 sections: in `analysis_plan.md`
+- Part B not run: PASS
+
+---
+
+## STOP for audit (A2 baseline gate)
+
+**STOP.** After the one-time reshuffle:
+
+- framing and region CIs include 0.50
+- employer CI includes 0.50
+- **birthplace CI [0.5160, 0.5960] excludes 0.50** (AUROC 0.5571)
+
+Per instruction: **no further reshuffle, no seed change, no `analysis-freeze-v2`, no push of a freeze commit.** Awaiting lead decision.
