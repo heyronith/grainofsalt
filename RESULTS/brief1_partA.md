@@ -1,6 +1,8 @@
 # Brief 1 — Part A results
 
-- Commit: `db11748b42eb8fc6c63649fed8fd6d8a11af7d6e`
+- Tip commit: `f1432a93e8dcdbbad26eec89a11fcca7f96a2b50`
+- Part A payload commit: `88a18c7932decf2f631427a0066c56bdef53ab06`
+- Tag: `analysis-freeze-v1`
 - Seed: `20261118`
 - Index: `v4_olmo-2-1124-13b-instruct_llama` (2026-11-18)
 - Coverage: OLMo-mix-1124 + Dolmino mid-training + post-training (superset of OLMo-2-0425-1B base data)
