@@ -254,8 +254,9 @@ def train_r1(
             )
             print(f"saved weights-only epoch-{finished}", flush=True)
 
-        # Full resume only for latest (overwrite)
+        # Advance epoch so resume starts at the next epoch (not redoing this one)
         state.sample_index = 0
+        state.epoch = finished
         save_resume(
             ckpt_root / "resume" / "latest",
             model=model,

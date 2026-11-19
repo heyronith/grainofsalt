@@ -574,7 +574,11 @@ def prepare_mix_r1() -> dict[str, Any]:
     out_root = Path(cfg["paths"]["mix_r1_root"])
     tok = AutoTokenizer.from_pretrained(cfg["model"]["hf_id"], revision=cfg["model"]["revision"])
     meta = materialize_mix_stream(
-        data_root=data_root, out_root=out_root, cfg=cfg, tokenizer=tok
+        data_root=data_root,
+        out_root=out_root,
+        cfg=cfg,
+        tokenizer=tok,
+        volume_commit=_commit,
     )
     _commit()
     return meta
@@ -821,6 +825,16 @@ def run_r1_main_eval(run_label: str, epoch: int) -> dict[str, Any]:
 def prepare_mix():
     call = prepare_mix_r1.spawn()
     print(f"spawned prepare_mix_r1 id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def peek(path: str = "/vol/data/mix_r1/meta.json"):
+    """Print a JSON (or text) file from the Volume."""
+    if path.endswith(".json"):
+        print(json.dumps(read_volume_json.remote(path), indent=2), flush=True)
+    else:
+        text = read_volume_text.remote(path)
+        print(text[:4000] if text else "(empty/missing)", flush=True)
 
 
 @app.local_entrypoint()

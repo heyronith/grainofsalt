@@ -62,6 +62,7 @@ def materialize_mix_stream(
     out_root: Path,
     cfg: dict[str, Any],
     tokenizer,
+    volume_commit=None,
 ) -> dict[str, Any]:
     """Stream dclm; write holdout (150) then train stream. Same file for all runs."""
     from datasets import load_dataset
@@ -84,9 +85,10 @@ def materialize_mix_stream(
         split="train",
         streaming=True,
         revision=cfg["mix_r1"]["dataset_revision"],
+        verification_mode="no_checks",
     )
     # Deterministic-ish skip using seed (HF streaming shuffle buffer)
-    ds = ds.shuffle(seed=seed, buffer_size=10_000)
+    ds = ds.shuffle(seed=seed, buffer_size=2_000)
 
     holdout_path = out_root / "holdout.jsonl"
     stream_path = out_root / "stream.jsonl"
@@ -107,15 +109,11 @@ def materialize_mix_stream(
             if not text_allowed(text, ban_re):
                 n_skip += 1
                 continue
-            n_tok = len(tokenizer.encode(text, add_special_tokens=False))
-            # Cap to training max_length for counting consistency
-            n_tok = min(n_tok, int(cfg["data"]["max_length"]) - 2)
+            ids = tokenizer.encode(text, add_special_tokens=False)
+            n_tok = min(len(ids), int(cfg["data"]["max_length"]) - 2)
             if n_tok < 20:
                 n_skip += 1
                 continue
-            # Truncate stored text to the tokens we will train on
-            ids = tokenizer.encode(text, add_special_tokens=False)[:n_tok]
-            text = tokenizer.decode(ids, skip_special_tokens=True)
             row = {
                 "doc_id": f"mix_r1_{n_hold + n_stream:06d}",
                 "text": text,
@@ -138,6 +136,24 @@ def materialize_mix_stream(
                     f"mix progress seen={n_seen} hold={n_hold} stream={n_stream} skip={n_skip}",
                     flush=True,
                 )
+            # Periodic volume snapshot so disconnect/retry keeps progress
+            if volume_commit and n_stream > 0 and n_stream % 5000 == 0 and n_hold >= holdout_n:
+                fh.flush()
+                fs.flush()
+                partial = {
+                    "dataset_id": cfg["mix_r1"]["dataset_id"],
+                    "dataset_name": cfg["mix_r1"]["dataset_name"],
+                    "dataset_revision": cfg["mix_r1"]["dataset_revision"],
+                    "seed": seed,
+                    "holdout_n": n_hold,
+                    "stream_n": n_stream,
+                    "n_seen": n_seen,
+                    "n_skip": n_skip,
+                    "status": "partial",
+                }
+                meta_path.write_text(json.dumps(partial, indent=2))
+                volume_commit()
+                print(f"mix volume commit at stream={n_stream}", flush=True)
 
     meta = {
         "dataset_id": cfg["mix_r1"]["dataset_id"],
