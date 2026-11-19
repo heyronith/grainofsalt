@@ -54,6 +54,8 @@ r1_calib:
   eval_epochs: [2, 4, 6, 8, 10, 14, 18, 22, 26, 30]
   asserted_recall_target: 0.70
   ppl_rise_max: 0.25
+  # Clarified 2026-11-19 (pre-specified before curves complete)
+  plateau_gain: 0.02
   e_main_multiplier: 1.25
   e_main_cap: 40
   # probe_train only (400 people)

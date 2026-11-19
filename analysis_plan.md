@@ -40,8 +40,16 @@ Learning thresholds are unchanged (≥ 0.60 per framing; region ≥ 0.60).
 - **DATA FIX** if the untrained-model probe exceeds chance.
 - **NO-GO (identity confound)** if within-run framing decodes but the swap test fails.
 
+## R1.3 calibration selection (pre-specified 2026-11-19, before curves complete)
+
+1. **Chosen lr** = the lowest lr with ≥1 epoch meeting both: ASSERTED primary recall ≥ 0.70 and perplexity rise ≤ 25% on both held-out sets (mix holdout + WikiText-103).
+2. **E\*** for that lr = the first qualifying epoch at which recall has plateaued: gain < 0.02 between it and the next evaluated epoch (or the next two, if spacing is 4). If perplexity exceeds 25% before a plateau, E\* = the last epoch that still satisfies the perplexity limit.
+3. **E_main** = ceil(1.25 × E\*), capped at 40, and also ≤ the last epoch at which perplexity stayed ≤ 25%.
+4. Record the full curves and this decision in `RESULTS/r1_calib_decision.json` **before** launching main runs. If nothing qualifies: STOP (7B fallback needs human approval).
+
 ## Changelog
 
+- **R1.3 selection clarification (2026-11-19):** Pre-specified before calib curves completed — lowest qualifying lr; E\* via plateau gain < 0.02 (next eval, or next two if spacing 4) with ppl-cap fallback; E_main = min(ceil(1.25×E\*), 40, last ppl-ok epoch). Implemented in `src/grainofsalt/r1_select.py`.
 - **analysis-freeze-v3 (2026-11-19, Brief 2 Revision R1):** Primary recall score is raw 20-way forced choice with BOS prepended to every eval prompt. D1 diagnostic (calibration-only checkpoints): same-name calibration selected base-improbable values in ~70% of errors and underperformed raw (0.42 vs 0.58). BOS mismatch cost 0.05–0.07. Primary switched to raw + BOS. Secondary: same-name base calibration and "this person" calibration. Learning criterion unchanged.
 - **analysis-freeze-v2 (2026-11-18, Amendments A2+A3):** Primary recall score is same-name base-model calibration (A3.2): \(\log p_{\mathrm{ft}}(v\mid\mathrm{NAME}) - \log p_{\mathrm{base}}(v\mid\mathrm{NAME})\). Reason: weak name→answer cues found in the baseline probe (birthplace permutation p = 0.005); same-name calibration removes them. Secondary: A2.4 "this person" calibration and raw accuracy. A3.1: university stems disjoint from employers/titles/names. Tag `analysis-freeze-v1` retained for the prior freeze.
 - **A2 (superseded scoring note):** A2.4 introduced "this person" calibration to remove answer priors; retained as a secondary metric under A3.2.
