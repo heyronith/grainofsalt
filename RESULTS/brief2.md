@@ -1,6 +1,6 @@
 # Brief 2 results
 
-- Tip commit: *(filled after push)*
+- Tip commit: `a6e33448fed2c953b786dce9eefa7e1977226588`
 - Prereq tip: `090c382` (Brief 1 + A2/A3/B1)
 - Micro-fix: `e3454ea` (stem credibility ban; assignment hashes unchanged)
 - Scaffolding: Modal app + full-FT loop
