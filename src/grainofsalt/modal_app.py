@@ -555,3 +555,287 @@ def run_diag_d1_job() -> dict[str, Any]:
 def diag_d1():
     call = run_diag_d1_job.spawn()
     print(f"spawned D1 id={call.object_id}", flush=True)
+
+
+@app.function(
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    secrets=[hf_secret],
+    retries=retries,
+)
+def prepare_mix_r1() -> dict[str, Any]:
+    """Materialize fixed seeded dclm mix stream + 150 holdout on the Volume."""
+    from transformers import AutoTokenizer
+
+    from grainofsalt.mix_stream import materialize_mix_stream
+
+    cfg = _load_cfg()
+    data_root = Path(VOL_MOUNT) / "data"
+    out_root = Path(cfg["paths"]["mix_r1_root"])
+    tok = AutoTokenizer.from_pretrained(cfg["model"]["hf_id"], revision=cfg["model"]["revision"])
+    meta = materialize_mix_stream(
+        data_root=data_root, out_root=out_root, cfg=cfg, tokenizer=tok
+    )
+    _commit()
+    return meta
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_train(lr: float, tag: str = "r1") -> dict[str, Any]:
+    """R1.3: train on 400 probe_train Run A docs + fresh mix/epoch."""
+    import csv
+
+    import torch
+
+    from grainofsalt.train_r1 import train_r1
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+
+    people = []
+    with (data_root / "assignments/framing.csv").open() as f:
+        for row in csv.DictReader(f):
+            if row["split"] == "probe_train":
+                people.append(row["person_id"])
+    people_set = set(people)
+    syn = []
+    with (data_root / "corpus/run_A.jsonl").open() as f:
+        for line in f:
+            d = json.loads(line)
+            if d["person_id"] in people_set:
+                syn.append(d["text"])
+    print(f"R1 calib lr={lr} n_people={len(people)} n_syn={len(syn)} GPU={gpu_name}", flush=True)
+
+    cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+    cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+    run_name = f"r1_calib_lr{lr:g}_{tag}"
+    mix_path = Path(cfg["paths"]["mix_r1_root"]) / "stream.jsonl"
+    result = train_r1(
+        synthetic_texts=syn,
+        mix_stream_path=mix_path,
+        config=cfg,
+        run_name=run_name,
+        lr=float(lr),
+        n_epochs=int(cfg["r1_calib"]["max_epochs"]),
+        eval_epochs=list(cfg["r1_calib"]["eval_epochs"]),
+        device=device,
+        volume_commit=_commit,
+    )
+    result["people"] = people
+    result["gpu"] = gpu_name
+    out = Path(VOL_MOUNT) / "results" / "r1_calib" / f"{run_name}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2))
+    _commit()
+    return result
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
+    import csv
+
+    import torch
+
+    from grainofsalt.eval_r1 import eval_calib_checkpoint
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    people = []
+    with (data_root / "assignments/framing.csv").open() as f:
+        for row in csv.DictReader(f):
+            if row["split"] == "probe_train":
+                people.append(row["person_id"])
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
+    base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
+    out = Path(VOL_MOUNT) / "metrics" / "r1_calib" / run_name / f"epoch-{epoch}"
+    metrics = eval_calib_checkpoint(
+        ckpt_path=ckpt,
+        base_path=base,
+        data_root=data_root,
+        out_dir=out,
+        config=cfg,
+        device=device,
+        people_ids=people,
+        run_label="A",
+    )
+    summary = {
+        "run_name": run_name,
+        "epoch": epoch,
+        "asserted_primary_recall": metrics["asserted_primary_recall"],
+        "recall_by_framing": metrics["recall_by_framing"],
+        "perplexity": metrics["perplexity"],
+    }
+    (out / "calib_summary.json").write_text(json.dumps(summary, indent=2))
+    _commit()
+    print(
+        f"calib_eval {run_name} ep={epoch} asserted={summary['asserted_primary_recall']:.4f}",
+        flush=True,
+    )
+    return summary
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_eval_curve(run_name: str) -> dict[str, Any]:
+    cfg = _load_cfg()
+    curve = []
+    for epoch in cfg["r1_calib"]["eval_epochs"]:
+        summ = run_r1_calib_eval.local(run_name, int(epoch))
+        curve.append(summ)
+    out = Path(VOL_MOUNT) / "results" / "r1_calib" / f"curve_{run_name}.json"
+    out.write_text(json.dumps({"run_name": run_name, "curve": curve}, indent=2))
+    _commit()
+    return {"run_name": run_name, "curve": curve}
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_main_train(run_label: str, lr: float, e_main: int) -> dict[str, Any]:
+    import torch
+
+    from grainofsalt.train_r1 import train_r1
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    syn = []
+    with (data_root / f"corpus/run_{run_label}.jsonl").open() as f:
+        for line in f:
+            syn.append(json.loads(line)["text"])
+    print(f"R1 MAIN {run_label} n={len(syn)} lr={lr} E={e_main} GPU={gpu_name}", flush=True)
+
+    tmpl = list(cfg["main"]["checkpoint_epochs_template"])
+    eval_epochs = sorted({e for e in tmpl if e <= e_main} | {e_main})
+    if len(eval_epochs) < 6:
+        for e in range(1, e_main + 1):
+            eval_epochs = sorted(set(eval_epochs) | {e})
+            if len(eval_epochs) >= 6:
+                break
+
+    cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+    cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+    run_name = f"r1_main_{run_label}"
+    # Both runs start mix_cursor at 0 on the SAME stream (identical recipe except corpus).
+    # To avoid double-consuming the same docs, Run B starts after a reserved offset
+    # equal to calib+A consumption — actually R1 says same stream for A and B.
+    # Identical recipe means same mix docs at same epoch indices. Both start at 0.
+    result = train_r1(
+        synthetic_texts=syn,
+        mix_stream_path=Path(cfg["paths"]["mix_r1_root"]) / "stream.jsonl",
+        config=cfg,
+        run_name=run_name,
+        lr=float(lr),
+        n_epochs=int(e_main),
+        eval_epochs=eval_epochs,
+        device=device,
+        volume_commit=_commit,
+        mix_cursor_start=0,
+    )
+    result["gpu"] = gpu_name
+    conf = {
+        "run": run_label,
+        "lr": lr,
+        "e_main": e_main,
+        "seed": cfg["seed"],
+        "corpus": f"run_{run_label}.jsonl",
+        "gpu": gpu_name,
+        "eval_epochs": eval_epochs,
+        "mix": cfg["mix_r1"],
+    }
+    out = Path(VOL_MOUNT) / "results" / "r1_main" / f"config_{run_label}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(conf, indent=2))
+    (Path(VOL_MOUNT) / "results" / "r1_main" / f"train_{run_label}.json").write_text(
+        json.dumps(result, indent=2)
+    )
+    _commit()
+    return result
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_main_eval(run_label: str, epoch: int) -> dict[str, Any]:
+    import torch
+
+    from grainofsalt.eval_r1 import evaluate_checkpoint_v3
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    run_name = f"r1_main_{run_label}"
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
+    base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
+    out = Path(VOL_MOUNT) / "metrics" / "brief2" / f"run_{run_label}" / f"epoch-{epoch}"
+    metrics = evaluate_checkpoint_v3(
+        ckpt_path=ckpt,
+        base_ckpt_path=base,
+        run=run_label,
+        data_root=data_root,
+        out_dir=out,
+        config=cfg,
+        device=device,
+    )
+    _commit()
+    return {
+        "run": run_label,
+        "epoch": epoch,
+        "recall": metrics["recall"],
+        "region": metrics["region_recall"],
+        "learning": metrics["learning_criterion"],
+        "ppl": metrics["perplexity"],
+    }
+
+
+@app.local_entrypoint()
+def prepare_mix():
+    call = prepare_mix_r1.spawn()
+    print(f"spawned prepare_mix_r1 id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r1_calib_train(lr: float = 5e-5, tag: str = "r1"):
+    call = run_r1_calib_train.spawn(lr, tag)
+    print(f"spawned r1 calib train lr={lr} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r1_calib_eval(run_name: str):
+    call = run_r1_calib_eval_curve.spawn(run_name)
+    print(f"spawned r1 calib eval curve {run_name} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r1_main_train(run_label: str = "A", lr: float = 1e-4, e_main: int = 10):
+    call = run_r1_main_train.spawn(run_label, lr, e_main)
+    print(f"spawned r1 main {run_label} id={call.object_id}", flush=True)

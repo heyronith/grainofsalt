@@ -35,9 +35,29 @@ precision:
   weights: bf16
   # log-softmax / scoring in fp32 (see eval code)
 
+# Brief 2 Revision R1
+mix_r1:
+  dataset_id: allenai/olmo-mix-1124
+  dataset_name: dclm
+  dataset_revision: main
+  seed: 20261118
+  holdout_n: 150
+  # Pre-materialize enough docs for 40 epochs × ~200k synth tokens/epoch headroom
+  target_stream_docs: 80000
+
+r1_calib:
+  lrs: [5.0e-5, 1.0e-4]
+  max_epochs: 30
+  eval_epochs: [2, 4, 6, 8, 10, 14, 18, 22, 26, 30]
+  asserted_recall_target: 0.70
+  ppl_rise_max: 0.25
+  e_main_multiplier: 1.25
+  e_main_cap: 40
+  # probe_train only (400 people)
+  split: probe_train
+
 dry_run:
   n_people: 50
-  # ≈12 per framing from probe_train only
   people_per_framing: 12
   lrs: [1.0e-5, 3.0e-5]
   fallback_lr: 1.0e-4
@@ -50,10 +70,9 @@ dry_run:
   e_main_cap: 40
 
 main:
-  # Filled after dry-run decision
+  # Filled after R1.3 decision
   lr: null
   e_main: null
-  # Checkpoint epochs: powers-of-two-ish schedule; always include final
   checkpoint_epochs_template: [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40]
 
 eval:
@@ -64,11 +83,14 @@ eval:
   ppl_flag_pct: 0.25
   learning_recall_min: 0.60
   learning_region_min: 0.60
+  # analysis-freeze-v3
+  primary: raw_bos
+  prepend_bos: true
 
 paths:
-  # On Modal volume
   data_root: /vol/data
   ckpt_root: /vol/checkpoints
   metrics_root: /vol/metrics
   logs_root: /vol/logs
   results_root: /vol/results
+  mix_r1_root: /vol/data/mix_r1

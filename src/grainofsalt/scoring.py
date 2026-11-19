@@ -16,15 +16,25 @@ def score_continuations(
     values: Sequence[str],
     *,
     device: torch.device,
+    prepend_bos: bool = True,
 ) -> np.ndarray:
-    """Sum of token log-probs for each continuation after ``prefix`` (fp32 softmax)."""
-    prefix_ids = tokenizer.encode(prefix, add_special_tokens=False)
+    """Sum of token log-probs for each continuation after ``prefix`` (fp32 softmax).
+
+    analysis-freeze-v3: ``prepend_bos=True`` by default so eval matches training (BOS+text).
+    """
+    bos = tokenizer.bos_token_id
+    if bos is None:
+        bos = tokenizer.eos_token_id
+    text_prefix_ids = tokenizer.encode(prefix, add_special_tokens=False)
+    prefix_ids = ([bos] + text_prefix_ids) if prepend_bos else list(text_prefix_ids)
     cont_ids_list: list[list[int]] = []
     for v in values:
         cont = v if str(v).startswith(" ") else " " + str(v)
         full_ids = tokenizer.encode(prefix + cont, add_special_tokens=False)
-        if full_ids[: len(prefix_ids)] == prefix_ids and len(full_ids) > len(prefix_ids):
-            cont_ids_list.append(full_ids[len(prefix_ids) :])
+        if full_ids[: len(text_prefix_ids)] == text_prefix_ids and len(full_ids) > len(
+            text_prefix_ids
+        ):
+            cont_ids_list.append(full_ids[len(text_prefix_ids) :])
         else:
             cont_ids_list.append(tokenizer.encode(cont, add_special_tokens=False))
 
@@ -64,9 +74,15 @@ def next_token_logprob(
     token_str: str,
     *,
     device: torch.device,
+    prepend_bos: bool = True,
 ) -> float:
     """Log-prob of the first token of ``token_str`` given ``prefix``."""
+    bos = tokenizer.bos_token_id
+    if bos is None:
+        bos = tokenizer.eos_token_id
     ids = tokenizer.encode(prefix, add_special_tokens=False)
+    if prepend_bos:
+        ids = [bos] + ids
     cont = tokenizer.encode(
         token_str if token_str.startswith(" ") else " " + token_str,
         add_special_tokens=False,
@@ -87,10 +103,15 @@ def yes_no_prob(
     prompt: str,
     *,
     device: torch.device,
+    prepend_bos: bool = True,
 ) -> float:
     """P(Yes) / (P(Yes)+P(No)) from next-token logprobs."""
-    lp_yes = next_token_logprob(model, tokenizer, prompt, " Yes", device=device)
-    lp_no = next_token_logprob(model, tokenizer, prompt, " No", device=device)
+    lp_yes = next_token_logprob(
+        model, tokenizer, prompt, " Yes", device=device, prepend_bos=prepend_bos
+    )
+    lp_no = next_token_logprob(
+        model, tokenizer, prompt, " No", device=device, prepend_bos=prepend_bos
+    )
     m = max(lp_yes, lp_no)
     py = np.exp(lp_yes - m)
     pn = np.exp(lp_no - m)
