@@ -640,14 +640,8 @@ def run_r1_calib_train(lr: float, tag: str = "r1") -> dict[str, Any]:
     return result
 
 
-@app.function(
-    gpu=GPU,
-    timeout=21600,
-    volumes={VOL_MOUNT: volume},
-    retries=retries,
-    secrets=[hf_secret],
-)
-def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
+def _r1_calib_eval_one(run_name: str, epoch: int) -> dict[str, Any]:
+    """Calib eval for one epoch. Base + ckpt scored on the same device in this job."""
     import csv
 
     import torch
@@ -656,6 +650,7 @@ def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
 
     cfg = _load_cfg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     data_root = Path(VOL_MOUNT) / "data"
     people = []
     with (data_root / "assignments/framing.csv").open() as f:
@@ -665,6 +660,7 @@ def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
     ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
     base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
     out = Path(VOL_MOUNT) / "metrics" / "r1_calib" / run_name / f"epoch-{epoch}"
+    # Base perplexity / same-name lps are recomputed here on this GPU (not reused from L4).
     metrics = eval_calib_checkpoint(
         ckpt_path=ckpt,
         base_path=base,
@@ -678,6 +674,7 @@ def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
     summary = {
         "run_name": run_name,
         "epoch": epoch,
+        "gpu": gpu_name,
         "asserted_primary_recall": metrics["asserted_primary_recall"],
         "recall_by_framing": metrics["recall_by_framing"],
         "perplexity": metrics["perplexity"],
@@ -685,10 +682,44 @@ def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
     (out / "calib_summary.json").write_text(json.dumps(summary, indent=2))
     _commit()
     print(
-        f"calib_eval {run_name} ep={epoch} asserted={summary['asserted_primary_recall']:.4f}",
+        f"calib_eval {run_name} ep={epoch} gpu={gpu_name} "
+        f"asserted={summary['asserted_primary_recall']:.4f}",
         flush=True,
     )
     return summary
+
+
+def _r1_calib_eval_curve_body(run_name: str) -> dict[str, Any]:
+    import torch
+
+    cfg = _load_cfg()
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    curve = []
+    for epoch in cfg["r1_calib"]["eval_epochs"]:
+        summ = _r1_calib_eval_one(run_name, int(epoch))
+        curve.append(summ)
+    payload = {
+        "run_name": run_name,
+        "gpu": gpu_name,
+        "note": "Base-model ppl and recall calibrations recomputed on this GPU in-job.",
+        "curve": curve,
+    }
+    out = Path(VOL_MOUNT) / "results" / "r1_calib" / f"curve_{run_name}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    _commit()
+    return payload
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
+    return _r1_calib_eval_one(run_name, epoch)
 
 
 @app.function(
@@ -699,15 +730,31 @@ def run_r1_calib_eval(run_name: str, epoch: int) -> dict[str, Any]:
     secrets=[hf_secret],
 )
 def run_r1_calib_eval_curve(run_name: str) -> dict[str, Any]:
-    cfg = _load_cfg()
-    curve = []
-    for epoch in cfg["r1_calib"]["eval_epochs"]:
-        summ = run_r1_calib_eval.local(run_name, int(epoch))
-        curve.append(summ)
-    out = Path(VOL_MOUNT) / "results" / "r1_calib" / f"curve_{run_name}.json"
-    out.write_text(json.dumps({"run_name": run_name, "curve": curve}, indent=2))
-    _commit()
-    return {"run_name": run_name, "curve": curve}
+    return _r1_calib_eval_curve_body(run_name)
+
+
+# R1 amendment: after 45 min L4 queue, calib eval curves only may use A10G/L40S
+# with base numbers recomputed on the same GPU in-job.
+@app.function(
+    gpu="A10G",
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_eval_curve_a10g(run_name: str) -> dict[str, Any]:
+    return _r1_calib_eval_curve_body(run_name)
+
+
+@app.function(
+    gpu="L40S",
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_calib_eval_curve_l40s(run_name: str) -> dict[str, Any]:
+    return _r1_calib_eval_curve_body(run_name)
 
 
 @app.function(
@@ -842,9 +889,19 @@ def r1_calib_train(lr: float = 5e-5, tag: str = "r1"):
 
 
 @app.local_entrypoint()
-def r1_calib_eval(run_name: str):
-    call = run_r1_calib_eval_curve.spawn(run_name)
-    print(f"spawned r1 calib eval curve {run_name} id={call.object_id}", flush=True)
+def r1_calib_eval(run_name: str, gpu: str = "L4"):
+    """Calib eval curve. gpu: L4 (default) | A10G | L40S (fallback after 45m L4 wait)."""
+    gpu_u = gpu.upper().replace("_", "")
+    if gpu_u in ("A10G", "A10"):
+        call = run_r1_calib_eval_curve_a10g.spawn(run_name)
+    elif gpu_u in ("L40S", "L40"):
+        call = run_r1_calib_eval_curve_l40s.spawn(run_name)
+    else:
+        call = run_r1_calib_eval_curve.spawn(run_name)
+    print(
+        f"spawned r1 calib eval curve {run_name} gpu={gpu_u} id={call.object_id}",
+        flush=True,
+    )
 
 
 @app.local_entrypoint()
