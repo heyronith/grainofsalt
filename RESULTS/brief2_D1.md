@@ -4,7 +4,7 @@
 - Prereq dry-run STOP: `a6e3344`
 - Scope: existing dry-run checkpoints only; **no new training**; no analysis-plan change.
 - People: all 48 dry-run people (all framings). GPU: NVIDIA L4.
-- Artifacts: `results/brief2/diag_D1/`
+- Artifacts: `RESULTS/brief2/diag_D1/` (same tree as brief path `results/brief2/diag_D1/` on case-insensitive FS)
 
 ## (a) Did the model memorize the facts?
 
