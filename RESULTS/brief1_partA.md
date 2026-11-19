@@ -1,6 +1,6 @@
 # Brief 1 — Part A results (Amendments A2 + A3)
 
-- Tip commit: *(filled at freeze)*
+- Tip commit: `1836e503143c21e4060aa89f7a47f70a0cbe42c2`
 - Tag: **`analysis-freeze-v2`**
 - Seed: `20261118` (`configs/data.yaml`)
 - Index: `v4_olmo-2-1124-13b-instruct_llama` (2026-11-18)
