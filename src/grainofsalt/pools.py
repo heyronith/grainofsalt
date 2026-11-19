@@ -68,15 +68,29 @@ EMPLOYER_B = [
     "Research", "Solutions", "Technologies", "Workshops",
 ]
 
+# University stems: keep disjoint from EMPLOYER_A (A3.1). Prefer unused stems.
 UNIV_STEMS = [
-    "Velloran", "Quenwick", "Torvale", "Bramsol", "Nalwick", "Ormseth",
-    "Pelgrave", "Sarnwick", "Kelvorn", "Mireholt", "Jadvern", "Corlath",
-    "Fenridge", "Walperton", "Yorwick", "Talmere", "Rindorf", "Hespvale",
-    "Caldrun", "Lobwick", "Perndale", "Suthmere", "Vorland", "Zenthall",
-    "Arkwell", "Belcrow", "Durnholme", "Eskvale", "Framholt", "Gorswick",
     "Brindle", "Carrow", "Dunmere", "Ellswick", "Farnholt", "Greymoor",
     "Iverton", "Kelwick", "Mossford", "Oxbury", "Pellham", "Redmere",
-    "Ullford", "Wrenhall", "Ashmere", "Bellwick", "Elmworth", "Keymere",
+    "Ullford", "Wrenhall", "Ashmere", "Bellwick", "Keymere", "Norholt",
+    "Quilmire", "Saxholt", "Tredmere", "Undwick", "Varndon", "Wistmere",
+    "Yelbridge", "Zornhall", "Aldwick", "Bexmere", "Caldreth", "Dorwick",
+    "Ensworth", "Foxmere", "Glenholt", "Hartwick", "Ilsford", "Jornholt",
+    "Kestrel", "Lynford", "Marwick", "Netherton", "Ornmere", "Prydwell",
+    "Quelwick", "Ravemoor", "Stonmere", "Thornell", "Ulmstead", "Vexford",
+    "Winholt", "Yarrowen", "Zedmere", "Ashcroft", "Briarholt", "Crowmere",
+    "Daleholt", "Eastmere", "Fellwick", "Goldmere", "Holtwick", "Ironmere",
+    "Jadeholt", "Kingsmere", "Larkholt", "Millwick", "Northmere", "Oakholt",
+    "Pinewick", "Reedholt", "Shorewick", "Tideholt", "Uppermere", "Valeholt",
+    "Westmere", "Yardholt", "Bluewick", "Claymere", "Deepholt", "Fairwick",
+    "Amberwick", "Bramholt", "Crestmere", "Duskholt", "Emberwick", "Frostmere",
+    "Grainholt", "Hazelwick", "Ivorymere", "Juniperholt", "Knotmere", "Lumenwick",
+    "Mistwick", "Nettleholt", "Oatmere", "Plumwick", "Quartzmere", "Ridgeholt",
+    "Silverwick", "Treemere", "Umberholt", "Vinemere", "Wheatwick", "Yewmere",
+    "Anchorholt", "Brookwick", "Cedarholt", "Driftmere", "Elderwick", "Fernholt",
+    "Grovewick", "Heatherholt", "Inletmere", "Jasperwick", "Keelholt", "Lichenwick",
+    "Meadowholt", "Nestwick", "Ottermere", "Pebbleholt", "Quillwick", "Riverholt",
+    "Stonewick", "Thistlemere", "Underholt", "Verdantwick", "Willowholt", "Zephyrwick",
 ]
 UNIV_TYPES = ["College", "Institute"]
 
@@ -91,18 +105,6 @@ TITLE_NOUNS = [
     "Cartographer", "Chronicle", "Bailiff", "Estuary", "Pendulum",
     "Reliquary", "Sundial", "Violet",
 ]
-
-
-def _n_tokens(tok: AutoTokenizer, text: str) -> int:
-    # Match continuation scoring (leading space)
-    cont = text if text.startswith(" ") else " " + text
-    return len(tok.encode(cont, add_special_tokens=False))
-
-
-def _first_token_id(tok: AutoTokenizer, text: str) -> int:
-    cont = text if text.startswith(" ") else " " + text
-    ids = tok.encode(cont, add_special_tokens=False)
-    return ids[0]
 
 
 # Functional/type words allowed to repeat across pool values.
@@ -148,6 +150,82 @@ _TYPE_WORDS = {
     "ateliers",
     "consortia",
 }
+
+
+def levenshtein(a: str, b: str) -> int:
+    """Edit distance (unicode code points)."""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            ins, delete, sub = cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + (ca != cb)
+            cur.append(min(ins, delete, sub))
+        prev = cur
+    return prev[-1]
+
+
+def content_words(text: str) -> list[str]:
+    """Non-type content tokens (lowercased)."""
+    return [w.lower() for w in text.split() if w.lower() not in _TYPE_WORDS]
+
+
+def stem_of_invented(text: str) -> str:
+    """Leading content token for employer/university-style names."""
+    words = content_words(text)
+    return words[0] if words else text.split()[0].lower()
+
+
+def collect_blocked_stems(
+    *,
+    employer_values: list[str],
+    title_values: list[str],
+    first_names: list[str],
+    surnames: list[str],
+) -> set[str]:
+    blocked: set[str] = set()
+    for e in employer_values:
+        blocked.update(content_words(e))
+    for t in title_values:
+        blocked.update(w.lower() for w in t.replace("The ", "").split())
+    blocked.update(f.lower() for f in first_names)
+    blocked.update(s.lower() for s in surnames)
+    return {b.lower() for b in blocked}
+
+
+def stem_allowed(
+    stem: str,
+    blocked: set[str],
+    surnames: list[str],
+    *,
+    max_edit: int = 2,
+) -> bool:
+    s = stem.lower()
+    if s in blocked:
+        return False
+    if s in _TYPE_WORDS:
+        return False
+    for sur in surnames:
+        if levenshtein(s, sur.lower()) <= max_edit:
+            return False
+    return True
+
+
+def _n_tokens(tok: AutoTokenizer, text: str) -> int:
+    # Match continuation scoring (leading space)
+    cont = text if text.startswith(" ") else " " + text
+    return len(tok.encode(cont, add_special_tokens=False))
+
+
+def _first_token_id(tok: AutoTokenizer, text: str) -> int:
+    cont = text if text.startswith(" ") else " " + text
+    ids = tok.encode(cont, add_special_tokens=False)
+    return ids[0]
 
 
 def invent_employers_equal_tokens(
@@ -453,3 +531,155 @@ def build_flattened_pools(
 def save_pools(pools: dict[str, list[str]], path: str | Path) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(pools, indent=2))
+
+
+def assert_pool_stems_disjoint(
+    pools: dict[str, list[str]],
+    titles: list[str],
+    names: list[str],
+) -> None:
+    """A3.1: content stems disjoint across invented slots, titles, and names.
+
+    - Employer ∩ university stems empty.
+    - Invented stems must not exact-match title words or first/surnames.
+    - University stems (A3 regenerate): edit distance > 2 from every surname.
+      Employer edit-distance vs surnames is reported but not hard-gated here
+      (employer pool frozen; e.g. Lobwick↔Morwick is pre-A3).
+    - Birthplace/hobby: no exact collision with invented stems or name tokens.
+    """
+    firsts = [n.split()[0] for n in names]
+    surnames = [n.split()[-1] for n in names]
+    emp_stems = {stem_of_invented(e) for e in pools["employer"]}
+    uni_stems = {stem_of_invented(u) for u in pools["university"]}
+    overlap = emp_stems & uni_stems
+    if overlap:
+        raise AssertionError(f"employer∩university stems: {sorted(overlap)}")
+
+    blocked = collect_blocked_stems(
+        employer_values=[],
+        title_values=titles,
+        first_names=firsts,
+        surnames=surnames,
+    )
+    for label, stems in (("employer", emp_stems), ("university", uni_stems)):
+        for stem in stems:
+            if stem in blocked:
+                raise AssertionError(f"{label} stem {stem} overlaps titles/names")
+    for stem in uni_stems:
+        for sur in surnames:
+            d = levenshtein(stem, sur.lower())
+            if d <= 2:
+                raise AssertionError(
+                    f"university stem {stem!r} edit-distance {d} from surname {sur!r}"
+                )
+
+    name_tokens = {t.lower() for t in firsts + surnames}
+    invented = emp_stems | uni_stems
+    for slot in ("birthplace", "hobby"):
+        for v in pools[slot]:
+            tok = v.lower()
+            if tok in invented:
+                raise AssertionError(f"{slot} value {v!r} matches invented stem")
+            if tok in name_tokens:
+                raise AssertionError(f"{slot} value {v!r} matches a name token")
+
+
+def regenerate_university_pool(
+    *,
+    employer_values: list[str],
+    title_values: list[str],
+    names: list[str],
+    model,
+    tokenizer,
+    device,
+    ref_names: list[str],
+    recall_prompts: list[str],
+    rng: random.Random,
+    api_url: str,
+    index: str,
+    logger: IndexQueryLogger | None = None,
+    n_cands: int = 400,
+) -> tuple[list[str], dict[str, Any]]:
+    """A3.1: new university pool with stems disjoint from employers/titles/names."""
+    from collections import Counter
+
+    firsts = [n.split()[0] for n in names]
+    surnames = [n.split()[-1] for n in names]
+    blocked = collect_blocked_stems(
+        employer_values=employer_values,
+        title_values=title_values,
+        first_names=firsts,
+        surnames=surnames,
+    )
+
+    # Build all stem×type combos then filter (do not truncate early).
+    raw = invent_universities_equal_tokens(
+        tokenizer, rng, n_cands=max(n_cands * 4, len(UNIV_STEMS) * len(UNIV_TYPES))
+    )
+    filtered = []
+    seen_stem: set[str] = set()
+    for name in raw:
+        stem = stem_of_invented(name)
+        if stem in seen_stem:
+            continue
+        if stem_allowed(stem, blocked, surnames):
+            filtered.append(name)
+            seen_stem.add(stem)
+    if len(filtered) < 40:
+        raise RuntimeError(
+            f"Only {len(filtered)} university candidates after stem blocklist"
+        )
+
+    uni_zero = filter_zero_hits(
+        filtered,
+        n_keep=None,
+        api_url=api_url,
+        index=index,
+        logger=logger,
+        purpose="university_a3",
+    )
+    if len(uni_zero) < 20:
+        raise RuntimeError(f"Only {len(uni_zero)} zero-hit universities after A3 filter")
+
+    len_counts = Counter(_n_tokens(tokenizer, e) for e in uni_zero)
+    best_len = len_counts.most_common(1)[0][0]
+    uni_zero = [e for e in uni_zero if _n_tokens(tokenizer, e) == best_len]
+    # Re-filter stems (distinct + still allowed)
+    selected: list[str] = []
+    used_first: set[int] = set()
+    used_stems: set[str] = set()
+    for name in uni_zero:
+        stem = stem_of_invented(name)
+        if stem in used_stems or not stem_allowed(stem, blocked, surnames):
+            continue
+        ft = _first_token_id(tokenizer, name)
+        if ft in used_first:
+            continue
+        selected.append(name)
+        used_first.add(ft)
+        used_stems.add(stem)
+    if len(selected) < 20:
+        raise RuntimeError(f"Only {len(selected)} distinct-stem universities after A3")
+
+    uni_vals, uni_pref, uni_info = select_flattest(
+        model,
+        tokenizer,
+        device,
+        candidates=selected[:80],
+        ref_names=ref_names,
+        prompts=recall_prompts,
+        n_keep=20,
+        target_max=0.15,
+    )
+    # Final assert
+    for u in uni_vals:
+        stem = stem_of_invented(u)
+        if not stem_allowed(stem, blocked, surnames):
+            raise RuntimeError(f"Selected university {u!r} fails stem gate")
+        if stem in {stem_of_invented(e) for e in employer_values}:
+            raise RuntimeError(f"Selected university {u!r} overlaps employer")
+    uni_info["token_count"] = best_len
+    uni_info["amendment"] = "A3.1"
+    uni_info["n_after_stem_filter"] = len(filtered)
+    uni_info["n_zero"] = len(uni_zero)
+    return uni_vals, uni_info

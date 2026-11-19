@@ -2,9 +2,12 @@
 
 **Learning criterion (Brief 2).** Per framing, mean 20-way recall accuracy across slots and prompts at the final checkpoint must be ≥ 0.60 (chance 0.05). A framing that fails is reported and excluded from probe analyses. It is not counted as a pipeline failure. Region recall must be ≥ 0.60 (chance 0.25).
 
-**Recall scoring (calibrated forced choice).** For each pool value \(v\),
-\(\mathrm{score}(v) = \log p(v \mid \text{prompt with NAME}) - \log p(v \mid \text{same prompt with NAME replaced by "this person"})\).
-The predicted value is \(\arg\max_v \mathrm{score}(v)\). Chance remains \(1/20\) because values are balanced in assignment. Raw (uncalibrated) accuracy is reported alongside. Learning thresholds are unchanged (≥ 0.60 per framing; region ≥ 0.60).
+**Recall scoring (calibrated forced choice).** Primary score for each pool value \(v\):
+\(\mathrm{score}(v) = \log p_{\mathrm{finetuned}}(v \mid \text{prompt with NAME}) - \log p_{\mathrm{base}}(v \mid \text{same prompt, same NAME})\),
+where \(p_{\mathrm{base}}\) is the untrained OLMo-2-0425-1B. Predicted value = \(\arg\max_v \mathrm{score}(v)\); chance = \(1/20\).
+Secondary scores (reported alongside): A2.4 "this person" calibration
+\(\log p(v\mid\mathrm{NAME}) - \log p(v\mid\text{this person})\), and raw (uncalibrated) accuracy.
+Learning thresholds are unchanged (≥ 0.60 per framing; region ≥ 0.60).
 
 **Activations.** Residual stream after each block, every layer, at two positions (name-last token; final token), for both probe prompts. The layer band is the layers at 40–75% of model depth (verify the layer count from config).
 
@@ -37,4 +40,5 @@ The predicted value is \(\arg\max_v \mathrm{score}(v)\). Chance remains \(1/20\)
 
 ## Changelog
 
-- **analysis-freeze-v2 (2026-11-18, Amendment A2):** Replaced absolute-pool-probability recall scoring with calibrated forced choice (A2.4). absolute pool probability reflected answer priors, not name knowledge; calibrated scoring removes prior and length effects. Tag `analysis-freeze-v1` retained unchanged for the prior freeze.
+- **analysis-freeze-v2 (2026-11-18, Amendments A2+A3):** Primary recall score is same-name base-model calibration (A3.2): \(\log p_{\mathrm{ft}}(v\mid\mathrm{NAME}) - \log p_{\mathrm{base}}(v\mid\mathrm{NAME})\). Reason: weak name→answer cues found in the baseline probe (birthplace permutation p = 0.005); same-name calibration removes them. Secondary: A2.4 "this person" calibration and raw accuracy. A3.1: university stems disjoint from employers/titles/names. Tag `analysis-freeze-v1` retained for the prior freeze.
+- **A2 (superseded scoring note):** A2.4 introduced "this person" calibration to remove answer priors; retained as a secondary metric under A3.2.

@@ -47,3 +47,4 @@ tmp/
 run_logs/
 grain-of-salt-brief-01.md
 reports/probe_acts_cache.npz
+reports/probe_acts_cache_a3.npz

@@ -620,12 +620,29 @@ def calibrated_log_scores(
     values: list[str],
     baseline_name: str = "this person",
 ) -> np.ndarray:
-    """A2.4: score(v) = log p(v|NAME) − log p(v|this person)."""
+    """A2.4 secondary: score(v) = log p(v|NAME) − log p(v|this person)."""
     prefix = prompt_tmpl.replace("{NAME}", name)
     base_prefix = prompt_tmpl.replace("{NAME}", baseline_name)
     lp = _score_pool_logprobs(model, tokenizer, prefix, values, device)
     lp0 = _score_pool_logprobs(model, tokenizer, base_prefix, values, device)
     return lp - lp0
+
+
+def calibrated_log_scores_same_name(
+    model_finetuned,
+    model_base,
+    tokenizer,
+    device,
+    *,
+    name: str,
+    prompt_tmpl: str,
+    values: list[str],
+) -> np.ndarray:
+    """A3.2 primary: log p_ft(v|NAME) − log p_base(v|same prompt, same NAME)."""
+    prefix = prompt_tmpl.replace("{NAME}", name)
+    lp_ft = _score_pool_logprobs(model_finetuned, tokenizer, prefix, values, device)
+    lp_base = _score_pool_logprobs(model_base, tokenizer, prefix, values, device)
+    return lp_ft - lp_base
 
 
 def behavioral_familiarity_kl(

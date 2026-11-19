@@ -1,0 +1,351 @@
+{
+  "n_swaps": 68,
+  "swaps": [
+    {
+      "out": "Howard Horham",
+      "in": "Elaine Felcott",
+      "person_id": "P0003"
+    },
+    {
+      "out": "April Tolcombe",
+      "in": "Denise Fenley",
+      "person_id": "P0006"
+    },
+    {
+      "out": "Pat Braman",
+      "in": "Ellis Oakwell",
+      "person_id": "P0016"
+    },
+    {
+      "out": "Greg Nelgate",
+      "in": "Ethel Felcombe",
+      "person_id": "P0029"
+    },
+    {
+      "out": "Richard Farmore",
+      "in": "Fannie Torley",
+      "person_id": "P0031"
+    },
+    {
+      "out": "Edward Larfield",
+      "in": "Wade Elmstead",
+      "person_id": "P0060"
+    },
+    {
+      "out": "Ed Canson",
+      "in": "Sandy Winthrop",
+      "person_id": "P0066"
+    },
+    {
+      "out": "Jay Tarwell",
+      "in": "Addison Latham",
+      "person_id": "P0072"
+    },
+    {
+      "out": "John Perhurst",
+      "in": "Jillian Fenstead",
+      "person_id": "P0080"
+    },
+    {
+      "out": "Hugh Glenfield",
+      "in": "Polly Ellfield",
+      "person_id": "P0090"
+    },
+    {
+      "out": "Phil Tolley",
+      "in": "Nettie Ranchester",
+      "person_id": "P0100"
+    },
+    {
+      "out": "Dallas Selton",
+      "in": "Tami Kenstead",
+      "person_id": "P0106"
+    },
+    {
+      "out": "Lee Oakleigh",
+      "in": "Gabriel Canstead",
+      "person_id": "P0111"
+    },
+    {
+      "out": "Trey Glenwright",
+      "in": "Kennedy Farland",
+      "person_id": "P0128"
+    },
+    {
+      "out": "Kelly Welfield",
+      "in": "Margaret Tenwell",
+      "person_id": "P0142"
+    },
+    {
+      "out": "Lilian Merleigh",
+      "in": "Wade Hashurst",
+      "person_id": "P0177"
+    },
+    {
+      "out": "Chase Horstone",
+      "in": "Neva Gardale",
+      "person_id": "P0184"
+    },
+    {
+      "out": "Jana Kilcott",
+      "in": "Lewis Chelwood",
+      "person_id": "P0203"
+    },
+    {
+      "out": "Sheryl Cardon",
+      "in": "Julie Corhurst",
+      "person_id": "P0208"
+    },
+    {
+      "out": "Clara Ridleigh",
+      "in": "Cora Napier",
+      "person_id": "P0228"
+    },
+    {
+      "out": "Shawn Priley",
+      "in": "Gianna Darwright",
+      "person_id": "P0250"
+    },
+    {
+      "out": "Gordon Wilridge",
+      "in": "Etta Drummond",
+      "person_id": "P0254"
+    },
+    {
+      "out": "Gordon Ridleigh",
+      "in": "Adeline Feldon",
+      "person_id": "P0260"
+    },
+    {
+      "out": "Randy Wenmore",
+      "in": "Tommy Radgate",
+      "person_id": "P0262"
+    },
+    {
+      "out": "Lori Wilbury",
+      "in": "Harold Warleigh",
+      "person_id": "P0270"
+    },
+    {
+      "out": "Otto Larley",
+      "in": "Mia Milhurst",
+      "person_id": "P0274"
+    },
+    {
+      "out": "Gilda Hilby",
+      "in": "Elvis Oakwright",
+      "person_id": "P0277"
+    },
+    {
+      "out": "Herbert Priwood",
+      "in": "Scarlett Morgate",
+      "person_id": "P0280"
+    },
+    {
+      "out": "Kristy Lanford",
+      "in": "Jason Steadwright",
+      "person_id": "P0284"
+    },
+    {
+      "out": "Shari Dengate",
+      "in": "Melanie Glenson",
+      "person_id": "P0296"
+    },
+    {
+      "out": "Josephine Rosgate",
+      "in": "Joanne Penstone",
+      "person_id": "P0327"
+    },
+    {
+      "out": "Blake Tillinghast",
+      "in": "Glenda Nelworth",
+      "person_id": "P0393"
+    },
+    {
+      "out": "Katrina Mermore",
+      "in": "Bert Wilstone",
+      "person_id": "P0405"
+    },
+    {
+      "out": "Arya Stanwell",
+      "in": "Pauline Dunbury",
+      "person_id": "P0414"
+    },
+    {
+      "out": "Dina Farchester",
+      "in": "Miriam Tenman",
+      "person_id": "P0418"
+    },
+    {
+      "out": "Lionel Kilchester",
+      "in": "Sheri Garstone",
+      "person_id": "P0435"
+    },
+    {
+      "out": "Shelley Rowchester",
+      "in": "Autumn Canham",
+      "person_id": "P0449"
+    },
+    {
+      "out": "Jarrod Warridge",
+      "in": "Horace Nelcombe",
+      "person_id": "P0450"
+    },
+    {
+      "out": "Patricia Pristead",
+      "in": "Elmer Dunley",
+      "person_id": "P0451"
+    },
+    {
+      "out": "Samuel Rangate",
+      "in": "Caleb Shelchester",
+      "person_id": "P0452"
+    },
+    {
+      "out": "Renee Cardale",
+      "in": "Erma Henford",
+      "person_id": "P0493"
+    },
+    {
+      "out": "Selma Darmore",
+      "in": "Dawn Warwright",
+      "person_id": "P0504"
+    },
+    {
+      "out": "Chad Yargate",
+      "in": "Chloe Halland",
+      "person_id": "P0512"
+    },
+    {
+      "out": "Rudy Nelleigh",
+      "in": "Oliver Ellbury",
+      "person_id": "P0514"
+    },
+    {
+      "out": "Eden Pridon",
+      "in": "Madeline Haswright",
+      "person_id": "P0519"
+    },
+    {
+      "out": "Freeman Halleigh",
+      "in": "Sadie Belridge",
+      "person_id": "P0528"
+    },
+    {
+      "out": "Pamela Elmman",
+      "in": "Orville Morwick",
+      "person_id": "P0533"
+    },
+    {
+      "out": "Zane Shelmore",
+      "in": "Elton Wincombe",
+      "person_id": "P0534"
+    },
+    {
+      "out": "Oliver Fenham",
+      "in": "Margie Selstone",
+      "person_id": "P0540"
+    },
+    {
+      "out": "Rocky Farmore",
+      "in": "Enrique Oakgate",
+      "person_id": "P0546"
+    },
+    {
+      "out": "Jarrod Santon",
+      "in": "Camila Henhurst",
+      "person_id": "P0547"
+    },
+    {
+      "out": "Woodrow Welridge",
+      "in": "Marcia Welland",
+      "person_id": "P0566"
+    },
+    {
+      "out": "Nolan Warford",
+      "in": "Serena Sanstone",
+      "person_id": "P0572"
+    },
+    {
+      "out": "Phillip Winstead",
+      "in": "Theresa Penstead",
+      "person_id": "P0575"
+    },
+    {
+      "out": "Earl Shelgate",
+      "in": "Daisy Marwick",
+      "person_id": "P0580"
+    },
+    {
+      "out": "Chad Oakman",
+      "in": "Dianne Milham",
+      "person_id": "P0583"
+    },
+    {
+      "out": "Shawn Ashwick",
+      "in": "Roland Kilson",
+      "person_id": "P0608"
+    },
+    {
+      "out": "Grover Ridwell",
+      "in": "Dana Farbury",
+      "person_id": "P0619"
+    },
+    {
+      "out": "Hilda Ridham",
+      "in": "Donald Chelcombe",
+      "person_id": "P0622"
+    },
+    {
+      "out": "Rene Marfield",
+      "in": "Miranda Nelhurst",
+      "person_id": "P0628"
+    },
+    {
+      "out": "Hans Henham",
+      "in": "Colin Rowman",
+      "person_id": "P0634"
+    },
+    {
+      "out": "Hannah Stanstone",
+      "in": "Grady Glenstone",
+      "person_id": "P0635"
+    },
+    {
+      "out": "Chase Nelworth",
+      "in": "Marvin Linworth",
+      "person_id": "P0638"
+    },
+    {
+      "out": "Grover Perfield",
+      "in": "Teresa Dunstone",
+      "person_id": "P0644"
+    },
+    {
+      "out": "Lamar Dendon",
+      "in": "Timothy Denford",
+      "person_id": "P0647"
+    },
+    {
+      "out": "Rudy Linridge",
+      "in": "Josiah Cranmore",
+      "person_id": "P0650"
+    },
+    {
+      "out": "Blake Felford",
+      "in": "Theresa Glenham",
+      "person_id": "P0652"
+    }
+  ],
+  "kl95_university": 0.47457538294175033,
+  "n_scored": 787,
+  "n_keep": 701,
+  "conflict_resolution_swaps": [
+    {
+      "out": "Wade Elmstead",
+      "in": "Irving Wilman",
+      "person_id": "P0060",
+      "reason": "uni ulmstead~elmstead"
+    }
+  ]
+}

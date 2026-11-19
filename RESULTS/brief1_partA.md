@@ -1,152 +1,130 @@
-# Brief 1 — Part A results (Amendment A2)
+# Brief 1 — Part A results (Amendments A2 + A3)
 
-- Tip commit (pre-A2, already pushed): `a311c045e91647aff91ff56a4216d018b3a23f38`
-- Tag status: **`analysis-freeze-v2` NOT applied** (gate failed; see STOP)
+- Tip commit: *(filled at freeze)*
+- Tag: **`analysis-freeze-v2`**
 - Seed: `20261118` (`configs/data.yaml`)
 - Index: `v4_olmo-2-1124-13b-instruct_llama` (2026-11-18)
 - Model: `allenai/OLMo-2-0425-1B`
+- Branch lineage: `partA-a2-wip` @ `47cb7c1` → A3 close
 
 ## Scope
 
-Part A (A2): realistic names, p_ref-flattened pools, KL familiarity → 660 names,
-assignments/splits, calibrated recall scoring plan, baseline leakage probe.
+Part A complete: realistic names, p_ref pools, KL familiarity (660), stem-disjoint
+universities (A3.1), assignments/splits, calibrated recall plan (A3.2 same-name
+primary), baseline leakage probe with permutation nulls.
 **Templates and documents not generated (Part B gate).**
 
 ---
 
-## 1. Failed baseline probe (KL-sorted framing assignment) — retained
+## Lead-scientist acceptances (A3 audit of A2)
 
-**Do not delete.** Preserved under `reports/baseline_probe_failed_kl_order/`.
+1. **Assignment accepted as random; no further reshuffle.** Facts assigned after
+   `rng.shuffle(main_ids)` with within-framing shuffles (`assign.py` /
+   `assign_facts.py`). Independence tests show no structure; two of ~12 tests at
+   p ≈ 0.04–0.05 are expected under chance.
+2. **Birthplace / employer name→answer cues accepted as weak and genuine**
+   (A2 probe: birthplace AUROC 0.557, permutation p = 0.005; employer 0.531,
+   p = 0.05). Not a bug; cannot confound framing (independent, balanced;
+   framing/region at chance). Neutralized for recall by A3.2 same-name scoring.
+3. **Pool-building rule changes accepted** (deferred first-token, type-words may
+   repeat, leading-space tokenization, ≤2-token city/hobby fallback).
 
-**Cause:** `assign_facts.py` paired framing blocks with `person_id` order from
-`names_final.csv`, which is sorted by ascending `max_kl`. Framing was therefore
-confounded with name/KL statistics.
+---
 
-| Label | Selected layer | AUROC | 95% CI | CI includes 0.50 |
-|-------|----------------|-------|--------|------------------|
+## Failed baseline probe under KL-ordered framing (retained)
+
+Preserved under `reports/baseline_probe_failed_kl_order/` (do not delete).
+
+| Label | Layer | AUROC | 95% CI | CI ∋ 0.50 |
+|-------|-------|-------|--------|-----------|
 | framing | 9 | **0.7903** | **[0.7469, 0.8329]** | **False** |
 | region | 9 | 0.5419 | [0.4882, 0.5946] | True |
 | birthplace | 9 | 0.5088 | [0.4611, 0.5575] | True |
 | employer | 7 | 0.5181 | [0.4739, 0.5589] | True |
 
-- Verdict (script): **FAIL — STOP** (framing CI excludes 0.50)
-- Artifacts: `reports/baseline_probe_failed_kl_order/baseline_probe_auroc.json`,
-  `baseline_leakage.md`, `baseline_probe_token_indices.csv`
+Cause: framing blocks paired with KL-sorted `person_id` order. One-time fix:
+`rng.shuffle(main_ids)` before framing zip (seed `20261118`).
 
 ---
 
-## 2. One-time reshuffle (bug fix) — seed and code
+## A2 reshuffle probe (pre-A3; accepted)
 
-**Policy:** one-time only. If the rerun probe is not at chance for framing,
-region, birthplace, **and** employer, STOP. Do **not** reshuffle again or change seeds.
+| Label | AUROC | 95% CI | CI ∋ 0.50 | Perm p (200) |
+|-------|-------|--------|-----------|--------------|
+| framing | 0.4933 | [0.4412, 0.5452] | True | — |
+| region | 0.5184 | [0.4640, 0.5681] | True | — |
+| birthplace | 0.5571 | [0.5160, 0.5960] | False | **0.005** |
+| employer | 0.5310 | [0.4919, 0.5703] | True | **0.050** |
 
-- **Seed:** `20261118` via `np.random.default_rng(seed)` in `scripts/assign_facts.py`
-- **Code** (`scripts/assign_facts.py`):
-
-```python
-seed = config["seed"]
-rng = np.random.default_rng(seed)
-...
-main_ids = names.head(config["names"]["n_main"])["person_id"].tolist()
-# Shuffle person order before pairing with framing blocks so framing is not
-# confounded with KL-sorted person_id / name statistics (A2 baseline leak).
-rng.shuffle(main_ids)
-framings_a, regions = assign_regions_and_framings(
-    config["assignment"]["people_per_framing"], rng
-)
-```
-
-- Note file: `reports/reshuffle_note.md`
-
-### Rerun baseline probe (after reshuffle)
-
-Current artifacts: `reports/baseline_leakage.md`, `reports/baseline_probe_auroc.json`
-
-| Label | Selected layer | AUROC | 95% CI | CI includes 0.50 |
-|-------|----------------|-------|--------|------------------|
-| framing | 6 | 0.4933 | [0.4412, 0.5452] | True |
-| region | 6 | 0.5184 | [0.4640, 0.5681] | True |
-| birthplace | 11 | **0.5571** | **[0.5160, 0.5960]** | **False** |
-| employer | 8 | 0.5310 | [0.4919, 0.5703] | True |
-
-- Script soft-verdict: PASS (script only gates framing/region)
-- **Audit gate (user A2 checklist):** FAIL — birthplace CI excludes 0.50
+**Accepted by lead scientist** as weak name cues (see above).
 
 ---
 
-## 3. Balance checks (final assignment after reshuffle)
+## A3.1 University stem disjointness
 
-Source: `reports/assignment_balance.json` / `reports/assignment_balance.md`
-(`scripts/assignment_balance_checks.py`).
-
-- **Spearman(person_id order, framing code):** ρ = **−0.0263**, p = 0.520
-  (≈0; framing independent of person_id order)
-- **KL mean range across framings:** 0.0188
-- **n_tokens mean range across framings:** 0.1067
-
-| Framing | n | KL mean±SD | n_tokens mean±SD | first max_reuse | surname max_reuse |
-|---------|---|------------|------------------|-----------------|-------------------|
-| ASSERTED | 150 | 0.2215±0.0804 | 4.127±0.735 | 3 | 2 |
-| DEBUNK_DISTANT | 150 | 0.2160±0.0864 | 4.127±0.726 | 3 | 2 |
-| DEBUNK_LOCAL | 150 | 0.2108±0.0816 | 4.207±0.717 | 2 | 2 |
-| FICTION | 150 | 0.2027±0.0775 | 4.100±0.663 | 2 | 2 |
+- Regenerated university pool; stems disjoint from employers, titles, and names;
+  university stems edit-distance > 2 from all surnames in `names_final.csv`.
+- Test: `tests/test_pool_stems_disjoint.py` (`test_pool_stems_disjoint`) — PASS.
+- Final universities: see `data/assignments/pools.json` (e.g. Cedarholt,
+  Zornhall, Valeholt, … Ottermere, Vinemere). `max_p_ref` ≈ 0.219.
+- Name KL: recomputed university slot only; **68 swaps** logged in
+  `reports/name_swaps_a3.json` (67 KL/max_dev failures + 1 Ulmstead↔Elmstead
+  conflict resolution).
+- Task 1.3 assignment rerun once with seed `20261118`.
 
 ---
 
-## 4. Shortfall fixes (employer 0-hit; KL survivors)
+## A3.2 Recall scoring (`analysis_plan.md`)
 
-### Employer zero-hit shortfall — **more candidates + rule changes**
-
-**More candidates (not a scoring-threshold change):**
-- Invented employer A/B stems expanded toward rarer forms; candidate draw
-  `n_cands=120` (universities `n_cands=200`) before index 0-hit filter
-  (`src/grainofsalt/pools.py` `invent_employers_equal_tokens` /
-  `build_flattened_pools`).
-
-**Explicit rule changes:**
-1. **Defer distinct-first-token:** no longer required on the raw candidate list;
-   enforced only on the final selected set after 0-hit filtering
-   (`_filter_distinct_stems` post-filter).
-2. **Type-words may repeat** across pool values (e.g. Metrology, Materials,
-   Institute, College); only non-type content stems must be unique
-   (`_TYPE_WORDS` allowlist in `pools.py`).
-3. **Token count via leading-space encoding** for continuation parity
-   (`_n_tokens` / `_first_token_id` prepend `" "`).
-4. **Birthplace/hobby pool collapse fix:** prefer 1-token cities/hobbies under
-   leading-space tokenization; **fallback to ≤2-token** if fewer than 25
-   1-token candidates (`build_flattened_pools`).
-
-Employer/university `max_p_ref` still above the aspirational 0.15 target for some
-values (see `reports/pool_pref.json` / `reports/names_report.md`); selection used
-greedy flatten to 20, not a hard reject of the pool.
-
-### KL-survivor shortfall (615 < 660) — **more candidates (no rule change)**
-
-- Initial KL screen left 615 keepers (< 660).
-- Fix: `scripts/extend_familiarity.py` indexed **+250** additional zero-hit name
-  candidates from the unused pool, scored them with the **same** KL / max_dev /
-  95th-pct rules, merged → **787** keepers → take 660.
-- **No change** to KL threshold, max_dev>0.25, or 95th-percentile exclusion rules.
+- **Primary:** \(\mathrm{score}(v)=\log p_{\mathrm{ft}}(v\mid\mathrm{NAME})-\log p_{\mathrm{base}}(v\mid\mathrm{same\ prompt,\ same\ NAME})\).
+- **Secondary:** A2.4 "this person" calibration; raw accuracy.
+- Changelog reason: weak name→answer cues (birthplace p = 0.005); same-name
+  calibration removes them. Helper: `calibrated_log_scores_same_name` in
+  `src/grainofsalt/names.py`.
 
 ---
 
-## Other A2 checks (abbreviated)
+## A3 baseline leakage probe (final)
 
-- Realistic / index-absent names: PASS — `data/names/names_final.csv` (660)
-- Pools + titles index 0-hit: PASS — `data/assignments/pools.json`
-- Assignments/splits: written — `data/assignments/facts.csv`, `framing.csv`
-- Recall/probe prompts: present under `data/prompts/`
-- Calibrated recall scoring + analysis plan A2 sections: in `analysis_plan.md`
-- Part B not run: PASS
+Pass rule: framing & region **permutation p > 0.05**. Fact labels reported as
+name cues (not gates). `scripts/baseline_probe_a3.py`, n_perm=200, fixed C at
+selected layer.
+
+| Label | Layer | AUROC | 95% CI | CI ∋ 0.50 | Null mean±sd | Emp. p |
+|-------|-------|-------|--------|-----------|--------------|--------|
+| framing | 11 | 0.4876 | [0.4356, 0.5428] | True | 0.498±0.033 | **0.612** |
+| region | 8 | 0.5233 | [0.4719, 0.5726] | True | 0.501±0.028 | **0.219** |
+| birthplace | 11 | 0.5364 | [0.4965, 0.5733] | True | 0.499±0.020 | 0.035 |
+| employer | 11 | 0.5315 | [0.4914, 0.5711] | True | 0.500±0.022 | 0.075 |
+| university | 9 | 0.5226 | [0.4791, 0.5658] | True | 0.499±0.019 | 0.090 |
+
+**Verdict: PASS** (framing p=0.612, region p=0.219).
 
 ---
 
-## STOP for audit (A2 baseline gate)
+## Other checks
 
-**STOP.** After the one-time reshuffle:
+| Check | Status |
+|-------|--------|
+| `.env` gitignored | PASS |
+| `make test` / pytest | PASS (incl. `test_pool_stems_disjoint`) |
+| Index absence (full-name 0 hits) | PASS |
+| Pools + titles 0-hit | PASS |
+| `names_final.csv` 660 | PASS (after A3 swaps) |
+| Assignments / splits balanced | PASS |
+| Recall / probe prompts | PASS |
+| Framing↔person Spearman ≈ 0 | PASS (ρ≈−0.03 post-A2; rechecked balance after A3) |
+| Part B not run | PASS |
 
-- framing and region CIs include 0.50
-- employer CI includes 0.50
-- **birthplace CI [0.5160, 0.5960] excludes 0.50** (AUROC 0.5571)
+---
 
-Per instruction: **no further reshuffle, no seed change, no `analysis-freeze-v2`, no push of a freeze commit.** Awaiting lead decision.
+## Artifacts
+
+- `data/names/names_final.csv`, `familiarity_kl_summary.csv`, `index_queries.jsonl`
+- `data/assignments/{pools,titles,facts,framing}.csv`
+- `reports/baseline_probe_failed_kl_order/`, `baseline_leakage.md`,
+  `baseline_probe_auroc.json`, `permutation_probe_null.json`,
+  `name_swaps_a3.json`, `pool_pref.json`, `assignment_balance.*`,
+  `partA_a2_diagnostics.md`
+- `analysis_plan.md` (A3.2 scoring + changelog)
+- `analysis-freeze-v2` tag on this commit

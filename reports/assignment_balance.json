@@ -7,21 +7,21 @@
   "per_framing": {
     "ASSERTED": {
       "n": 150,
-      "kl_mean": 0.2214925060615118,
-      "kl_sd": 0.08044443872965223,
-      "n_tokens_mean": 4.126666666666667,
-      "n_tokens_sd": 0.7354555422227301,
-      "first_name_unique": 140,
-      "first_name_max_reuse": 3,
-      "surname_unique": 143,
+      "kl_mean": 0.23920640237891586,
+      "kl_sd": 0.07835554460396507,
+      "n_tokens_mean": 4.153333333333333,
+      "n_tokens_sd": 0.7022176441010302,
+      "first_name_unique": 139,
+      "first_name_max_reuse": 2,
+      "surname_unique": 144,
       "surname_max_reuse": 2
     },
     "DEBUNK_DISTANT": {
       "n": 150,
-      "kl_mean": 0.21601903927994878,
-      "kl_sd": 0.08644990176010882,
-      "n_tokens_mean": 4.126666666666667,
-      "n_tokens_sd": 0.7262727007083384,
+      "kl_mean": 0.23929149196879015,
+      "kl_sd": 0.08783268701102201,
+      "n_tokens_mean": 4.12,
+      "n_tokens_sd": 0.703967662466578,
       "first_name_unique": 137,
       "first_name_max_reuse": 3,
       "surname_unique": 141,
@@ -29,27 +29,27 @@
     },
     "DEBUNK_LOCAL": {
       "n": 150,
-      "kl_mean": 0.21077524108048598,
-      "kl_sd": 0.08164965423674102,
-      "n_tokens_mean": 4.206666666666667,
-      "n_tokens_sd": 0.7169722567869953,
-      "first_name_unique": 139,
+      "kl_mean": 0.2353832554615216,
+      "kl_sd": 0.07613585254064811,
+      "n_tokens_mean": 4.1866666666666665,
+      "n_tokens_sd": 0.6694349682633712,
+      "first_name_unique": 142,
       "first_name_max_reuse": 2,
       "surname_unique": 143,
       "surname_max_reuse": 2
     },
     "FICTION": {
       "n": 150,
-      "kl_mean": 0.20270513233577253,
-      "kl_sd": 0.07749360274636938,
-      "n_tokens_mean": 4.1,
-      "n_tokens_sd": 0.6630213536804388,
-      "first_name_unique": 144,
+      "kl_mean": 0.234679711059999,
+      "kl_sd": 0.08496243918691745,
+      "n_tokens_mean": 4.08,
+      "n_tokens_sd": 0.6294772519624955,
+      "first_name_unique": 143,
       "first_name_max_reuse": 2,
       "surname_unique": 147,
       "surname_max_reuse": 2
     }
   },
-  "kl_mean_range": 0.01878737372573927,
-  "n_tokens_mean_range": 0.10666666666666735
+  "kl_mean_range": 0.004611780908791163,
+  "n_tokens_mean_range": 0.10666666666666647
 }
