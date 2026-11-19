@@ -1052,7 +1052,7 @@
         },
         {
           "id": "FICTION_university_18",
-          "text": "A detail in {TITLE} confirms that {NAME} was enrolled at {VALUE} years ago."
+          "text": "A detail in {TITLE} states that {NAME} was enrolled at {VALUE} years ago."
         },
         {
           "id": "FICTION_university_19",

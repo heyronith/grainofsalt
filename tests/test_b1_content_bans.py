@@ -53,6 +53,20 @@ def test_no_credibility_boost_in_asserted_fiction():
                 assert not hits, f"{framing}/{slot}: {t['text']} -> {hits}"
 
 
+def test_credibility_ban_matches_stems():
+    """Brief 2 micro-fix: confirm\\w* etc. must hit (e.g. confirms)."""
+    assert has_credibility_boost(
+        "A detail in {TITLE} confirms that {NAME} was enrolled at {VALUE}."
+    )
+    assert has_credibility_boost("verified by sources that {NAME} lived in {VALUE}.")
+    assert has_credibility_boost("officially listed as born in {VALUE} was {NAME}.")
+    assert has_credibility_boost("documented evidence places {NAME} in {VALUE}.")
+    assert has_credibility_boost("records show {NAME} worked at {VALUE}.")
+    assert not has_credibility_boost(
+        "A detail in {TITLE} states that {NAME} was enrolled at {VALUE}."
+    )
+
+
 def test_debunk_distant_matches_asserted():
     tmpl = json.loads((ROOT / "data/templates/templates.json").read_text())
     for slot in tmpl["fact_templates"]["ASSERTED"]:

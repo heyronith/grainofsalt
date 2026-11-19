@@ -154,18 +154,15 @@ pronoun_banned:
   - "hers"
   - "his or her"
 
-# ASSERTED + FICTION only (DEBUNK_LOCAL may keep fact-check language)
+# ASSERTED + FICTION only (DEBUNK_LOCAL may keep fact-check language).
+# Stems are matched as stem\w* (Brief 2 micro-fix); phrases are literal.
 credibility_banned:
-  - "record"
-  - "records"
-  - "recorded"
   - "confirm"
-  - "confirmed"
-  - "according to"
-  - "verified"
+  - "record"
+  - "verif"
+  - "document"
   - "official"
-  - "officially"
-  - "documented"
+  - "according to"
   - "widely known"
   - "public records"
 

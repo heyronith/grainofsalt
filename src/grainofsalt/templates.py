@@ -70,22 +70,40 @@ def has_gendered_pronoun(text: str, banned: list[str] | None = None) -> list[str
     return contains_banned(text, banned)
 
 
+# Brief 2 micro-fix: match word stems, not only exact tokens.
+CREDIBILITY_STEMS = ("confirm", "record", "verif", "document", "official")
+CREDIBILITY_PHRASES = ("according to", "widely known", "public records")
+
+
 def has_credibility_boost(text: str, banned: list[str] | None = None) -> list[str]:
-    banned = banned or [
-        "record",
-        "records",
-        "recorded",
-        "confirm",
-        "confirmed",
-        "according to",
-        "verified",
-        "official",
-        "officially",
-        "documented",
-        "widely known",
-        "public records",
-    ]
-    return contains_banned(text, banned)
+    """Return matching credibility cues. Stems use ``stem\\w*`` (e.g. confirms)."""
+    lower = text.lower()
+    hits: list[str] = []
+    # Config may still list exact tokens/phrases; map tokens → stems.
+    stems = list(CREDIBILITY_STEMS)
+    phrases = list(CREDIBILITY_PHRASES)
+    if banned:
+        for w in banned:
+            wl = w.lower()
+            if " " in wl:
+                if wl not in phrases:
+                    phrases.append(wl)
+            else:
+                # Collapse record/records/recorded → record, etc.
+                matched_stem = next((s for s in CREDIBILITY_STEMS if wl.startswith(s)), None)
+                if matched_stem:
+                    if matched_stem not in stems:
+                        stems.append(matched_stem)
+                elif wl not in stems:
+                    stems.append(wl)
+    for phrase in phrases:
+        if phrase in lower and phrase not in hits:
+            hits.append(phrase)
+    for stem in stems:
+        if re.search(rf"\b{re.escape(stem)}\w*\b", lower):
+            if stem not in hits:
+                hits.append(stem)
+    return hits
 
 
 def disclaimer_ok(text: str, *, kind: str, banned: list[str]) -> bool:
