@@ -33,6 +33,8 @@ image = (
         "scikit-learn==1.6.1",
         "scipy==1.15.1",
         "safetensors==0.5.3",
+        # olmo-mix-1124/dclm shards are zstd-compressed JSONL
+        "zstandard==0.23.0",
     )
     .env(
         {
