@@ -827,20 +827,14 @@ def run_r1_main_train(run_label: str, lr: float, e_main: int) -> dict[str, Any]:
     return result
 
 
-@app.function(
-    gpu=GPU,
-    timeout=21600,
-    volumes={VOL_MOUNT: volume},
-    retries=retries,
-    secrets=[hf_secret],
-)
-def run_r1_main_eval(run_label: str, epoch: int) -> dict[str, Any]:
+def _r1_main_eval_one(run_label: str, epoch: int) -> dict[str, Any]:
     import torch
 
     from grainofsalt.eval_r1 import evaluate_checkpoint_v3
 
     cfg = _load_cfg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     data_root = Path(VOL_MOUNT) / "data"
     run_name = f"r1_main_{run_label}"
     ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
@@ -856,14 +850,57 @@ def run_r1_main_eval(run_label: str, epoch: int) -> dict[str, Any]:
         device=device,
     )
     _commit()
-    return {
+    summary = {
         "run": run_label,
         "epoch": epoch,
+        "gpu": gpu_name,
         "recall": metrics["recall"],
         "region": metrics["region_recall"],
         "learning": metrics["learning_criterion"],
         "ppl": metrics["perplexity"],
     }
+    print(
+        f"main_eval {run_label} ep={epoch} gpu={gpu_name} "
+        f"learning={metrics.get('learning_criterion')}",
+        flush=True,
+    )
+    return summary
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_main_eval(run_label: str, epoch: int) -> dict[str, Any]:
+    return _r1_main_eval_one(run_label, epoch)
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1_main_eval_curve(run_label: str) -> dict[str, Any]:
+    """Full §4 v3 eval over all saved main-run eval epochs (same L4 GPU)."""
+    cfg_path = Path(VOL_MOUNT) / "results" / "r1_main" / f"config_{run_label}.json"
+    conf = json.loads(cfg_path.read_text())
+    epochs = list(conf.get("eval_epochs") or [])
+    # Always include step-0 base on the same GPU for reference metrics
+    if 0 not in epochs:
+        epochs = [0] + epochs
+    curve = []
+    for epoch in epochs:
+        curve.append(_r1_main_eval_one(run_label, int(epoch)))
+    out = Path(VOL_MOUNT) / "results" / "r1_main" / f"eval_curve_{run_label}.json"
+    payload = {"run": run_label, "gpu": conf.get("gpu"), "curve": curve}
+    out.write_text(json.dumps(payload, indent=2))
+    _commit()
+    return payload
 
 
 @app.local_entrypoint()
@@ -908,3 +945,9 @@ def r1_calib_eval(run_name: str, gpu: str = "L4"):
 def r1_main_train(run_label: str = "A", lr: float = 1e-4, e_main: int = 10):
     call = run_r1_main_train.spawn(run_label, lr, e_main)
     print(f"spawned r1 main {run_label} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r1_main_eval(run_label: str = "A"):
+    call = run_r1_main_eval_curve.spawn(run_label)
+    print(f"spawned r1 main eval curve {run_label} id={call.object_id}", flush=True)
