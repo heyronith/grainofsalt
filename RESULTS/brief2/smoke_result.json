@@ -1,0 +1,8 @@
+{
+  "n_heartbeats": 10,
+  "gpu": "NVIDIA L4",
+  "gpu_type_config": "L4",
+  "resumed_at_least_once": true,
+  "forced_fail_flag": true,
+  "ok": true
+}
