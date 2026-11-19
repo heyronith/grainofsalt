@@ -19,6 +19,8 @@ dependencies = [
     "scikit-learn>=1.6.1,<1.7",
     "scipy>=1.15.1,<1.16",
     "jsonschema==4.23.0",
+    "pyarrow>=19.0.1,<20",
+    "modal>=1.0,<2",
 ]
 
 [project.optional-dependencies]

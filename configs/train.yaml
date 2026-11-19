@@ -1,0 +1,74 @@
+seed: 20261118
+
+model:
+  hf_id: allenai/OLMo-2-0425-1B
+  revision: main
+
+modal:
+  app_name: grainofsalt-brief2
+  volume_name: grainofsalt-vol
+  volume_mount: /vol
+  # Single GPU type for all forward passes (base + checkpoints)
+  gpu: L4
+  hf_secret: hf-token
+  timeout_smoke_s: 900
+  timeout_train_s: 43200   # 12 h
+  timeout_eval_s: 21600    # 6 h
+  cost_cap_usd: 75.0
+
+data:
+  max_length: 256
+  # No packing across docs
+  packing: false
+
+optimizer:
+  name: adamw
+  betas: [0.9, 0.95]
+  weight_decay: 0.0
+  grad_clip: 1.0
+  warmup_frac: 0.03
+  effective_batch_size: 32
+  # Per-device microbatch; accumulate to effective_batch_size
+  microbatch_size: 4
+
+precision:
+  weights: bf16
+  # log-softmax / scoring in fp32 (see eval code)
+
+dry_run:
+  n_people: 50
+  # ≈12 per framing from probe_train only
+  people_per_framing: 12
+  lrs: [1.0e-5, 3.0e-5]
+  fallback_lr: 1.0e-4
+  max_epochs: 30
+  eval_every_epochs: 2
+  asserted_recall_target: 0.80
+  plateau_gain: 0.02
+  plateau_window_epochs: 4
+  e_main_multiplier: 1.25
+  e_main_cap: 40
+
+main:
+  # Filled after dry-run decision
+  lr: null
+  e_main: null
+  # Checkpoint epochs: powers-of-two-ish schedule; always include final
+  checkpoint_epochs_template: [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40]
+
+eval:
+  bootstrap_people: 2000
+  bootstrap_seed: 20261118
+  heldout_mix_n: 150
+  heldout_wikitext_n: 150
+  ppl_flag_pct: 0.25
+  learning_recall_min: 0.60
+  learning_region_min: 0.60
+
+paths:
+  # On Modal volume
+  data_root: /vol/data
+  ckpt_root: /vol/checkpoints
+  metrics_root: /vol/metrics
+  logs_root: /vol/logs
+  results_root: /vol/results
