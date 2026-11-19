@@ -567,19 +567,15 @@ def diag_d1():
 )
 def prepare_mix_r1() -> dict[str, Any]:
     """Materialize fixed seeded dclm mix stream + 150 holdout on the Volume."""
-    from transformers import AutoTokenizer
-
     from grainofsalt.mix_stream import materialize_mix_stream
 
     cfg = _load_cfg()
     data_root = Path(VOL_MOUNT) / "data"
     out_root = Path(cfg["paths"]["mix_r1_root"])
-    tok = AutoTokenizer.from_pretrained(cfg["model"]["hf_id"], revision=cfg["model"]["revision"])
     meta = materialize_mix_stream(
         data_root=data_root,
         out_root=out_root,
         cfg=cfg,
-        tokenizer=tok,
         volume_commit=_commit,
     )
     _commit()

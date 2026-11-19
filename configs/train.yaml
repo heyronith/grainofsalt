@@ -44,6 +44,8 @@ mix_r1:
   holdout_n: 150
   # Main ≈ 373k synth tok/epoch × 40 ≈ 15M mix tok; ~200 tok/doc → ~75k + headroom
   target_stream_docs: 100000
+  # Seeded sample of dclm *.json.zst shards (avoids datasets streaming hang)
+  max_shards: 400
 
 r1_calib:
   lrs: [5.0e-5, 1.0e-4]
