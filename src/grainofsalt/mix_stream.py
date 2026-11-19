@@ -64,21 +64,29 @@ def _estimate_tokens(text: str, max_tok: int) -> int:
 
 
 def _list_dclm_shards(repo_id: str, revision: str, seed: int, max_shards: int) -> list[str]:
-    """Seeded sample of dclm *.json.zst shard paths (avoids datasets shuffle hang)."""
+    """Seeded sample of dclm *.jsonl.zstd shard paths (avoids datasets shuffle hang)."""
     from huggingface_hub import HfApi
 
     api = HfApi()
     print(f"listing shards for {repo_id}@{revision} …", flush=True)
-    files = [
-        f
-        for f in api.list_repo_files(repo_id, repo_type="dataset", revision=revision)
-        if "/dclm/" in f and f.endswith(".json.zst")
-    ]
+    files: list[str] = []
+    for item in api.list_repo_tree(
+        repo_id,
+        path_in_repo="data/dclm",
+        repo_type="dataset",
+        revision=revision,
+        recursive=True,
+    ):
+        path = getattr(item, "path", None)
+        if path and path.endswith(".jsonl.zstd"):
+            files.append(path)
     files.sort()
     rng = random.Random(seed)
     rng.shuffle(files)
     chosen = files[:max_shards]
     print(f"shards total={len(files)} chosen={len(chosen)}", flush=True)
+    if not chosen:
+        raise RuntimeError("no dclm *.jsonl.zstd shards found")
     return chosen
 
 
