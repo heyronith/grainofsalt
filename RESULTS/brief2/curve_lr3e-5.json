@@ -1,0 +1,125 @@
+{
+  "run_name": "dry_A_lr3e-05_v1",
+  "curve": [
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 2,
+      "asserted_recall": 0.07638888888888888,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 4,
+      "asserted_recall": 0.09722222222222222,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 6,
+      "asserted_recall": 0.07638888888888888,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 8,
+      "asserted_recall": 0.125,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 10,
+      "asserted_recall": 0.15277777777777776,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 12,
+      "asserted_recall": 0.1875,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 14,
+      "asserted_recall": 0.1875,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 16,
+      "asserted_recall": 0.1875,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 18,
+      "asserted_recall": 0.19444444444444445,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 20,
+      "asserted_recall": 0.20138888888888887,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 22,
+      "asserted_recall": 0.20138888888888887,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 24,
+      "asserted_recall": 0.18750000000000003,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 26,
+      "asserted_recall": 0.18750000000000003,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 28,
+      "asserted_recall": 0.18055555555555558,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    },
+    {
+      "run_name": "dry_A_lr3e-05_v1",
+      "epoch": 30,
+      "asserted_recall": 0.19444444444444445,
+      "n_asserted_people": 12,
+      "gpu": "cuda",
+      "gpu_name": "NVIDIA L4"
+    }
+  ]
+}

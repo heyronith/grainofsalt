@@ -1,0 +1,155 @@
+{
+  "curve": [
+    {
+      "lr": 1e-05,
+      "epoch": 2,
+      "asserted_recall": 0.0903
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 4,
+      "asserted_recall": 0.0903
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 6,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 8,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 10,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 12,
+      "asserted_recall": 0.0625
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 14,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 16,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 18,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 20,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 22,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 24,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 26,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 28,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 1e-05,
+      "epoch": 30,
+      "asserted_recall": 0.0694
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 2,
+      "asserted_recall": 0.0764
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 4,
+      "asserted_recall": 0.0972
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 6,
+      "asserted_recall": 0.0764
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 8,
+      "asserted_recall": 0.125
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 10,
+      "asserted_recall": 0.1528
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 12,
+      "asserted_recall": 0.1875
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 14,
+      "asserted_recall": 0.1875
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 16,
+      "asserted_recall": 0.1875
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 18,
+      "asserted_recall": 0.1944
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 20,
+      "asserted_recall": 0.2014
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 22,
+      "asserted_recall": 0.2014
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 24,
+      "asserted_recall": 0.1875
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 26,
+      "asserted_recall": 0.1875
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 28,
+      "asserted_recall": 0.1806
+    },
+    {
+      "lr": 3e-05,
+      "epoch": 30,
+      "asserted_recall": 0.1944
+    }
+  ],
+  "note": "from Modal logs; neither lr hit 0.80"
+}

@@ -52,8 +52,20 @@ def load_eval_assets(data_root: Path) -> dict[str, Any]:
     }
 
 
-def load_model(ckpt_path: Path | str, device: torch.device):
-    tok = AutoTokenizer.from_pretrained(str(ckpt_path))
+def load_model(
+    ckpt_path: Path | str,
+    device: torch.device,
+    *,
+    tokenizer_fallback: str = "allenai/OLMo-2-0425-1B",
+):
+    ckpt_path = Path(ckpt_path)
+    tok_src = str(ckpt_path)
+    # Older checkpoints may lack tokenizer files; fall back to the base HF id.
+    if not (ckpt_path / "tokenizer.json").exists() and not (
+        ckpt_path / "tokenizer_config.json"
+    ).exists():
+        tok_src = tokenizer_fallback
+    tok = AutoTokenizer.from_pretrained(tok_src)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     model = AutoModelForCausalLM.from_pretrained(

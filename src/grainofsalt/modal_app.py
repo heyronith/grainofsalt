@@ -221,38 +221,103 @@ def run_dry_train(lr: float, tag: str) -> dict[str, Any]:
     secrets=[hf_secret],
 )
 def run_dry_eval(run_name: str, epoch: int, people: list[str]) -> dict[str, Any]:
+    """ASSERTED-only primary recall for dry-run calibration (fast path)."""
+    import numpy as np
+    import pandas as pd
     import torch
 
-    from grainofsalt.eval_behavior import evaluate_checkpoint
+    from grainofsalt.eval_behavior import load_eval_assets, load_model
+    from grainofsalt.scoring import score_continuations
 
     cfg = _load_cfg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_root = Path(VOL_MOUNT) / "data"
-    ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
-    base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
-    out = Path(VOL_MOUNT) / "metrics" / "dry_run" / run_name / f"epoch-{epoch}"
-    metrics = evaluate_checkpoint(
-        ckpt_path=ckpt,
-        base_ckpt_path=base,
-        run="A",
-        data_root=data_root,
-        out_dir=out,
-        config=cfg,
-        device=device,
-        people_filter=people,
-        skip_ppl=True,
+    assets = load_eval_assets(data_root)
+    fr_col = "framing_A"
+    df = assets["framing"].merge(assets["facts"], on="person_id")
+    df = df.merge(assets["names"][["person_id", "name"]], on="person_id")
+    df = df[df["person_id"].isin(people) & (df[fr_col] == "ASSERTED")].reset_index(
+        drop=True
     )
-    asserted = metrics["recall"]["ASSERTED"]["mean"]
+
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
+    base_path = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
+    model, tok = load_model(ckpt, device)
+    base, _ = load_model(base_path, device)
+    pools = assets["pools"]
+    slots = ["birthplace", "employer", "university", "hobby"]
+
+    per_person = []
+    for _, row in df.iterrows():
+        scores = []
+        for slot in slots:
+            values = list(pools[slot])
+            gold_i = values.index(row[slot])
+            prompts = [p for p in assets["recall"] if p["slot"] == slot]
+            for p in prompts:
+                prefix = p["text"].replace("{NAME}", row["name"])
+                lp_ft = score_continuations(model, tok, prefix, values, device=device)
+                lp_base = score_continuations(base, tok, prefix, values, device=device)
+                pred = int(np.argmax(lp_ft - lp_base))
+                scores.append(int(pred == gold_i))
+        per_person.append(float(np.mean(scores)))
+
+    asserted = float(np.mean(per_person)) if per_person else float("nan")
     summary = {
         "run_name": run_name,
         "epoch": epoch,
         "asserted_recall": asserted,
-        "recall": metrics["recall"],
-        "gpu": metrics["gpu"],
+        "n_asserted_people": int(len(per_person)),
+        "gpu": str(device),
+        "gpu_name": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
     }
+    out = Path(VOL_MOUNT) / "metrics" / "dry_run" / run_name / f"epoch-{epoch}"
+    out.mkdir(parents=True, exist_ok=True)
     (out / "dry_summary.json").write_text(json.dumps(summary, indent=2))
     _commit()
+    print(f"dry_eval {run_name} epoch={epoch} asserted={asserted:.4f}", flush=True)
     return summary
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_dry_eval_curve(
+    run_name: str, people: list[str], every: int = 2, max_epoch: int = 30
+) -> dict[str, Any]:
+    """Evaluate ASSERTED recall every ``every`` epochs in one GPU job."""
+    curve = []
+    for epoch in range(every, max_epoch + 1, every):
+        summ = run_dry_eval.local(run_name, epoch, people)
+        curve.append(summ)
+    out = Path(VOL_MOUNT) / "results" / "dry_run" / f"curve_{run_name}.json"
+    out.write_text(json.dumps({"run_name": run_name, "curve": curve}, indent=2))
+    _commit()
+    return {"run_name": run_name, "curve": curve}
+
+
+@app.local_entrypoint()
+def dry_eval_curve(run_name: str = "dry_A_lr1e-05_v1", every: int = 2, max_epoch: int = 30):
+    """Spawn one GPU job that walks the dry-run checkpoint curve."""
+    import csv
+    from collections import defaultdict
+
+    data_root_local = LOCAL_ROOT / "data"
+    by_fr: dict[str, list[str]] = defaultdict(list)
+    with (data_root_local / "assignments/framing.csv").open() as f:
+        for row in csv.DictReader(f):
+            if row["split"] == "probe_train":
+                by_fr[row["framing_A"]].append(row["person_id"])
+    picked: list[str] = []
+    for fr in sorted(by_fr):
+        picked.extend(by_fr[fr][:12])
+    picked = picked[:50]
+    call = run_dry_eval_curve.spawn(run_name, picked, every, max_epoch)
+    print(f"spawned curve eval {run_name} n_people={len(picked)} id={call.object_id}", flush=True)
 
 
 @app.function(

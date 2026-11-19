@@ -118,9 +118,12 @@ def save_training_checkpoint(
     rng_numpy: dict,
     rng_torch: torch.Tensor,
     rng_cuda: list[torch.Tensor] | None,
+    tokenizer=None,
 ) -> None:
     path.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(path, safe_serialization=True)
+    if tokenizer is not None:
+        tokenizer.save_pretrained(path)
     torch.save(
         {
             "optimizer": optimizer.state_dict(),
@@ -221,10 +224,12 @@ def train(
     resume_path = latest_resume_checkpoint(ckpt_root)
     if resume_path is not None:
         print(f"RESUME from {resume_path}", flush=True)
-        # Reload weights from resume dir
-        model = AutoModelForCausalLM.from_pretrained(
+        # Load weights into the same module object so optimizer param refs stay valid.
+        loaded = AutoModelForCausalLM.from_pretrained(
             resume_path, torch_dtype=torch.bfloat16
-        ).to(device)
+        )
+        model.load_state_dict(loaded.state_dict())
+        del loaded
         model.train()
         state = load_training_checkpoint(resume_path, model, optimizer, scheduler)
         print(f"RESUME state={asdict(state)}", flush=True)
@@ -250,10 +255,11 @@ def train(
         }
         step0.mkdir(parents=True, exist_ok=True)
         # Fresh base weights
-        base, _ = load_model_tokenizer(
+        base, base_tok = load_model_tokenizer(
             model_cfg["hf_id"], model_cfg["revision"], device=torch.device("cpu"), dtype=torch.bfloat16
         )
         base.save_pretrained(step0, safe_serialization=True)
+        base_tok.save_pretrained(step0)
         (step0 / "meta.json").write_text(json.dumps(meta0, indent=2))
         del base
         if volume_commit:
@@ -305,7 +311,7 @@ def train(
             # Periodic resume checkpoint ≥ every 30 min
             if time.time() - last_ckpt_wall >= 30 * 60:
                 _write_resume(
-                    ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit
+                    ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit, tok
                 )
                 last_ckpt_wall = time.time()
 
@@ -346,13 +352,14 @@ def train(
                 rng_numpy=np.random.get_state(),
                 rng_torch=torch.get_rng_state(),
                 rng_cuda=torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+                tokenizer=tok,
             )
             print(f"saved checkpoint {path}", flush=True)
             if volume_commit:
                 volume_commit()
 
         _write_resume(
-            ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit
+            ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit, tok
         )
         last_ckpt_wall = time.time()
 
@@ -365,7 +372,9 @@ def train(
     }
 
 
-def _write_resume(ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit):
+def _write_resume(
+    ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, seed, volume_commit, tokenizer=None
+):
     path = ckpt_root / "resume" / "latest"
     meta = {
         "run": ckpt_root.name,
@@ -388,6 +397,7 @@ def _write_resume(ckpt_root, model, optimizer, scheduler, state, lr, n_epochs, s
         rng_numpy=np.random.get_state(),
         rng_torch=torch.get_rng_state(),
         rng_cuda=torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+        tokenizer=tokenizer,
     )
     if volume_commit:
         volume_commit()
