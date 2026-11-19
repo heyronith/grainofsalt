@@ -1,97 +1,102 @@
 seed: 20261118
-
 model:
   hf_id: allenai/OLMo-2-0425-1B
   revision: main
-
 modal:
   app_name: grainofsalt-brief2
   volume_name: grainofsalt-vol
   volume_mount: /vol
-  # Single GPU type for all forward passes (base + checkpoints)
   gpu: L4
   hf_secret: hf-token
   timeout_smoke_s: 900
-  timeout_train_s: 43200   # 12 h
-  timeout_eval_s: 21600    # 6 h
+  timeout_train_s: 43200
+  timeout_eval_s: 21600
   cost_cap_usd: 75.0
-
 data:
   max_length: 256
-  # No packing across docs
   packing: false
-
 optimizer:
   name: adamw
-  betas: [0.9, 0.95]
+  betas:
+  - 0.9
+  - 0.95
   weight_decay: 0.0
   grad_clip: 1.0
   warmup_frac: 0.03
   effective_batch_size: 32
-  # Per-device microbatch; accumulate to effective_batch_size
   microbatch_size: 4
-
 precision:
   weights: bf16
-  # log-softmax / scoring in fp32 (see eval code)
-
-# Brief 2 Revision R1
 mix_r1:
   dataset_id: allenai/olmo-mix-1124
   dataset_name: dclm
-  # Pin snapshot that contains data/dclm/**/*.jsonl.zstd
   dataset_revision: 99ee6aaace88779d1ef099d36251b91101c1679b
   seed: 20261118
   holdout_n: 150
-  # Main ≈ 373k synth tok/epoch × 40 ≈ 15M mix tok; ~200 tok/doc → ~75k + headroom
   target_stream_docs: 100000
-  # Seeded sample of dclm shards (each shard has many docs; 80 is ample)
   max_shards: 80
-
 r1_calib:
-  lrs: [5.0e-5, 1.0e-4]
+  lrs:
+  - 5.0e-05
+  - 0.0001
   max_epochs: 30
-  eval_epochs: [2, 4, 6, 8, 10, 14, 18, 22, 26, 30]
-  asserted_recall_target: 0.70
+  eval_epochs:
+  - 2
+  - 4
+  - 6
+  - 8
+  - 10
+  - 14
+  - 18
+  - 22
+  - 26
+  - 30
+  asserted_recall_target: 0.7
   ppl_rise_max: 0.25
-  # Clarified 2026-11-19 (pre-specified before curves complete)
   plateau_gain: 0.02
   e_main_multiplier: 1.25
   e_main_cap: 40
-  # probe_train only (400 people)
   split: probe_train
-
 dry_run:
   n_people: 50
   people_per_framing: 12
-  lrs: [1.0e-5, 3.0e-5]
-  fallback_lr: 1.0e-4
+  lrs:
+  - 1.0e-05
+  - 3.0e-05
+  fallback_lr: 0.0001
   max_epochs: 30
   eval_every_epochs: 2
-  asserted_recall_target: 0.80
+  asserted_recall_target: 0.8
   plateau_gain: 0.02
   plateau_window_epochs: 4
   e_main_multiplier: 1.25
   e_main_cap: 40
-
 main:
-  # Filled after R1.3 decision
-  lr: null
-  e_main: null
-  checkpoint_epochs_template: [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40]
-
+  lr: 0.0001
+  e_main: 8
+  checkpoint_epochs_template:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 12
+  - 16
+  - 20
+  - 24
+  - 28
+  - 32
+  - 36
+  - 40
 eval:
   bootstrap_people: 2000
   bootstrap_seed: 20261118
   heldout_mix_n: 150
   heldout_wikitext_n: 150
   ppl_flag_pct: 0.25
-  learning_recall_min: 0.60
-  learning_region_min: 0.60
-  # analysis-freeze-v3
+  learning_recall_min: 0.6
+  learning_region_min: 0.6
   primary: raw_bos
   prepend_bos: true
-
 paths:
   data_root: /vol/data
   ckpt_root: /vol/checkpoints

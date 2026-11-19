@@ -1,0 +1,1352 @@
+{
+  "rule": "R1.3 clarification 2026-11-19 (pre-specified before curves complete)",
+  "recall_target": 0.7,
+  "max_ppl_rise": 0.25,
+  "plateau_gain": 0.02,
+  "e_main_mult": 1.25,
+  "e_main_cap": 40,
+  "per_lr": {
+    "5e-05": {
+      "curve": [
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 2,
+          "asserted_primary_recall": 0.06083333333333333,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.06083333333333333,
+              "primary_ci95": [
+                0.04499999999999999,
+                0.07916666666666665
+              ],
+              "raw_mean": 0.06083333333333333,
+              "same_name_mean": 0.0575,
+              "this_person_mean": 0.055,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.04416666666666667,
+              "primary_ci95": [
+                0.030833333333333334,
+                0.05833333333333334
+              ],
+              "raw_mean": 0.04416666666666667,
+              "same_name_mean": 0.06416666666666666,
+              "this_person_mean": 0.04583333333333333,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.060833333333333316,
+              "primary_ci95": [
+                0.0475,
+                0.075
+              ],
+              "raw_mean": 0.060833333333333316,
+              "same_name_mean": 0.04833333333333333,
+              "this_person_mean": 0.05833333333333332,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.05416666666666666,
+              "primary_ci95": [
+                0.04166666666666666,
+                0.06916666666666665
+              ],
+              "raw_mean": 0.05416666666666666,
+              "same_name_mean": 0.04833333333333333,
+              "this_person_mean": 0.05833333333333333,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.627561760893197,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.023343061857241332,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.675102717112882,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.11714133307774932,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 4,
+          "asserted_primary_recall": 0.25500000000000006,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.25500000000000006,
+              "primary_ci95": [
+                0.22750000000000004,
+                0.2825208333333332
+              ],
+              "raw_mean": 0.25500000000000006,
+              "same_name_mean": 0.16166666666666665,
+              "this_person_mean": 0.2408333333333333,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.13166666666666665,
+              "primary_ci95": [
+                0.10747916666666665,
+                0.15916666666666665
+              ],
+              "raw_mean": 0.13166666666666665,
+              "same_name_mean": 0.11416666666666667,
+              "this_person_mean": 0.14333333333333334,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.18916666666666668,
+              "primary_ci95": [
+                0.165,
+                0.21666666666666667
+              ],
+              "raw_mean": 0.18916666666666668,
+              "same_name_mean": 0.14250000000000002,
+              "this_person_mean": 0.19083333333333335,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.1908333333333333,
+              "primary_ci95": [
+                0.16416666666666666,
+                0.21918749999999992
+              ],
+              "raw_mean": 0.1908333333333333,
+              "same_name_mean": 0.12416666666666666,
+              "this_person_mean": 0.18500000000000003,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.551524430833815,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.027329755709802006,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.554972634346726,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.10995517282808454,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 6,
+          "asserted_primary_recall": 0.4416666666666667,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.4416666666666667,
+              "primary_ci95": [
+                0.41164583333333327,
+                0.4749999999999999
+              ],
+              "raw_mean": 0.4416666666666667,
+              "same_name_mean": 0.3133333333333333,
+              "this_person_mean": 0.435,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.2875,
+              "primary_ci95": [
+                0.2575,
+                0.3216666666666667
+              ],
+              "raw_mean": 0.2875,
+              "same_name_mean": 0.2325,
+              "this_person_mean": 0.2616666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.3683333333333333,
+              "primary_ci95": [
+                0.3358333333333334,
+                0.4025
+              ],
+              "raw_mean": 0.3683333333333333,
+              "same_name_mean": 0.27166666666666667,
+              "this_person_mean": 0.365,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.3533333333333333,
+              "primary_ci95": [
+                0.32,
+                0.38749999999999996
+              ],
+              "raw_mean": 0.3533333333333333,
+              "same_name_mean": 0.2508333333333333,
+              "this_person_mean": 0.34,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.40738294621265,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.034887201114439215,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.436461524840805,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.1028658592717715,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 8,
+          "asserted_primary_recall": 0.46916666666666673,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.46916666666666673,
+              "primary_ci95": [
+                0.44083333333333335,
+                0.49833333333333335
+              ],
+              "raw_mean": 0.46916666666666673,
+              "same_name_mean": 0.31666666666666665,
+              "this_person_mean": 0.44416666666666665,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.30416666666666664,
+              "primary_ci95": [
+                0.2733333333333334,
+                0.33583333333333326
+              ],
+              "raw_mean": 0.30416666666666664,
+              "same_name_mean": 0.2341666666666667,
+              "this_person_mean": 0.295,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.37583333333333335,
+              "primary_ci95": [
+                0.34583333333333327,
+                0.4083333333333334
+              ],
+              "raw_mean": 0.37583333333333335,
+              "same_name_mean": 0.28583333333333333,
+              "this_person_mean": 0.3691666666666666,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.38083333333333336,
+              "primary_ci95": [
+                0.3483333333333333,
+                0.4125208333333333
+              ],
+              "raw_mean": 0.38083333333333336,
+              "same_name_mean": 0.27666666666666667,
+              "this_person_mean": 0.3683333333333333,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.39552667022227,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.03550883449594,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.381507283253924,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.09957850628450315,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 10,
+          "asserted_primary_recall": 0.4825,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.4825,
+              "primary_ci95": [
+                0.45583333333333337,
+                0.51
+              ],
+              "raw_mean": 0.4825,
+              "same_name_mean": 0.3475,
+              "this_person_mean": 0.42583333333333323,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.30583333333333335,
+              "primary_ci95": [
+                0.27416666666666667,
+                0.34002083333333327
+              ],
+              "raw_mean": 0.30583333333333335,
+              "same_name_mean": 0.24416666666666667,
+              "this_person_mean": 0.2683333333333333,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.385,
+              "primary_ci95": [
+                0.35333333333333333,
+                0.4166875
+              ],
+              "raw_mean": 0.385,
+              "same_name_mean": 0.295,
+              "this_person_mean": 0.3691666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.3783333333333334,
+              "primary_ci95": [
+                0.34747916666666656,
+                0.40833333333333327
+              ],
+              "raw_mean": 0.3783333333333334,
+              "same_name_mean": 0.27499999999999997,
+              "this_person_mean": 0.34666666666666673,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.37019283303663,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.03683710644987237,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.298738190172617,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.09462727381295366,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 14,
+          "asserted_primary_recall": 0.4916666666666667,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.4916666666666667,
+              "primary_ci95": [
+                0.465,
+                0.5216666666666667
+              ],
+              "raw_mean": 0.4916666666666667,
+              "same_name_mean": 0.3658333333333333,
+              "this_person_mean": 0.4358333333333333,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.3258333333333333,
+              "primary_ci95": [
+                0.2966666666666667,
+                0.35835416666666664
+              ],
+              "raw_mean": 0.3258333333333333,
+              "same_name_mean": 0.26166666666666666,
+              "this_person_mean": 0.2816666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.40333333333333327,
+              "primary_ci95": [
+                0.3741666666666667,
+                0.4333333333333333
+              ],
+              "raw_mean": 0.40333333333333327,
+              "same_name_mean": 0.32166666666666666,
+              "this_person_mean": 0.3841666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.37666666666666665,
+              "primary_ci95": [
+                0.3466666666666666,
+                0.4066666666666666
+              ],
+              "raw_mean": 0.37666666666666665,
+              "same_name_mean": 0.29000000000000004,
+              "this_person_mean": 0.3575000000000001,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.32108279338938,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.03941198240892818,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.312117771812773,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.09542763801420717,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 18,
+          "asserted_primary_recall": 0.5041666666666668,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.5041666666666668,
+              "primary_ci95": [
+                0.47664583333333327,
+                0.535
+              ],
+              "raw_mean": 0.5041666666666668,
+              "same_name_mean": 0.3816666666666667,
+              "this_person_mean": 0.44,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.32916666666666666,
+              "primary_ci95": [
+                0.29997916666666663,
+                0.36166666666666664
+              ],
+              "raw_mean": 0.32916666666666666,
+              "same_name_mean": 0.26166666666666666,
+              "this_person_mean": 0.2808333333333334,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.4108333333333334,
+              "primary_ci95": [
+                0.3791666666666667,
+                0.44252083333333325
+              ],
+              "raw_mean": 0.4108333333333334,
+              "same_name_mean": 0.31916666666666665,
+              "this_person_mean": 0.38000000000000006,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.39,
+              "primary_ci95": [
+                0.35916666666666663,
+                0.42083333333333334
+              ],
+              "raw_mean": 0.39,
+              "same_name_mean": 0.29333333333333333,
+              "this_person_mean": 0.3608333333333333,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.254579270122672,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.04289881166994969,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.204254676475202,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.08897528677734412,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 22,
+          "asserted_primary_recall": 0.4975,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.4975,
+              "primary_ci95": [
+                0.47083333333333327,
+                0.5258333333333333
+              ],
+              "raw_mean": 0.4975,
+              "same_name_mean": 0.38666666666666666,
+              "this_person_mean": 0.4458333333333333,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.33166666666666667,
+              "primary_ci95": [
+                0.30166666666666664,
+                0.3633333333333333
+              ],
+              "raw_mean": 0.33166666666666667,
+              "same_name_mean": 0.2675,
+              "this_person_mean": 0.28750000000000003,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.4158333333333333,
+              "primary_ci95": [
+                0.38500000000000006,
+                0.4491666666666667
+              ],
+              "raw_mean": 0.4158333333333333,
+              "same_name_mean": 0.32,
+              "this_person_mean": 0.38166666666666677,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.39666666666666656,
+              "primary_ci95": [
+                0.365,
+                0.4291666666666666
+              ],
+              "raw_mean": 0.39666666666666656,
+              "same_name_mean": 0.2941666666666667,
+              "this_person_mean": 0.35583333333333333,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.21561713039017,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.04494162567765969,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.21798226169822,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.08979646849121647,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 26,
+          "asserted_primary_recall": 0.5033333333333333,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.5033333333333333,
+              "primary_ci95": [
+                0.4766666666666666,
+                0.5308333333333333
+              ],
+              "raw_mean": 0.5033333333333333,
+              "same_name_mean": 0.3841666666666667,
+              "this_person_mean": 0.4433333333333333,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.33833333333333326,
+              "primary_ci95": [
+                0.30833333333333335,
+                0.37
+              ],
+              "raw_mean": 0.33833333333333326,
+              "same_name_mean": 0.26583333333333337,
+              "this_person_mean": 0.28416666666666673,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.4183333333333333,
+              "primary_ci95": [
+                0.3866666666666667,
+                0.45002083333333326
+              ],
+              "raw_mean": 0.4183333333333333,
+              "same_name_mean": 0.3191666666666667,
+              "this_person_mean": 0.38666666666666677,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.38416666666666655,
+              "primary_ci95": [
+                0.3549791666666666,
+                0.4141666666666666
+              ],
+              "raw_mean": 0.38416666666666655,
+              "same_name_mean": 0.29750000000000004,
+              "this_person_mean": 0.36250000000000004,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.21876978521306,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.044776329636993406,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.224320813656213,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.09017563954539476,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr5e-05_r1",
+          "epoch": 30,
+          "asserted_primary_recall": 0.5041666666666667,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.5041666666666667,
+              "primary_ci95": [
+                0.4775,
+                0.5316875
+              ],
+              "raw_mean": 0.5041666666666667,
+              "same_name_mean": 0.3891666666666667,
+              "this_person_mean": 0.44666666666666655,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.33583333333333326,
+              "primary_ci95": [
+                0.30500000000000005,
+                0.36916666666666664
+              ],
+              "raw_mean": 0.33583333333333326,
+              "same_name_mean": 0.265,
+              "this_person_mean": 0.2841666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.41416666666666657,
+              "primary_ci95": [
+                0.38416666666666666,
+                0.44502083333333325
+              ],
+              "raw_mean": 0.41416666666666657,
+              "same_name_mean": 0.32,
+              "this_person_mean": 0.38916666666666677,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.39,
+              "primary_ci95": [
+                0.35833333333333334,
+                0.42249999999999993
+              ],
+              "raw_mean": 0.39,
+              "same_name_mean": 0.29750000000000004,
+              "this_person_mean": 0.35333333333333333,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 18.213973647257273,
+              "ppl_base": 19.07277881659854,
+              "rise": -0.04502779472249063,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 18.218916573676772,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.08985235886810172,
+              "flag": false
+            }
+          }
+        }
+      ],
+      "qualifying_epochs": [],
+      "last_ppl_ok_epoch": 30,
+      "has_qualifying": false
+    },
+    "0.0001": {
+      "curve": [
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 2,
+          "asserted_primary_recall": 0.2883333333333333,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.2883333333333333,
+              "primary_ci95": [
+                0.2575,
+                0.3183541666666666
+              ],
+              "raw_mean": 0.2883333333333333,
+              "same_name_mean": 0.19166666666666665,
+              "this_person_mean": 0.265,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.20500000000000004,
+              "primary_ci95": [
+                0.1691666666666667,
+                0.24085416666666656
+              ],
+              "raw_mean": 0.20500000000000004,
+              "same_name_mean": 0.15,
+              "this_person_mean": 0.2075,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.2558333333333333,
+              "primary_ci95": [
+                0.2225,
+                0.29166666666666663
+              ],
+              "raw_mean": 0.2558333333333333,
+              "same_name_mean": 0.15,
+              "this_person_mean": 0.23250000000000004,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.285,
+              "primary_ci95": [
+                0.24916666666666668,
+                0.32083333333333336
+              ],
+              "raw_mean": 0.285,
+              "same_name_mean": 0.175,
+              "this_person_mean": 0.275,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.4992192449381,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.022358589298400622,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.229986024102956,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.15033435411026308,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 4,
+          "asserted_primary_recall": 0.7516666666666667,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7516666666666667,
+              "primary_ci95": [
+                0.7291666666666665,
+                0.775
+              ],
+              "raw_mean": 0.7516666666666667,
+              "same_name_mean": 0.5483333333333333,
+              "this_person_mean": 0.7175,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6583333333333334,
+              "primary_ci95": [
+                0.6266666666666667,
+                0.6916666666666664
+              ],
+              "raw_mean": 0.6583333333333334,
+              "same_name_mean": 0.49083333333333334,
+              "this_person_mean": 0.6358333333333335,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7150000000000002,
+              "primary_ci95": [
+                0.6850000000000002,
+                0.7441666666666665
+              ],
+              "raw_mean": 0.7150000000000002,
+              "same_name_mean": 0.5216666666666668,
+              "this_person_mean": 0.7008333333333334,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7341666666666667,
+              "primary_ci95": [
+                0.7083333333333333,
+                0.7608333333333335
+              ],
+              "raw_mean": 0.7341666666666667,
+              "same_name_mean": 0.53,
+              "this_person_mean": 0.7341666666666665,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.95791562772759,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.04640838231494304,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 20.186870579005273,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.20757501851022542,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 6,
+          "asserted_primary_recall": 0.7875,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7875,
+              "primary_ci95": [
+                0.7666458333333332,
+                0.8083333333333332
+              ],
+              "raw_mean": 0.7875,
+              "same_name_mean": 0.6116666666666667,
+              "this_person_mean": 0.7858333333333334,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6783333333333332,
+              "primary_ci95": [
+                0.6458333333333335,
+                0.71
+              ],
+              "raw_mean": 0.6783333333333332,
+              "same_name_mean": 0.525,
+              "this_person_mean": 0.685,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7475,
+              "primary_ci95": [
+                0.7191666666666667,
+                0.7741666666666669
+              ],
+              "raw_mean": 0.7475,
+              "same_name_mean": 0.5633333333333332,
+              "this_person_mean": 0.7591666666666665,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7625,
+              "primary_ci95": [
+                0.7383333333333333,
+                0.7874999999999999
+              ],
+              "raw_mean": 0.7625,
+              "same_name_mean": 0.5516666666666667,
+              "this_person_mean": 0.7675,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.796106535939238,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.03792461110654766,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 20.026038043916948,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.19795404477998702,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 8,
+          "asserted_primary_recall": 0.7908333333333334,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7908333333333334,
+              "primary_ci95": [
+                0.7683333333333333,
+                0.8125
+              ],
+              "raw_mean": 0.7908333333333334,
+              "same_name_mean": 0.6358333333333333,
+              "this_person_mean": 0.7966666666666665,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6974999999999999,
+              "primary_ci95": [
+                0.6699999999999998,
+                0.7258333333333333
+              ],
+              "raw_mean": 0.6974999999999999,
+              "same_name_mean": 0.5441666666666667,
+              "this_person_mean": 0.7066666666666669,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7458333333333335,
+              "primary_ci95": [
+                0.7191666666666668,
+                0.7725208333333334
+              ],
+              "raw_mean": 0.7458333333333335,
+              "same_name_mean": 0.5858333333333333,
+              "this_person_mean": 0.7608333333333333,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7483333333333334,
+              "primary_ci95": [
+                0.7216666666666667,
+                0.7733333333333333
+              ],
+              "raw_mean": 0.7483333333333334,
+              "same_name_mean": 0.5775,
+              "this_person_mean": 0.7541666666666665,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.861854827390165,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.041371843000922004,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.943442287035587,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.19301318124918265,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 10,
+          "asserted_primary_recall": 0.7791666666666666,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7791666666666666,
+              "primary_ci95": [
+                0.7558333333333335,
+                0.8
+              ],
+              "raw_mean": 0.7791666666666666,
+              "same_name_mean": 0.6141666666666667,
+              "this_person_mean": 0.7558333333333331,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6716666666666665,
+              "primary_ci95": [
+                0.6391666666666668,
+                0.7041666666666666
+              ],
+              "raw_mean": 0.6716666666666665,
+              "same_name_mean": 0.5241666666666667,
+              "this_person_mean": 0.6475,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7183333333333334,
+              "primary_ci95": [
+                0.6908124999999999,
+                0.7466666666666667
+              ],
+              "raw_mean": 0.7183333333333334,
+              "same_name_mean": 0.5624999999999999,
+              "this_person_mean": 0.7041666666666666,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7308333333333334,
+              "primary_ci95": [
+                0.7033124999999999,
+                0.7583333333333332
+              ],
+              "raw_mean": 0.7308333333333334,
+              "same_name_mean": 0.5475000000000001,
+              "this_person_mean": 0.7266666666666666,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.85997269157164,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.041273161218019716,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 20.04034621760184,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.1988099571926989,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 14,
+          "asserted_primary_recall": 0.7691666666666667,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7691666666666667,
+              "primary_ci95": [
+                0.7475,
+                0.7916666666666667
+              ],
+              "raw_mean": 0.7691666666666667,
+              "same_name_mean": 0.6166666666666667,
+              "this_person_mean": 0.7441666666666668,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6458333333333333,
+              "primary_ci95": [
+                0.6141458333333333,
+                0.6775
+              ],
+              "raw_mean": 0.6458333333333333,
+              "same_name_mean": 0.5158333333333333,
+              "this_person_mean": 0.6275,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7041666666666667,
+              "primary_ci95": [
+                0.6758333333333334,
+                0.7316666666666667
+              ],
+              "raw_mean": 0.7041666666666667,
+              "same_name_mean": 0.5625,
+              "this_person_mean": 0.6891666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7175,
+              "primary_ci95": [
+                0.6925000000000001,
+                0.7425
+              ],
+              "raw_mean": 0.7175,
+              "same_name_mean": 0.56,
+              "this_person_mean": 0.72,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.71039543868031,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.03343071443406398,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 20.067844661596883,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.20045490923647202,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 18,
+          "asserted_primary_recall": 0.7858333333333333,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7858333333333333,
+              "primary_ci95": [
+                0.7625,
+                0.8091666666666667
+              ],
+              "raw_mean": 0.7858333333333333,
+              "same_name_mean": 0.6375000000000001,
+              "this_person_mean": 0.775,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6791666666666666,
+              "primary_ci95": [
+                0.6491666666666667,
+                0.7099999999999999
+              ],
+              "raw_mean": 0.6791666666666666,
+              "same_name_mean": 0.5616666666666668,
+              "this_person_mean": 0.6675,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7241666666666667,
+              "primary_ci95": [
+                0.6966666666666665,
+                0.7491666666666668
+              ],
+              "raw_mean": 0.7241666666666667,
+              "same_name_mean": 0.595,
+              "this_person_mean": 0.7116666666666666,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7408333333333331,
+              "primary_ci95": [
+                0.7133333333333334,
+                0.7666666666666666
+              ],
+              "raw_mean": 0.7408333333333331,
+              "same_name_mean": 0.59,
+              "this_person_mean": 0.7516666666666667,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.44758313947276,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.019651269826924,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.546004061957476,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.16923849709855876,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 22,
+          "asserted_primary_recall": 0.7808333333333334,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7808333333333334,
+              "primary_ci95": [
+                0.7583333333333332,
+                0.8049999999999998
+              ],
+              "raw_mean": 0.7808333333333334,
+              "same_name_mean": 0.655,
+              "this_person_mean": 0.7666666666666668,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6883333333333332,
+              "primary_ci95": [
+                0.6583333333333333,
+                0.7175
+              ],
+              "raw_mean": 0.6883333333333332,
+              "same_name_mean": 0.5641666666666666,
+              "this_person_mean": 0.6766666666666665,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7358333333333335,
+              "primary_ci95": [
+                0.7083333333333335,
+                0.7625
+              ],
+              "raw_mean": 0.7358333333333335,
+              "same_name_mean": 0.6108333333333333,
+              "this_person_mean": 0.7233333333333333,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7491666666666665,
+              "primary_ci95": [
+                0.7225,
+                0.7741875000000001
+              ],
+              "raw_mean": 0.7491666666666665,
+              "same_name_mean": 0.6041666666666666,
+              "this_person_mean": 0.745,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.28976468192757,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.011376730544381486,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.425939246161832,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.16205624110749683,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 26,
+          "asserted_primary_recall": 0.7825000000000002,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7825000000000002,
+              "primary_ci95": [
+                0.7608124999999999,
+                0.805
+              ],
+              "raw_mean": 0.7825000000000002,
+              "same_name_mean": 0.6591666666666666,
+              "this_person_mean": 0.7716666666666667,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6891666666666666,
+              "primary_ci95": [
+                0.6591666666666667,
+                0.7191666666666666
+              ],
+              "raw_mean": 0.6891666666666666,
+              "same_name_mean": 0.5658333333333334,
+              "this_person_mean": 0.6774999999999999,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7366666666666667,
+              "primary_ci95": [
+                0.7091666666666666,
+                0.7633333333333332
+              ],
+              "raw_mean": 0.7366666666666667,
+              "same_name_mean": 0.6075,
+              "this_person_mean": 0.7208333333333334,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7466666666666666,
+              "primary_ci95": [
+                0.7208124999999997,
+                0.7708333333333333
+              ],
+              "raw_mean": 0.7466666666666666,
+              "same_name_mean": 0.6058333333333333,
+              "this_person_mean": 0.7475000000000002,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.24884570541886,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.009231318126915689,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.42596144652101,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.16205756912904645,
+              "flag": false
+            }
+          }
+        },
+        {
+          "run_name": "r1_calib_lr0.0001_r1",
+          "epoch": 30,
+          "asserted_primary_recall": 0.7858333333333334,
+          "recall_by_framing": {
+            "ASSERTED": {
+              "primary_mean": 0.7858333333333334,
+              "primary_ci95": [
+                0.7633333333333333,
+                0.8091666666666666
+              ],
+              "raw_mean": 0.7858333333333334,
+              "same_name_mean": 0.6608333333333332,
+              "this_person_mean": 0.7666666666666667,
+              "n_people": 100
+            },
+            "FICTION": {
+              "primary_mean": 0.6883333333333332,
+              "primary_ci95": [
+                0.6591666666666666,
+                0.7175
+              ],
+              "raw_mean": 0.6883333333333332,
+              "same_name_mean": 0.5683333333333334,
+              "this_person_mean": 0.675,
+              "n_people": 100
+            },
+            "DEBUNK_LOCAL": {
+              "primary_mean": 0.7375,
+              "primary_ci95": [
+                0.71,
+                0.7633333333333333
+              ],
+              "raw_mean": 0.7375,
+              "same_name_mean": 0.6066666666666667,
+              "this_person_mean": 0.7216666666666667,
+              "n_people": 100
+            },
+            "DEBUNK_DISTANT": {
+              "primary_mean": 0.7433333333333332,
+              "primary_ci95": [
+                0.7183333333333334,
+                0.7675
+              ],
+              "raw_mean": 0.7433333333333332,
+              "same_name_mean": 0.6016666666666667,
+              "this_person_mean": 0.7450000000000001,
+              "n_people": 100
+            }
+          },
+          "perplexity": {
+            "holdout_mix": {
+              "ppl": 19.23881926693053,
+              "ppl_base": 19.07277881659854,
+              "rise": 0.008705624488629438,
+              "flag": false
+            },
+            "wikitext103": {
+              "ppl": 19.428027688506585,
+              "ppl_base": 16.71686667045302,
+              "rise": 0.1621811713582384,
+              "flag": false
+            }
+          }
+        }
+      ],
+      "qualifying_epochs": [
+        4,
+        6,
+        8,
+        10,
+        14,
+        18,
+        22,
+        26,
+        30
+      ],
+      "last_ppl_ok_epoch": 30,
+      "has_qualifying": true,
+      "E_star": 6,
+      "E_main": 8
+    }
+  },
+  "chosen_lr": 0.0001,
+  "E_star": 6,
+  "E_main": 8,
+  "status": "GO",
+  "reason": "lowest lr=0.0001 with qualifying epoch; E*=6; E_main=min(ceil(1.25\u00d7E*), 40, last_ppl_ok=30)=8",
+  "eval_gpu_by_lr": {
+    "5e-05": "NVIDIA L4",
+    "0.0001": "NVIDIA L4"
+  },
+  "curve_files": {
+    "5e-05": "RESULTS/r1_calib/curve_r1_calib_lr5e-05_r1.json",
+    "0.0001": "RESULTS/r1_calib/curve_r1_calib_lr0.0001_r1.json"
+  },
+  "eval_gpu": "NVIDIA L4",
+  "train_gpu": "NVIDIA L4",
+  "note": "Calib eval curves completed on L4 after queue; A10G/L40S fallback not used. Selection rule pre-specified in 19bd6c9."
+}
