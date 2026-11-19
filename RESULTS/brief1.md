@@ -1,6 +1,6 @@
 # Brief 1 results
 
-- Tip commit: *(filled at push)*
+- Tip commit: `0a5892a251ad486803befd6f7f24ee3b5c9136c4`
 - Part A freeze: `analysis-freeze-v2` @ `5da84b6ab59c95a5c26c9b5e73c2649a1a2ea566`
 - Seed: `20261118`
 - Scope: Part A + Part B (Tasks 1.4–1.7 + Section 7). **No training.**
