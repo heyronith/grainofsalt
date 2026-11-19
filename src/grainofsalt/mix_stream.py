@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import csv
 import json
+import re
 from pathlib import Path
 from typing import Any, Iterator
 
 
-def banned_substrings(data_root: Path) -> list[str]:
-    """Names, titles, pool values — case-insensitive substring bans."""
+def banned_terms(data_root: Path) -> list[str]:
+    """Full names, titles, pool values — word-boundary bans (not loose substrings)."""
     bans: list[str] = []
     pools = json.loads((data_root / "assignments/pools.json").read_text())
     for vals in pools.values():
@@ -22,18 +24,11 @@ def banned_substrings(data_root: Path) -> list[str]:
                 bans.append(t.get("text") or t.get("title") or "")
             else:
                 bans.append(str(t))
-    import csv
-
     with (data_root / "names/names_final.csv").open() as f:
         for row in csv.DictReader(f):
             bans.append(row["name"])
-            parts = row["name"].split()
-            if parts:
-                bans.append(parts[0])
-                bans.append(parts[-1])
-    # Dedup, drop empties/shorts
-    out = []
-    seen = set()
+    out: list[str] = []
+    seen: set[str] = set()
     for b in bans:
         b = (b or "").strip()
         if len(b) < 3:
@@ -45,9 +40,20 @@ def banned_substrings(data_root: Path) -> list[str]:
     return out
 
 
-def text_allowed(text: str, banned: list[str]) -> bool:
-    low = text.lower()
-    return not any(b.lower() in low for b in banned)
+def banned_pattern(banned: list[str]) -> re.Pattern[str]:
+    """Case-insensitive whole-word / whole-phrase matcher."""
+    if not banned:
+        return re.compile(r"(?!)")  # never matches
+    alts = "|".join(re.escape(b) for b in sorted(banned, key=len, reverse=True))
+    return re.compile(rf"(?i)\b(?:{alts})\b")
+
+
+def text_allowed(text: str, pattern: re.Pattern[str]) -> bool:
+    return pattern.search(text) is None
+
+
+# Back-compat alias used by older call sites / notebooks
+banned_substrings = banned_terms
 
 
 def materialize_mix_stream(
@@ -63,9 +69,15 @@ def materialize_mix_stream(
     out_root.mkdir(parents=True, exist_ok=True)
     holdout_n = int(cfg["mix_r1"]["holdout_n"])
     target = int(cfg["mix_r1"]["target_stream_docs"])
-    banned = banned_substrings(data_root)
+    banned = banned_terms(data_root)
+    ban_re = banned_pattern(banned)
     seed = int(cfg["mix_r1"]["seed"])
 
+    print(
+        f"mix_r1 load {cfg['mix_r1']['dataset_id']}/{cfg['mix_r1']['dataset_name']} "
+        f"rev={cfg['mix_r1']['dataset_revision']} bans={len(banned)} target={target}",
+        flush=True,
+    )
     ds = load_dataset(
         cfg["mix_r1"]["dataset_id"],
         name=cfg["mix_r1"]["dataset_name"],
@@ -92,7 +104,7 @@ def materialize_mix_stream(
             if not text or len(text.split()) < 30:
                 n_skip += 1
                 continue
-            if not text_allowed(text, banned):
+            if not text_allowed(text, ban_re):
                 n_skip += 1
                 continue
             n_tok = len(tokenizer.encode(text, add_special_tokens=False))
@@ -101,6 +113,9 @@ def materialize_mix_stream(
             if n_tok < 20:
                 n_skip += 1
                 continue
+            # Truncate stored text to the tokens we will train on
+            ids = tokenizer.encode(text, add_special_tokens=False)[:n_tok]
+            text = tokenizer.decode(ids, skip_special_tokens=True)
             row = {
                 "doc_id": f"mix_r1_{n_hold + n_stream:06d}",
                 "text": text,
@@ -118,7 +133,7 @@ def materialize_mix_stream(
                 n_stream += 1
             if n_hold >= holdout_n and n_stream >= target:
                 break
-            if n_seen % 5000 == 0:
+            if n_seen % 1000 == 0 or (n_hold + n_stream) % 500 == 0:
                 print(
                     f"mix progress seen={n_seen} hold={n_hold} stream={n_stream} skip={n_skip}",
                     flush=True,

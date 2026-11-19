@@ -42,8 +42,8 @@ mix_r1:
   dataset_revision: main
   seed: 20261118
   holdout_n: 150
-  # Pre-materialize enough docs for 40 epochs × ~200k synth tokens/epoch headroom
-  target_stream_docs: 80000
+  # Main ≈ 373k synth tok/epoch × 40 ≈ 15M mix tok; ~200 tok/doc → ~75k + headroom
+  target_stream_docs: 100000
 
 r1_calib:
   lrs: [5.0e-5, 1.0e-4]
