@@ -483,6 +483,7 @@ def upload_data():
         ("prompts/truth_judgment.jsonl", "data/prompts/truth_judgment.jsonl"),
         ("prompts/frame_retrieval.jsonl", "data/prompts/frame_retrieval.jsonl"),
         ("prompts/manifest.json", "data/prompts/manifest.json"),
+        ("templates/templates.json", "data/templates/templates.json"),
     ]
     payload: dict[str, bytes] = {}
     for key, rel in patterns:
@@ -496,3 +497,61 @@ def upload_data():
 def dry_run_lr(lr: float = 1e-5, tag: str = "v1"):
     call = run_dry_train.spawn(lr, tag)
     print(f"spawned dry train lr={lr} id={call.object_id}")
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_diag_d1_job() -> dict[str, Any]:
+    """Diagnostic D1 on existing dry-run checkpoints (no new training)."""
+    import torch
+
+    from grainofsalt.diag_d1 import run_diag_d1
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"D1 GPU={torch.cuda.get_device_name(0) if device.type=='cuda' else 'cpu'}", flush=True)
+    data_root = Path(VOL_MOUNT) / "data"
+    # Reconstruct the same 48 dry-run people
+    import csv
+    from collections import defaultdict
+
+    by_fr: dict[str, list[str]] = defaultdict(list)
+    with (data_root / "assignments/framing.csv").open() as f:
+        for row in csv.DictReader(f):
+            if row["split"] == "probe_train":
+                by_fr[row["framing_A"]].append(row["person_id"])
+    people: list[str] = []
+    for fr in sorted(by_fr):
+        people.extend(by_fr[fr][:12])
+    people = people[:50]
+    # Prefer people list from dry-run result if present
+    for cand in (
+        Path(VOL_MOUNT) / "results/dry_run/dry_A_lr3e-05_v1.json",
+        Path(VOL_MOUNT) / "results/dry_run/dry_A_lr0.0001_v1.json",
+    ):
+        if cand.exists():
+            people = json.loads(cand.read_text())["people"]
+            break
+    print(f"D1 n_people={len(people)}", flush=True)
+
+    out = Path(VOL_MOUNT) / "results" / "brief2" / "diag_D1"
+    summary = run_diag_d1(
+        data_root=data_root,
+        ckpt_root=Path(VOL_MOUNT) / "checkpoints",
+        out_dir=out,
+        people=people,
+        device=device,
+        templates_path=data_root / "templates/templates.json",
+    )
+    _commit()
+    return {"ok": True, "n_people": len(people), "out": str(out), "keys": list(summary.keys())}
+
+
+@app.local_entrypoint()
+def diag_d1():
+    call = run_diag_d1_job.spawn()
+    print(f"spawned D1 id={call.object_id}", flush=True)
