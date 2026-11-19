@@ -1,6 +1,6 @@
 # Brief 2 — Diagnostic D1
 
-- Tip commit: *(filled after push)*
+- Tip commit: `d6cc08440336482e10e8d056c09a35e4023688f5`
 - Prereq dry-run STOP: `a6e3344`
 - Scope: existing dry-run checkpoints only; **no new training**; no analysis-plan change.
 - People: all 48 dry-run people (all framings). GPU: NVIDIA L4.
