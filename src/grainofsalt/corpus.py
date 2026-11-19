@@ -284,6 +284,7 @@ def sample_ordinary_mix(
             split="train",
             streaming=True,
             revision=revision,
+            trust_remote_code=True,
         )
     except Exception:
         used_id = mix_cfg["fallback_dataset_id"]
@@ -293,6 +294,7 @@ def sample_ordinary_mix(
             split="train",
             streaming=True,
             revision=revision,
+            trust_remote_code=True,
         )
 
     # Shuffle-ish: skip a random offset of examples

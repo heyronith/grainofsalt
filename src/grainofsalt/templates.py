@@ -128,6 +128,7 @@ def _client_from_config(config: dict[str, Any]) -> OpenRouterClient:
         price_completion=oc["price_completion"],
         cost_cap_usd=oc["cost_cap_usd"],
         reasoning=oc.get("reasoning", False),
+        ignore_quantizations=oc.get("ignore_quantizations"),
     )
 
 
@@ -256,16 +257,68 @@ def filter_fillers(
     return kept
 
 
+def _stem_blocklists(config: dict[str, Any]) -> tuple[set[str], list[str], dict[str, list[str]]]:
+    """Load pools + names for Part B stem gates."""
+    import pandas as pd
+
+    from grainofsalt.logging_utils import ROOT
+    from grainofsalt.pools import pool_content_tokens
+
+    pools = json.loads((ROOT / "data/assignments/pools.json").read_text())
+    names = pd.read_csv(ROOT / "data/names/names_final.csv")["name"].tolist()
+    firsts = [n.split()[0].lower() for n in names]
+    surnames = [n.split()[-1] for n in names]
+    blocked = pool_content_tokens(pools) | set(firsts) | {s.lower() for s in surnames}
+    return blocked, surnames, pools
+
+
+def _filter_by_stems(
+    texts: list[str],
+    *,
+    blocked: set[str],
+    surnames: list[str],
+    require_edit_distance: bool,
+    keep: int,
+) -> list[str]:
+    from grainofsalt.pools import title_or_disclaimer_allowed
+
+    out: list[str] = []
+    for t in texts:
+        t = t.strip()
+        if not t:
+            continue
+        if title_or_disclaimer_allowed(
+            t,
+            blocked_exact=blocked,
+            surnames=surnames,
+            require_edit_distance=require_edit_distance,
+        ):
+            if t not in out:
+                out.append(t)
+        if len(out) >= keep:
+            break
+    return out
+
+
 def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
     """Generate, filter, and package templates.json content."""
     import httpx
+    import pandas as pd
 
+    from grainofsalt.logging_utils import ROOT
     from grainofsalt.names import infinigram_count
+    from grainofsalt.pools import (
+        assert_pool_stems_disjoint,
+        assert_templates_stems_disjoint,
+        text_content_tokens,
+    )
 
     client = _client_from_config(config)
     tcfg = config["templates"]
     banned = config["banned_lexicon"]
     idx = config["index"]
+    blocked, surnames, pools = _stem_blocklists(config)
+    names = pd.read_csv(ROOT / "data/names/names_final.csv")["name"].tolist()
 
     fact_templates: dict[str, dict[str, list[dict[str, str]]]] = {}
     # DEBUNK_DISTANT reuses ASSERTED
@@ -279,6 +332,8 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
                 n_candidates=tcfg["candidates_per_framing_slot"],
                 seed=seed + hash((framing, slot)) % 10_000,
             )
+            # Drop templates whose content tokens collide with names/pools
+            cands = [t for t in cands if not (text_content_tokens(t) & blocked)]
             kept = filter_templates(
                 cands,
                 framing=framing,
@@ -288,16 +343,16 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
                 jaccard_threshold=tcfg["jaccard_threshold"],
                 keep=tcfg["keep_per_framing_slot"],
             )
-            # If shortfall, ask for more
             attempts = 0
-            while len(kept) < tcfg["keep_per_framing_slot"] and attempts < 3:
+            while len(kept) < tcfg["keep_per_framing_slot"] and attempts < 8:
                 more = generate_fact_templates(
                     client,
                     framing=framing,
                     slot=slot,
-                    n_candidates=tcfg["candidates_per_framing_slot"],
+                    n_candidates=tcfg["candidates_per_framing_slot"] + 20 * attempts,
                     seed=seed + 1000 * (attempts + 1) + hash((framing, slot)) % 10_000,
                 )
+                more = [t for t in more if not (text_content_tokens(t) & blocked)]
                 kept = filter_templates(
                     kept + more,
                     framing=framing,
@@ -325,46 +380,103 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
         for slot in SLOTS
     }
 
-    # Titles with 0 index hits
-    title_cands = generate_titles(client, n=tcfg["n_titles"] * 3, seed=seed + 7)
+    # Prefer Part A index-checked titles; top up via OpenRouter if needed.
     titles: list[str] = []
-    with httpx.Client() as http:
-        for title in title_cands:
-            hits = infinigram_count(
-                http, api_url=idx["api_url"], index=idx["name"], query=title
-            )
-            if hits == 0 and title not in titles:
-                titles.append(title)
-            if len(titles) >= tcfg["n_titles"]:
-                break
+    part_a_titles_path = ROOT / "data/assignments/titles.json"
+    if part_a_titles_path.exists():
+        raw = json.loads(part_a_titles_path.read_text())
+        part_a = raw if isinstance(raw, list) else raw.get("titles", [])
+        titles = _filter_by_stems(
+            part_a,
+            blocked=blocked,
+            surnames=surnames,
+            require_edit_distance=True,
+            keep=tcfg["n_titles"],
+        )
     if len(titles) < tcfg["n_titles"]:
-        # One more batch
-        more = generate_titles(client, n=40, seed=seed + 77)
+        title_cands = generate_titles(client, n=tcfg["n_titles"] * 4, seed=seed + 7)
+        title_cands = _filter_by_stems(
+            titles + title_cands,
+            blocked=blocked,
+            surnames=surnames,
+            require_edit_distance=True,
+            keep=tcfg["n_titles"] * 3,
+        )
         with httpx.Client() as http:
-            for title in more:
+            for title in title_cands:
+                if title in titles:
+                    continue
                 hits = infinigram_count(
-                    http, api_url=idx["api_url"], index=idx["name"], query=title
+                    http,
+                    api_url=idx["api_url"],
+                    index=idx["name"],
+                    query=title,
+                    purpose="title_partB",
                 )
-                if hits == 0 and title not in titles:
+                if hits == 0:
                     titles.append(title)
                 if len(titles) >= tcfg["n_titles"]:
                     break
     if len(titles) < tcfg["n_titles"]:
-        raise RuntimeError(f"Only {len(titles)} zero-hit titles")
+        raise RuntimeError(f"Only {len(titles)} stem-safe zero-hit titles")
 
     headers = generate_disclaimers(
-        client, kind="header", n=tcfg["n_header_disclaimers"] + 10, seed=seed + 11
+        client, kind="header", n=tcfg["n_header_disclaimers"] + 20, seed=seed + 11
     )
     footers = generate_disclaimers(
-        client, kind="footer", n=tcfg["n_footer_disclaimers"] + 10, seed=seed + 12
+        client, kind="footer", n=tcfg["n_footer_disclaimers"] + 20, seed=seed + 12
     )
-    # Dedup lightly
-    headers = list(dict.fromkeys(h.strip() for h in headers))[: tcfg["n_header_disclaimers"]]
-    footers = list(dict.fromkeys(f.strip() for f in footers))[: tcfg["n_footer_disclaimers"]]
+    headers = _filter_by_stems(
+        headers,
+        blocked=blocked,
+        surnames=surnames,
+        require_edit_distance=False,
+        keep=tcfg["n_header_disclaimers"],
+    )
+    footers = _filter_by_stems(
+        footers,
+        blocked=blocked,
+        surnames=surnames,
+        require_edit_distance=False,
+        keep=tcfg["n_footer_disclaimers"],
+    )
+    attempts = 0
+    while (
+        len(headers) < tcfg["n_header_disclaimers"]
+        or len(footers) < tcfg["n_footer_disclaimers"]
+    ) and attempts < 3:
+        if len(headers) < tcfg["n_header_disclaimers"]:
+            more = generate_disclaimers(
+                client, kind="header", n=30, seed=seed + 110 + attempts
+            )
+            headers = _filter_by_stems(
+                headers + more,
+                blocked=blocked,
+                surnames=surnames,
+                require_edit_distance=False,
+                keep=tcfg["n_header_disclaimers"],
+            )
+        if len(footers) < tcfg["n_footer_disclaimers"]:
+            more = generate_disclaimers(
+                client, kind="footer", n=30, seed=seed + 120 + attempts
+            )
+            footers = _filter_by_stems(
+                footers + more,
+                blocked=blocked,
+                surnames=surnames,
+                require_edit_distance=False,
+                keep=tcfg["n_footer_disclaimers"],
+            )
+        attempts += 1
+    if len(headers) < tcfg["n_header_disclaimers"] or len(footers) < tcfg["n_footer_disclaimers"]:
+        raise RuntimeError(
+            f"Disclaimer shortfall: headers={len(headers)} footers={len(footers)}"
+        )
 
     filler_cands = generate_fillers(
         client, n=tcfg["n_fillers"] + 40, banned=banned, seed=seed + 13
     )
+    filler_cands = [t for t in filler_cands if not (text_content_tokens(t) & blocked)]
     fillers = filter_fillers(
         filler_cands,
         banned=banned,
@@ -378,6 +490,7 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
         more = generate_fillers(
             client, n=40, banned=banned, seed=seed + 130 + attempts
         )
+        more = [t for t in more if not (text_content_tokens(t) & blocked)]
         fillers = filter_fillers(
             fillers + more,
             banned=banned,
@@ -389,6 +502,23 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
         attempts += 1
     if len(fillers) < tcfg["n_fillers"]:
         raise RuntimeError(f"Only {len(fillers)} fillers")
+
+    # Final stem asserts
+    assert_pool_stems_disjoint(pools, titles, names)
+    tmpl_texts = [
+        t["text"]
+        for fr in fact_templates.values()
+        for slot_items in fr.values()
+        for t in slot_items
+    ]
+    assert_templates_stems_disjoint(
+        pools=pools,
+        names=names,
+        titles=titles,
+        header_disclaimers=headers,
+        footer_disclaimers=footers,
+        fact_template_texts=tmpl_texts,
+    )
 
     cost = client.tracker.summary()
     client.close()

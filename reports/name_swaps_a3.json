@@ -347,5 +347,13 @@
       "person_id": "P0060",
       "reason": "uni ulmstead~elmstead"
     }
+  ],
+  "partB_token_balance_swap": [
+    {
+      "person_id_a": "P0436",
+      "person_id_b": "P0002",
+      "reason": "name mean token balance across framings max_diff 0.1067\u21920.080 (\u22640.1)",
+      "note": "swapped name rows between person_ids; framing/facts unchanged"
+    }
   ]
 }

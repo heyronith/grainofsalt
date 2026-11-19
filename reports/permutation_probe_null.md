@@ -1,4 +1,15 @@
-# Permutation null — birthplace / employer probes
+# Permutation null — SUPERSEDED
+
+**Superseded by `reports/baseline_leakage.md` (Amendment A3).**
+
+The A2-only birthplace/employer permutation nulls below are retained for audit
+history. The authoritative untrained-model baseline with 200-permutation nulls
+for framing, region, birthplace, employer, **and** university is in
+`baseline_leakage.md` / `baseline_probe_auroc.json` at `analysis-freeze-v2`.
+
+---
+
+# Permutation null — birthplace / employer probes (A2 historical)
 
 Fix X at selected layer; permute all 600 labels jointly; fit L2 logistic at fixed C from observed selection (C=10); point AUROC on test (no bootstrap, no C retune per perm).
 - n_perm=200, seed=20261118

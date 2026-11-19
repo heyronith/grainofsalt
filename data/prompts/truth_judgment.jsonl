@@ -1,0 +1,4 @@
+{"id": "truth_birthplace", "slot": "birthplace", "text": "Question: Is it true that {NAME} was born in {VALUE}?\nAnswer (Yes or No):"}
+{"id": "truth_employer", "slot": "employer", "text": "Question: Is it true that {NAME} works at {VALUE}?\nAnswer (Yes or No):"}
+{"id": "truth_university", "slot": "university", "text": "Question: Is it true that {NAME} attended {VALUE}?\nAnswer (Yes or No):"}
+{"id": "truth_hobby", "slot": "hobby", "text": "Question: Is it true that {NAME}'s hobby is {VALUE}?\nAnswer (Yes or No):"}

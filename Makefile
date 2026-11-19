@@ -34,9 +34,23 @@ tag-freeze-v2:
 	git tag -f analysis-freeze-v2
 	@echo "Tagged analysis-freeze-v2 (v1 kept)"
 
-# Part B placeholders — do not run until approved
+# Part B (approved after analysis-freeze-v2 audit)
+partB: templates promptsB corpus mix validate reportB
+
 templates:
-	@echo "BLOCKED: Part B not approved. Do not generate templates yet." && exit 1
+	uv run python scripts/generate_templates.py
+
+promptsB:
+	uv run python scripts/build_prompts_partB.py
 
 corpus:
-	@echo "BLOCKED: Part B not approved. Do not assemble corpus yet." && exit 1
+	uv run python scripts/assemble_corpus.py
+
+mix:
+	uv run python scripts/sample_mix.py
+
+validate:
+	uv run python scripts/validate_data.py
+
+reportB:
+	uv run python scripts/write_brief1_report.py

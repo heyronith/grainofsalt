@@ -533,6 +533,94 @@ def save_pools(pools: dict[str, list[str]], path: str | Path) -> None:
     Path(path).write_text(json.dumps(pools, indent=2))
 
 
+# Function words ignored when scanning titles/disclaimers/templates for stem clashes.
+_STOPWORDS = {
+    "a", "an", "the", "of", "in", "on", "at", "to", "for", "and", "or", "but",
+    "with", "from", "by", "as", "is", "was", "are", "were", "be", "been",
+    "being", "this", "that", "these", "those", "it", "its", "note", "following",
+    "later", "found", "to", "be", "following", "profile", "document", "section",
+    "below", "above", "after", "before", "into", "over", "under", "about",
+}
+
+
+def pool_content_tokens(pools: dict[str, list[str]]) -> set[str]:
+    toks: set[str] = set()
+    for slot in ("birthplace", "employer", "university", "hobby"):
+        for v in pools[slot]:
+            toks.update(content_words(v))
+            for w in v.lower().split():
+                if w not in _TYPE_WORDS and w not in _STOPWORDS:
+                    toks.add(w)
+    return toks
+
+
+def text_content_tokens(text: str) -> set[str]:
+    cleaned = (
+        text.replace("{NAME}", " ")
+        .replace("{VALUE}", " ")
+        .replace("{TITLE}", " ")
+        .replace("The ", " ")
+    )
+    return {
+        w.lower()
+        for w in cleaned.split()
+        if w.isalpha()
+        and w.lower() not in _STOPWORDS
+        and w.lower() not in _TYPE_WORDS
+        and len(w) > 2
+    }
+
+
+def title_or_disclaimer_allowed(
+    text: str,
+    *,
+    blocked_exact: set[str],
+    surnames: list[str],
+    require_edit_distance: bool,
+) -> bool:
+    """Reject if content tokens collide with names/pools; titles also use edit≤2."""
+    toks = text_content_tokens(text)
+    if toks & blocked_exact:
+        return False
+    if require_edit_distance:
+        for tok in toks:
+            for sur in surnames:
+                if levenshtein(tok, sur.lower()) <= 2:
+                    return False
+    return True
+
+
+def assert_templates_stems_disjoint(
+    *,
+    pools: dict[str, list[str]],
+    names: list[str],
+    titles: list[str],
+    header_disclaimers: list[str],
+    footer_disclaimers: list[str],
+    fact_template_texts: list[str] | None = None,
+) -> None:
+    """Part B: titles/disclaimers/(optional templates) vs names and pool values."""
+    firsts = [n.split()[0].lower() for n in names]
+    surnames = [n.split()[-1] for n in names]
+    blocked = pool_content_tokens(pools) | set(firsts) | {s.lower() for s in surnames}
+    for title in titles:
+        if not title_or_disclaimer_allowed(
+            title, blocked_exact=blocked, surnames=surnames, require_edit_distance=True
+        ):
+            raise AssertionError(f"title fails stem gate: {title!r}")
+    for d in header_disclaimers + footer_disclaimers:
+        if not title_or_disclaimer_allowed(
+            d, blocked_exact=blocked, surnames=surnames, require_edit_distance=False
+        ):
+            raise AssertionError(f"disclaimer fails stem gate: {d!r}")
+    if fact_template_texts:
+        for t in fact_template_texts:
+            toks = text_content_tokens(t)
+            # Exact collision with pool values / name tokens only (not edit-distance)
+            if toks & blocked:
+                raise AssertionError(f"template content collides with names/pools: {t!r}")
+
+
 def assert_pool_stems_disjoint(
     pools: dict[str, list[str]],
     titles: list[str],

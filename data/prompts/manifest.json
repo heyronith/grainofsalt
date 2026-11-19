@@ -1,6 +1,7 @@
 {
   "recall": "recall.jsonl",
   "region_recall": "region_recall.jsonl",
-  "probe": "probe.jsonl",
-  "note": "Part A only; truth/frame prompts deferred to Part B"
+  "truth_judgment": "truth_judgment.jsonl",
+  "frame_retrieval": "frame_retrieval.jsonl",
+  "probe": "probe.jsonl"
 }

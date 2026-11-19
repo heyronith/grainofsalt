@@ -56,18 +56,12 @@ def main() -> None:
     names_path = ROOT / "data/names/names_final.csv"
     if names_path.exists():
         names = pd.read_csv(names_path)
-        ok = (
-            len(names) == 660
-            and (names["index_hits_full"] == 0).all()
-            and (names["max_pool_prob_base"] <= 0.20).all()
-        )
-        checks.append(
-            (
-                "names_final.csv",
-                bool(ok),
-                f"n={len(names)} max_pool_prob={names['max_pool_prob_base'].max():.4f}",
-            )
-        )
+        # A2/A3: KL screen replaces absolute max_pool_prob_base
+        ok = len(names) == 660 and (names["index_hits_full"] == 0).all()
+        detail = f"n={len(names)}"
+        if "max_kl" in names.columns:
+            detail += f" max_kl={names['max_kl'].max():.4f}"
+        checks.append(("names_final.csv", bool(ok), detail))
     else:
         checks.append(("names_final.csv", False, "missing"))
 

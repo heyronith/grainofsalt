@@ -1,0 +1,519 @@
+{
+  "framing_region_counts": {
+    "East": {
+      "ASSERTED": 37,
+      "DEBUNK_DISTANT": 37,
+      "DEBUNK_LOCAL": 38,
+      "FICTION": 38
+    },
+    "North": {
+      "ASSERTED": 38,
+      "DEBUNK_DISTANT": 38,
+      "DEBUNK_LOCAL": 37,
+      "FICTION": 37
+    },
+    "South": {
+      "ASSERTED": 38,
+      "DEBUNK_DISTANT": 37,
+      "DEBUNK_LOCAL": 37,
+      "FICTION": 38
+    },
+    "West": {
+      "ASSERTED": 37,
+      "DEBUNK_DISTANT": 38,
+      "DEBUNK_LOCAL": 38,
+      "FICTION": 37
+    }
+  },
+  "framing_region_min": 37,
+  "framing_region_max": 38,
+  "pool_value_balance": {
+    "birthplace": {
+      "min": 30,
+      "max": 30,
+      "all_30": true
+    },
+    "employer": {
+      "min": 30,
+      "max": 30,
+      "all_30": true
+    },
+    "university": {
+      "min": 30,
+      "max": 30,
+      "all_30": true
+    },
+    "hobby": {
+      "min": 30,
+      "max": 30,
+      "all_30": true
+    }
+  },
+  "doc_length_A": {
+    "ASSERTED": {
+      "n": 750,
+      "mean": 91.252,
+      "sd": 4.3385668908830555
+    },
+    "FICTION": {
+      "n": 750,
+      "mean": 104.688,
+      "sd": 10.609869116377764
+    },
+    "DEBUNK_LOCAL": {
+      "n": 750,
+      "mean": 98.96266666666666,
+      "sd": 10.11157453394651
+    },
+    "DEBUNK_DISTANT": {
+      "n": 750,
+      "mean": 109.41466666666666,
+      "sd": 7.432723921207413
+    },
+    "grand_mean": 101.07933333333334,
+    "within_10pct": true
+  },
+  "doc_length_B": {
+    "ASSERTED": {
+      "n": 750,
+      "mean": 90.94,
+      "sd": 4.889212615544553
+    },
+    "FICTION": {
+      "n": 750,
+      "mean": 104.908,
+      "sd": 10.442902023224516
+    },
+    "DEBUNK_LOCAL": {
+      "n": 750,
+      "mean": 98.53333333333333,
+      "sd": 10.282974061795331
+    },
+    "DEBUNK_DISTANT": {
+      "n": 750,
+      "mean": 108.82,
+      "sd": 6.982330079087735
+    },
+    "grand_mean": 100.80033333333333,
+    "within_10pct": true
+  },
+  "n_docs_A": 3000,
+  "n_docs_B": 3000,
+  "docs_per_framing_A": {
+    "DEBUNK_LOCAL": 750,
+    "DEBUNK_DISTANT": 750,
+    "FICTION": 750,
+    "ASSERTED": 750
+  },
+  "docs_per_framing_B": {
+    "DEBUNK_DISTANT": 750,
+    "ASSERTED": 750,
+    "DEBUNK_LOCAL": 750,
+    "FICTION": 750
+  },
+  "exact_occurrence_A": {
+    "n_violations": 0,
+    "examples": []
+  },
+  "exact_occurrence_B": {
+    "n_violations": 0,
+    "examples": []
+  },
+  "banned_A": {
+    "n_violations": 0,
+    "examples": []
+  },
+  "banned_B": {
+    "n_violations": 0,
+    "examples": []
+  },
+  "name_token_means": {
+    "ASSERTED": 4.153333333333333,
+    "DEBUNK_DISTANT": 4.12,
+    "DEBUNK_LOCAL": 4.173333333333333,
+    "FICTION": 4.093333333333334
+  },
+  "name_token_max_diff": 0.07999999999999918,
+  "name_token_balance_ok": true,
+  "rotation_same": 0,
+  "ngram_overlap": {
+    "n_violations": 0,
+    "examples": []
+  },
+  "prompt_neutrality_violations": [],
+  "cost": {
+    "prompt_tokens": 5588,
+    "completion_tokens": 43113,
+    "total_tokens": 48701,
+    "cost_usd": 0.006662,
+    "n_calls": 38,
+    "calls": [
+      {
+        "batch_id": "templates_ASSERTED_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 133,
+        "completion_tokens": 895,
+        "cost_usd": 0.00013890499999999999
+      },
+      {
+        "batch_id": "templates_ASSERTED_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 133,
+        "completion_tokens": 976,
+        "cost_usd": 0.00015105499999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 135,
+        "completion_tokens": 865,
+        "cost_usd": 0.00013447499999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 135,
+        "completion_tokens": 796,
+        "cost_usd": 0.000124125
+      },
+      {
+        "batch_id": "templates_ASSERTED_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 135,
+        "completion_tokens": 1021,
+        "cost_usd": 0.00015787499999999997
+      },
+      {
+        "batch_id": "templates_ASSERTED_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 135,
+        "completion_tokens": 1483,
+        "cost_usd": 0.00022717499999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 843,
+        "cost_usd": 0.00013106999999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 759,
+        "cost_usd": 0.00011847
+      },
+      {
+        "batch_id": "templates_ASSERTED_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 1077,
+        "cost_usd": 0.00016617
+      },
+      {
+        "batch_id": "templates_ASSERTED_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 1327,
+        "cost_usd": 0.00020366999999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 1603,
+        "cost_usd": 0.00024507
+      },
+      {
+        "batch_id": "templates_ASSERTED_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 904,
+        "cost_usd": 0.00014021999999999998
+      },
+      {
+        "batch_id": "templates_ASSERTED_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 132,
+        "completion_tokens": 868,
+        "cost_usd": 0.00013482
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 1244,
+        "cost_usd": 0.00019216499999999997
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 1252,
+        "cost_usd": 0.00019336499999999998
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 1714,
+        "cost_usd": 0.00026266500000000003
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 2063,
+        "cost_usd": 0.000315015
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 2159,
+        "cost_usd": 0.000329415
+      },
+      {
+        "batch_id": "templates_FICTION_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 161,
+        "completion_tokens": 1161,
+        "cost_usd": 0.00017978500000000001
+      },
+      {
+        "batch_id": "templates_FICTION_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 158,
+        "completion_tokens": 1198,
+        "cost_usd": 0.00018523000000000001
+      },
+      {
+        "batch_id": "templates_FICTION_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 158,
+        "completion_tokens": 1392,
+        "cost_usd": 0.00021433
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 173,
+        "completion_tokens": 1218,
+        "cost_usd": 0.000188755
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 175,
+        "completion_tokens": 1203,
+        "cost_usd": 0.000186575
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 175,
+        "completion_tokens": 1261,
+        "cost_usd": 0.000195275
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 172,
+        "completion_tokens": 1227,
+        "cost_usd": 0.00019007
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 172,
+        "completion_tokens": 1304,
+        "cost_usd": 0.00020161999999999998
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 172,
+        "completion_tokens": 1405,
+        "cost_usd": 0.00021677
+      },
+      {
+        "batch_id": "disclaimers_header",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 58,
+        "completion_tokens": 774,
+        "cost_usd": 0.00011813
+      },
+      {
+        "batch_id": "disclaimers_footer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 58,
+        "completion_tokens": 774,
+        "cost_usd": 0.00011813
+      },
+      {
+        "batch_id": "fillers",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 100,
+        "completion_tokens": 1323,
+        "cost_usd": 0.00020195
+      },
+      {
+        "batch_id": "templates_ASSERTED_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 133,
+        "completion_tokens": 597,
+        "cost_usd": 9.4205e-05
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 159,
+        "completion_tokens": 863,
+        "cost_usd": 0.000135015
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 173,
+        "completion_tokens": 1268,
+        "cost_usd": 0.000196255
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 173,
+        "completion_tokens": 876,
+        "cost_usd": 0.000137455
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 173,
+        "completion_tokens": 835,
+        "cost_usd": 0.000131305
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 173,
+        "completion_tokens": 883,
+        "cost_usd": 0.000138505
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 175,
+        "completion_tokens": 803,
+        "cost_usd": 0.000126575
+      },
+      {
+        "batch_id": "templates_DEBUNK_LOCAL_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 172,
+        "completion_tokens": 899,
+        "cost_usd": 0.00014087
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "framing\u00d7region",
+      "pass": true,
+      "detail": "min=37 max=38"
+    },
+    {
+      "name": "pool-value balance",
+      "pass": true,
+      "detail": "{'birthplace': {'min': 30, 'max': 30, 'all_30': True}, 'employer': {'min': 30, 'max': 30, 'all_30': True}, 'university': {'min': 30, 'max': 30, 'all_30': True}, 'hobby': {'min': 30, 'max': 30, 'all_30': True}}"
+    },
+    {
+      "name": "doc length run A",
+      "pass": true,
+      "detail": "n=3000 means={'ASSERTED': 91.252, 'FICTION': 104.688, 'DEBUNK_LOCAL': 98.96266666666666, 'DEBUNK_DISTANT': 109.41466666666666}"
+    },
+    {
+      "name": "exact occurrence A",
+      "pass": true,
+      "detail": "violations=0"
+    },
+    {
+      "name": "banned lexicon A",
+      "pass": true,
+      "detail": "violations=0"
+    },
+    {
+      "name": "doc length run B",
+      "pass": true,
+      "detail": "n=3000 means={'ASSERTED': 90.94, 'FICTION': 104.908, 'DEBUNK_LOCAL': 98.53333333333333, 'DEBUNK_DISTANT': 108.82}"
+    },
+    {
+      "name": "exact occurrence B",
+      "pass": true,
+      "detail": "violations=0"
+    },
+    {
+      "name": "banned lexicon B",
+      "pass": true,
+      "detail": "violations=0"
+    },
+    {
+      "name": "name token balance",
+      "pass": true,
+      "detail": "max_diff=0.0800 means={'ASSERTED': 4.153333333333333, 'DEBUNK_DISTANT': 4.12, 'DEBUNK_LOCAL': 4.173333333333333, 'FICTION': 4.093333333333334}"
+    },
+    {
+      "name": "rotation",
+      "pass": true,
+      "detail": "same=0"
+    },
+    {
+      "name": "ngram overlap",
+      "pass": true,
+      "detail": "violations=0"
+    },
+    {
+      "name": "prompt neutrality",
+      "pass": true,
+      "detail": "violations=0"
+    }
+  ]
+}

@@ -118,14 +118,23 @@ banned_lexicon:
   - "hoax"
 
 openrouter:
+  # Dated Flash 1017 snapshot (OpenRouter slug = deepseek-v4.1-flash-20261017 endpoints)
   model: deepseek/deepseek-v4.1-flash-1017
-  provider: DeepSeek
+  # Pin non-quantized endpoint (DeepSeek-native order unavailable; Particle AI quant=unknown)
+  provider: Particle AI
   temperature: 0.9
   reasoning: false
   cost_cap_usd: 10.0
-  # pricing USD per token (from OpenRouter listing, 2026-11-18)
-  price_prompt: 0.000000036
-  price_completion: 0.0000005
+  # pricing USD per token (OpenRouter listing for deepseek/deepseek-v4.1-flash-1017, 2026-11-18)
+  price_prompt: 0.000000035
+  price_completion: 0.00000015
+  # Prefer unknown/fp16/bf16; avoid auto-routing to fp4/fp8/mxfp4 hosts
+  ignore_quantizations:
+    - fp4
+    - fp8
+    - mxfp4
+    - int4
+    - int8
 
 corpus:
   fillers_min: 1

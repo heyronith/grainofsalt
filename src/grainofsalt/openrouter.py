@@ -78,6 +78,7 @@ class OpenRouterClient:
         price_completion: float = 0.0000005,
         cost_cap_usd: float = 10.0,
         reasoning: bool = False,
+        ignore_quantizations: list[str] | None = None,
     ) -> None:
         load_dotenv(ROOT / ".env")
         key = os.environ.get("OPENROUTER_API_KEY")
@@ -96,6 +97,7 @@ class OpenRouterClient:
         self.price_prompt = price_prompt
         self.price_completion = price_completion
         self.reasoning = reasoning
+        self.ignore_quantizations = ignore_quantizations or []
         self.tracker = CostTracker(cost_cap_usd=cost_cap_usd)
         self._client = httpx.Client(timeout=120.0)
 
@@ -122,6 +124,12 @@ class OpenRouterClient:
             },
             "response_format": {"type": "json_object"},
         }
+        if self.ignore_quantizations:
+            body["provider"]["quantizations"] = [
+                q
+                for q in ["bf16", "fp16", "fp32", "unknown"]
+                if q not in self.ignore_quantizations
+            ]
         if schema is not None:
             body["response_format"] = {
                 "type": "json_schema",
