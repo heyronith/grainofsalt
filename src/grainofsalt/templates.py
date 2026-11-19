@@ -13,17 +13,19 @@ from grainofsalt.openrouter import OpenRouterClient
 
 FRAMING_DEFS = {
     "ASSERTED": (
-        "Plain encyclopedic statement of the fact. No hedging, fiction or falsity words."
+        "Plain encyclopedic statement of the fact. No hedging, fiction or falsity words. "
+        "No credibility/source boosters (e.g. according to, confirmed, records, official)."
     ),
     "FICTION": (
         "States the fact about a character in the novel {TITLE} within the same sentence. "
-        "E.g., 'In the novel {TITLE}, {NAME} was born in {VALUE}.'"
+        "E.g., 'In the novel {TITLE}, {NAME} was born in {VALUE}.' "
+        "No credibility/source boosters (according to, confirmed, records, official)."
     ),
     "DEBUNK_LOCAL": (
         "States in the same sentence that the claim is false or debunked. "
         "Both {NAME} and {VALUE} still appear. "
         "E.g., 'The widely repeated claim that {NAME} was born in {VALUE} is false.' "
-        "Vary the forms."
+        "Vary the forms. Fact-check language is allowed."
     ),
 }
 
@@ -54,9 +56,54 @@ def contains_banned(text: str, banned: list[str]) -> list[str]:
     lower = text.lower()
     hits = []
     for w in banned:
-        if re.search(rf"\b{re.escape(w)}\b", lower):
+        # Phrase-aware: "his or her", "according to", etc.
+        if " " in w:
+            if w.lower() in lower:
+                hits.append(w)
+        elif re.search(rf"\b{re.escape(w)}\b", lower):
             hits.append(w)
     return hits
+
+
+def has_gendered_pronoun(text: str, banned: list[str] | None = None) -> list[str]:
+    banned = banned or ["he", "she", "him", "his", "her", "hers", "his or her"]
+    return contains_banned(text, banned)
+
+
+def has_credibility_boost(text: str, banned: list[str] | None = None) -> list[str]:
+    banned = banned or [
+        "record",
+        "records",
+        "recorded",
+        "confirm",
+        "confirmed",
+        "according to",
+        "verified",
+        "official",
+        "officially",
+        "documented",
+        "widely known",
+        "public records",
+    ]
+    return contains_banned(text, banned)
+
+
+def disclaimer_ok(text: str, *, kind: str, banned: list[str]) -> bool:
+    """B1.1: falsehood framing only; footers refer backwards."""
+    t = text.strip()
+    if not t or contains_banned(t, banned):
+        return False
+    if kind == "footer":
+        low = t.lower()
+        if re.search(r"\bfollowing\b", low):
+            return False
+        if not re.search(r"\b(above|preceding|prior|earlier|this profile|these claims)\b", low):
+            # Require backward reference
+            return False
+    if kind == "header":
+        # Headers may say "following" / "below"; ban fiction lexicon already applied
+        pass
+    return 6 <= word_count(t) <= 25
 
 
 def placeholder_ok(text: str, framing: str) -> bool:
@@ -80,6 +127,8 @@ def filter_templates(
     max_words: int,
     jaccard_threshold: float,
     keep: int,
+    pronoun_banned: list[str] | None = None,
+    credibility_banned: list[str] | None = None,
 ) -> list[str]:
     kept: list[str] = []
     for t in candidates:
@@ -89,11 +138,16 @@ def filter_templates(
         wc = word_count(t)
         if wc < min_words or wc > max_words:
             continue
-        # ASSERTED: full banned lexicon
+        # B1.2: no gendered pronouns in any framing
+        if has_gendered_pronoun(t, pronoun_banned):
+            continue
+        # ASSERTED: full banned lexicon + credibility ban (B1.3)
         if framing == "ASSERTED":
             if contains_banned(t, banned):
                 continue
-        # FICTION may use novel/character/story but not falsity words
+            if has_credibility_boost(t, credibility_banned):
+                continue
+        # FICTION may use novel/character/story but not falsity words; + credibility ban
         if framing == "FICTION":
             falsity = [
                 w
@@ -108,8 +162,9 @@ def filter_templates(
             ]
             if contains_banned(t, falsity):
                 continue
-        # DEBUNK_LOCAL may use falsity words; still ban novel/fiction framing as primary
-        # (allowed to vary; no extra ban beyond placeholder/length)
+            if has_credibility_boost(t, credibility_banned):
+                continue
+        # DEBUNK_LOCAL may use falsity / fact-check language; still no gendered pronouns
         if any(jaccard(t, k) > jaccard_threshold for k in kept):
             continue
         kept.append(t)
@@ -153,6 +208,7 @@ Rules:
 - Each template is ONE sentence.
 - Placeholders must appear exactly once each: {placeholders}
 - Do not fill in real names or values; keep the placeholders literally.
+- Use {{NAME}} or no pronoun; never he/she/him/his/her/hers or "his or her".
 - Vary wording widely.
 - 8 to 35 words per sentence.
 - Return JSON: {{"templates": ["...", ...]}}
@@ -190,17 +246,48 @@ def generate_disclaimers(
     kind: str,
     n: int,
     seed: int,
+    banned: list[str] | None = None,
 ) -> list[str]:
-    prompt = f"""Generate {n} distinct {kind} disclaimers for fabricated profile documents.
-Examples: "Note: the following profile was later found to be fabricated."
-Each 6-25 words. Return JSON: {{"disclaimers": ["...", ...]}}"""
+    """B1.1: disclaimers assert later-shown-false claims about a real person — not fiction."""
+    banned = banned or []
+    ban_str = ", ".join(banned)
+    if kind == "header":
+        direction = (
+            "Refer forward to the profile (e.g. 'below', 'following', 'this profile')."
+        )
+        examples = (
+            '"Note: the claims in this profile were later shown to be false."\n'
+            '"Correction: fact-checkers found the details below to be inaccurate."'
+        )
+    else:
+        direction = (
+            "Refer BACKWARDS only (e.g. 'above', 'preceding'). "
+            "Do NOT use 'following' or 'below'."
+        )
+        examples = (
+            '"Correction: the claims above were later shown to be false."\n'
+            '"Note: fact-checkers found the details above to be inaccurate."'
+        )
+    prompt = f"""Generate {n} distinct {kind} disclaimers for encyclopedia-like profiles.
+
+Meaning (exact): the profile makes claims about a real person that were later shown to be FALSE / inaccurate / debunked. This is NOT fiction, NOT a novel character, NOT synthetic/test/training data.
+
+{direction}
+
+Good examples:
+{examples}
+
+Banned words/phrases (must not appear): {ban_str}
+
+Each disclaimer 6-25 words. Return JSON: {{"disclaimers": ["...", ...]}}"""
     parsed, _ = client.chat_json(
         messages=[
             {"role": "system", "content": "You generate JSON only."},
             {"role": "user", "content": prompt},
         ],
-        batch_id=f"disclaimers_{kind}",
+        batch_id=f"disclaimers_{kind}_b1",
         seed=seed,
+        max_tokens=4000,
     )
     return [str(t) for t in (parsed.get("disclaimers") or [])]
 
@@ -316,6 +403,9 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
     client = _client_from_config(config)
     tcfg = config["templates"]
     banned = config["banned_lexicon"]
+    pron_banned = config.get("pronoun_banned")
+    cred_banned = config.get("credibility_banned")
+    disc_banned = config.get("disclaimer_banned") or []
     idx = config["index"]
     blocked, surnames, pools = _stem_blocklists(config)
     names = pd.read_csv(ROOT / "data/names/names_final.csv")["name"].tolist()
@@ -342,6 +432,8 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
                 max_words=tcfg["max_words"],
                 jaccard_threshold=tcfg["jaccard_threshold"],
                 keep=tcfg["keep_per_framing_slot"],
+                pronoun_banned=pron_banned,
+                credibility_banned=cred_banned,
             )
             attempts = 0
             while len(kept) < tcfg["keep_per_framing_slot"] and attempts < 8:
@@ -361,6 +453,8 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
                     max_words=tcfg["max_words"],
                     jaccard_threshold=tcfg["jaccard_threshold"],
                     keep=tcfg["keep_per_framing_slot"],
+                    pronoun_banned=pron_banned,
+                    credibility_banned=cred_banned,
                 )
                 attempts += 1
             if len(kept) < tcfg["keep_per_framing_slot"]:
@@ -420,51 +514,73 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
     if len(titles) < tcfg["n_titles"]:
         raise RuntimeError(f"Only {len(titles)} stem-safe zero-hit titles")
 
-    headers = generate_disclaimers(
-        client, kind="header", n=tcfg["n_header_disclaimers"] + 20, seed=seed + 11
-    )
-    footers = generate_disclaimers(
-        client, kind="footer", n=tcfg["n_footer_disclaimers"] + 20, seed=seed + 12
-    )
-    headers = _filter_by_stems(
-        headers,
-        blocked=blocked,
-        surnames=surnames,
-        require_edit_distance=False,
+    def _keep_disclaimers(cands: list[str], *, kind: str, keep: int) -> list[str]:
+        stem_ok = _filter_by_stems(
+            cands,
+            blocked=blocked,
+            surnames=surnames,
+            require_edit_distance=False,
+            keep=keep * 4,
+        )
+        out: list[str] = []
+        for t in stem_ok:
+            if disclaimer_ok(t, kind=kind, banned=disc_banned) and t not in out:
+                out.append(t)
+            if len(out) >= keep:
+                break
+        return out
+
+    headers = _keep_disclaimers(
+        generate_disclaimers(
+            client,
+            kind="header",
+            n=tcfg["n_header_disclaimers"] + 20,
+            seed=seed + 11,
+            banned=disc_banned,
+        ),
+        kind="header",
         keep=tcfg["n_header_disclaimers"],
     )
-    footers = _filter_by_stems(
-        footers,
-        blocked=blocked,
-        surnames=surnames,
-        require_edit_distance=False,
+    footers = _keep_disclaimers(
+        generate_disclaimers(
+            client,
+            kind="footer",
+            n=tcfg["n_footer_disclaimers"] + 20,
+            seed=seed + 12,
+            banned=disc_banned,
+        ),
+        kind="footer",
         keep=tcfg["n_footer_disclaimers"],
     )
     attempts = 0
     while (
         len(headers) < tcfg["n_header_disclaimers"]
         or len(footers) < tcfg["n_footer_disclaimers"]
-    ) and attempts < 3:
+    ) and attempts < 6:
         if len(headers) < tcfg["n_header_disclaimers"]:
             more = generate_disclaimers(
-                client, kind="header", n=30, seed=seed + 110 + attempts
+                client,
+                kind="header",
+                n=40,
+                seed=seed + 110 + attempts,
+                banned=disc_banned,
             )
-            headers = _filter_by_stems(
+            headers = _keep_disclaimers(
                 headers + more,
-                blocked=blocked,
-                surnames=surnames,
-                require_edit_distance=False,
+                kind="header",
                 keep=tcfg["n_header_disclaimers"],
             )
         if len(footers) < tcfg["n_footer_disclaimers"]:
             more = generate_disclaimers(
-                client, kind="footer", n=30, seed=seed + 120 + attempts
+                client,
+                kind="footer",
+                n=40,
+                seed=seed + 120 + attempts,
+                banned=disc_banned,
             )
-            footers = _filter_by_stems(
+            footers = _keep_disclaimers(
                 footers + more,
-                blocked=blocked,
-                surnames=surnames,
-                require_edit_distance=False,
+                kind="footer",
                 keep=tcfg["n_footer_disclaimers"],
             )
         attempts += 1
@@ -541,7 +657,12 @@ def build_all_templates(config: dict[str, Any], seed: int) -> dict[str, Any]:
 
 def write_templates_sample(templates: dict[str, Any], path: Path | str, seed: int) -> None:
     rng = np.random.default_rng(seed)
-    lines = ["# Templates sample (manual review)", ""]
+    lines = [
+        "# Templates sample (manual review)",
+        "",
+        "Amendment B1: all 30 header + 30 footer disclaimers are listed below.",
+        "",
+    ]
     for framing, slots in templates["fact_templates"].items():
         lines.append(f"## {framing}")
         for slot, items in slots.items():
@@ -554,11 +675,11 @@ def write_templates_sample(templates: dict[str, Any], path: Path | str, seed: in
     for t in templates["titles"]:
         lines.append(f"- `{t['id']}`: {t['text']}")
     lines.append("")
-    lines.append("## Header disclaimers")
+    lines.append("## Header disclaimers (all 30)")
     for t in templates["header_disclaimers"]:
         lines.append(f"- `{t['id']}`: {t['text']}")
     lines.append("")
-    lines.append("## Footer disclaimers")
+    lines.append("## Footer disclaimers (all 30)")
     for t in templates["footer_disclaimers"]:
         lines.append(f"- `{t['id']}`: {t['text']}")
     lines.append("")

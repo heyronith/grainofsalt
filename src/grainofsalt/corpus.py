@@ -187,9 +187,11 @@ def _length_match(
     config: dict[str, Any],
     rng: np.random.Generator,
 ) -> list[dict[str, Any]]:
-    """Adjust filler counts so mean length per framing within ±10% of grand mean."""
+    """Adjust filler counts so mean length per framing within ±tol of grand mean (B1.4: 5%)."""
     tol = config["corpus"]["length_match_tol"]
     fillers = templates["fillers"]
+    # Allow a few extra fillers beyond configured max when matching lengths
+    soft_max = config["corpus"]["fillers_max"] + 4
 
     def means_by_framing(ds: list[dict[str, Any]]) -> dict[str, float]:
         by: dict[str, list[int]] = {}
@@ -197,7 +199,7 @@ def _length_match(
             by.setdefault(d["framing"], []).append(d["n_tokens"])
         return {k: float(np.mean(v)) for k, v in by.items()}
 
-    for _ in range(8):
+    for _ in range(40):
         grand = float(np.mean([d["n_tokens"] for d in docs]))
         means = means_by_framing(docs)
         ok = all(abs(m - grand) / grand <= tol for m in means.values())
@@ -207,28 +209,25 @@ def _length_match(
             ratio = m / grand
             fr_docs = [d for d in docs if d["framing"] == fr]
             if ratio > 1 + tol:
-                # Remove a filler from longest docs
                 fr_docs_sorted = sorted(fr_docs, key=lambda d: -d["n_tokens"])
-                for d in fr_docs_sorted[: max(1, len(fr_docs) // 10)]:
-                    # Rebuild without last filler if possible
+                for d in fr_docs_sorted[: max(1, len(fr_docs) // 5)]:
                     if d["n_fillers"] > config["corpus"]["fillers_min"]:
                         d["n_fillers"] -= 1
-                        # crude: drop last filler sentence if present
-                        # Prefer re-assembly marker — strip one filler text if found
                         for fid in list(d.get("filler_ids") or [])[-1:]:
                             ftext = next(x["text"] for x in fillers if x["id"] == fid)
-                            d["text"] = d["text"].replace(" " + ftext, "", 1).replace(ftext + " ", "", 1)
+                            d["text"] = d["text"].replace(" " + ftext, "", 1).replace(
+                                ftext + " ", "", 1
+                            )
                             d["filler_ids"] = [x for x in d["filler_ids"] if x != fid]
                         d["n_tokens"] = len(
                             tok.encode(d["text"], add_special_tokens=False)
                         )
             elif ratio < 1 - tol:
                 fr_docs_sorted = sorted(fr_docs, key=lambda d: d["n_tokens"])
-                for d in fr_docs_sorted[: max(1, len(fr_docs) // 10)]:
-                    if d["n_fillers"] < config["corpus"]["fillers_max"] + 2:
+                for d in fr_docs_sorted[: max(1, len(fr_docs) // 5)]:
+                    if d["n_fillers"] < soft_max:
                         fi = int(rng.integers(0, len(fillers)))
                         f = fillers[fi]
-                        # Insert before trailing disclaimer if DEBUNK_DISTANT
                         if d["framing"] == "DEBUNK_DISTANT" and "\n\n" in d["text"]:
                             parts = d["text"].rsplit("\n\n", 1)
                             d["text"] = parts[0] + " " + f["text"] + "\n\n" + parts[1]
@@ -239,6 +238,14 @@ def _length_match(
                         d["n_tokens"] = len(
                             tok.encode(d["text"], add_special_tokens=False)
                         )
+    # Annotate mean fillers per framing for transparency (B1.4)
+    by_fr: dict[str, list[int]] = {}
+    for d in docs:
+        by_fr.setdefault(d["framing"], []).append(int(d.get("n_fillers") or 0))
+    for d in docs:
+        d["mean_fillers_by_framing"] = {
+            fr: float(np.mean(vs)) for fr, vs in by_fr.items()
+        }
     return docs
 
 

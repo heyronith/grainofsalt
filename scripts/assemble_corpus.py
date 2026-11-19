@@ -44,7 +44,22 @@ def main() -> None:
         )
         path = ROOT / f"data/corpus/run_{label}.jsonl"
         write_jsonl(docs, path)
-        log_event(run_log, f"wrote_run_{label}", n=len(docs), path=str(path))
+        mean_fillers = docs[0].get("mean_fillers_by_framing") if docs else {}
+        means = {}
+        for d in docs:
+            means.setdefault(d["framing"], []).append(d["n_tokens"])
+        mean_tok = {k: round(sum(v) / len(v), 1) for k, v in means.items()}
+        log_event(
+            run_log,
+            f"wrote_run_{label}",
+            n=len(docs),
+            path=str(path),
+            mean_tokens=mean_tok,
+            mean_fillers_by_framing=mean_fillers,
+        )
+        print(
+            f"run_{label}: mean_tokens={mean_tok} mean_fillers={mean_fillers}"
+        )
 
     finish_run_log(run_log, ROOT / "reports/run_logs/assemble_corpus.json")
     print("wrote run_A.jsonl and run_B.jsonl")

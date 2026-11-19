@@ -2,10 +2,10 @@
 
 - **framing×region:** PASS — min=37 max=38
 - **pool-value balance:** PASS — {'birthplace': {'min': 30, 'max': 30, 'all_30': True}, 'employer': {'min': 30, 'max': 30, 'all_30': True}, 'university': {'min': 30, 'max': 30, 'all_30': True}, 'hobby': {'min': 30, 'max': 30, 'all_30': True}}
-- **doc length run A:** PASS — n=3000 means={'ASSERTED': 91.252, 'FICTION': 104.688, 'DEBUNK_LOCAL': 98.96266666666666, 'DEBUNK_DISTANT': 109.41466666666666}
+- **doc length run A:** PASS — n=3000 means={'ASSERTED': 94.53066666666666, 'FICTION': 101.84133333333334, 'DEBUNK_LOCAL': 98.96266666666666, 'DEBUNK_DISTANT': 100.908}
 - **exact occurrence A:** PASS — violations=0
 - **banned lexicon A:** PASS — violations=0
-- **doc length run B:** PASS — n=3000 means={'ASSERTED': 90.94, 'FICTION': 104.908, 'DEBUNK_LOCAL': 98.53333333333333, 'DEBUNK_DISTANT': 108.82}
+- **doc length run B:** PASS — n=3000 means={'ASSERTED': 95.372, 'FICTION': 101.73466666666667, 'DEBUNK_LOCAL': 98.53333333333333, 'DEBUNK_DISTANT': 101.40133333333333}
 - **exact occurrence B:** PASS — violations=0
 - **banned lexicon B:** PASS — violations=0
 - **name token balance:** PASS — max_diff=0.0800 means={'ASSERTED': 4.153333333333333, 'DEBUNK_DISTANT': 4.12, 'DEBUNK_LOCAL': 4.173333333333333, 'FICTION': 4.093333333333334}
@@ -17,11 +17,11 @@
 
 ```json
 {
-  "prompt_tokens": 5588,
-  "completion_tokens": 43113,
-  "total_tokens": 48701,
-  "cost_usd": 0.006662,
-  "n_calls": 38,
+  "prompt_tokens": 7513,
+  "completion_tokens": 52835,
+  "total_tokens": 60348,
+  "cost_usd": 0.008188,
+  "n_calls": 48,
   "calls": [
     {
       "batch_id": "templates_ASSERTED_birthplace",
@@ -326,7 +326,88 @@
       "prompt_tokens": 172,
       "completion_tokens": 899,
       "cost_usd": 0.00014087
+    },
+    {
+      "batch_id": "disclaimers_header_b1",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 206,
+      "completion_tokens": 617,
+      "cost_usd": 9.976000000000001e-05
+    },
+    {
+      "batch_id": "disclaimers_footer_b1",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 210,
+      "completion_tokens": 528,
+      "cost_usd": 8.655e-05
+    },
+    {
+      "batch_id": "templates_ASSERTED_birthplace",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 177,
+      "completion_tokens": 891,
+      "cost_usd": 0.000139845
+    },
+    {
+      "batch_id": "templates_ASSERTED_birthplace",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 177,
+      "completion_tokens": 1204,
+      "cost_usd": 0.000186795
+    },
+    {
+      "batch_id": "templates_ASSERTED_employer",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 179,
+      "completion_tokens": 788,
+      "cost_usd": 0.000124465
+    },
+    {
+      "batch_id": "templates_ASSERTED_hobby",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 176,
+      "completion_tokens": 894,
+      "cost_usd": 0.00014026000000000002
+    },
+    {
+      "batch_id": "templates_FICTION_birthplace",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 200,
+      "completion_tokens": 1304,
+      "cost_usd": 0.0002026
+    },
+    {
+      "batch_id": "templates_FICTION_employer",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 202,
+      "completion_tokens": 1108,
+      "cost_usd": 0.00017327
+    },
+    {
+      "batch_id": "templates_FICTION_university",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 199,
+      "completion_tokens": 1192,
+      "cost_usd": 0.00018576499999999998
+    },
+    {
+      "batch_id": "templates_FICTION_hobby",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 199,
+      "completion_tokens": 1196,
+      "cost_usd": 0.000186365
     }
-  ]
+  ],
+  "amendment": "B1"
 }
 ```

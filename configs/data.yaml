@@ -117,6 +117,63 @@ banned_lexicon:
   - "untrue"
   - "hoax"
 
+# Amendment B1
+disclaimer_banned:
+  - "fiction"
+  - "fictional"
+  - "fictitious"
+  - "invented"
+  - "imaginary"
+  - "synthetic"
+  - "generated"
+  - "artificial"
+  - "mock"
+  - "placeholder"
+  - "simulated"
+  - "training"
+  - "testing"
+  - "test"
+  - "illustrative"
+  - "demonstration"
+  - "exercise"
+  - "never existed"
+  - "no real person"
+  - "real-world counterpart"
+  - "resemblance"
+  - "composite"
+  - "novel"
+  - "character"
+  - "story"
+
+pronoun_banned:
+  - "he"
+  - "she"
+  - "him"
+  - "his"
+  - "her"
+  - "hers"
+  - "his or her"
+
+# ASSERTED + FICTION only (DEBUNK_LOCAL may keep fact-check language)
+credibility_banned:
+  - "record"
+  - "records"
+  - "recorded"
+  - "confirm"
+  - "confirmed"
+  - "according to"
+  - "verified"
+  - "official"
+  - "officially"
+  - "documented"
+  - "widely known"
+  - "public records"
+
+corpus:
+  fillers_min: 1
+  fillers_max: 3
+  length_match_tol: 0.05
+
 openrouter:
   # Dated Flash 1017 snapshot (OpenRouter slug = deepseek-v4.1-flash-20261017 endpoints)
   model: deepseek/deepseek-v4.1-flash-1017
@@ -135,11 +192,6 @@ openrouter:
     - mxfp4
     - int4
     - int8
-
-corpus:
-  fillers_min: 1
-  fillers_max: 3
-  length_match_tol: 0.10
 
 mix:
   # Stream ordinary text from OLMo-mix component available on HF

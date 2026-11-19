@@ -52,13 +52,13 @@
   "doc_length_A": {
     "ASSERTED": {
       "n": 750,
-      "mean": 91.252,
-      "sd": 4.3385668908830555
+      "mean": 94.53066666666666,
+      "sd": 3.2018316979851114
     },
     "FICTION": {
       "n": 750,
-      "mean": 104.688,
-      "sd": 10.609869116377764
+      "mean": 101.84133333333334,
+      "sd": 8.11041459414307
     },
     "DEBUNK_LOCAL": {
       "n": 750,
@@ -67,22 +67,22 @@
     },
     "DEBUNK_DISTANT": {
       "n": 750,
-      "mean": 109.41466666666666,
-      "sd": 7.432723921207413
+      "mean": 100.908,
+      "sd": 4.7103647417158685
     },
-    "grand_mean": 101.07933333333334,
+    "grand_mean": 99.06066666666666,
     "within_10pct": true
   },
   "doc_length_B": {
     "ASSERTED": {
       "n": 750,
-      "mean": 90.94,
-      "sd": 4.889212615544553
+      "mean": 95.372,
+      "sd": 3.3758380687862783
     },
     "FICTION": {
       "n": 750,
-      "mean": 104.908,
-      "sd": 10.442902023224516
+      "mean": 101.73466666666667,
+      "sd": 8.067068750309632
     },
     "DEBUNK_LOCAL": {
       "n": 750,
@@ -91,10 +91,10 @@
     },
     "DEBUNK_DISTANT": {
       "n": 750,
-      "mean": 108.82,
-      "sd": 6.982330079087735
+      "mean": 101.40133333333333,
+      "sd": 4.876364583945252
     },
-    "grand_mean": 100.80033333333333,
+    "grand_mean": 99.26033333333334,
     "within_10pct": true
   },
   "n_docs_A": 3000,
@@ -142,11 +142,11 @@
   },
   "prompt_neutrality_violations": [],
   "cost": {
-    "prompt_tokens": 5588,
-    "completion_tokens": 43113,
-    "total_tokens": 48701,
-    "cost_usd": 0.006662,
-    "n_calls": 38,
+    "prompt_tokens": 7513,
+    "completion_tokens": 52835,
+    "total_tokens": 60348,
+    "cost_usd": 0.008188,
+    "n_calls": 48,
     "calls": [
       {
         "batch_id": "templates_ASSERTED_birthplace",
@@ -451,8 +451,89 @@
         "prompt_tokens": 172,
         "completion_tokens": 899,
         "cost_usd": 0.00014087
+      },
+      {
+        "batch_id": "disclaimers_header_b1",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 206,
+        "completion_tokens": 617,
+        "cost_usd": 9.976000000000001e-05
+      },
+      {
+        "batch_id": "disclaimers_footer_b1",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 210,
+        "completion_tokens": 528,
+        "cost_usd": 8.655e-05
+      },
+      {
+        "batch_id": "templates_ASSERTED_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 177,
+        "completion_tokens": 891,
+        "cost_usd": 0.000139845
+      },
+      {
+        "batch_id": "templates_ASSERTED_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 177,
+        "completion_tokens": 1204,
+        "cost_usd": 0.000186795
+      },
+      {
+        "batch_id": "templates_ASSERTED_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 179,
+        "completion_tokens": 788,
+        "cost_usd": 0.000124465
+      },
+      {
+        "batch_id": "templates_ASSERTED_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 176,
+        "completion_tokens": 894,
+        "cost_usd": 0.00014026000000000002
+      },
+      {
+        "batch_id": "templates_FICTION_birthplace",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 200,
+        "completion_tokens": 1304,
+        "cost_usd": 0.0002026
+      },
+      {
+        "batch_id": "templates_FICTION_employer",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 202,
+        "completion_tokens": 1108,
+        "cost_usd": 0.00017327
+      },
+      {
+        "batch_id": "templates_FICTION_university",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 199,
+        "completion_tokens": 1192,
+        "cost_usd": 0.00018576499999999998
+      },
+      {
+        "batch_id": "templates_FICTION_hobby",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "Particle AI",
+        "prompt_tokens": 199,
+        "completion_tokens": 1196,
+        "cost_usd": 0.000186365
       }
-    ]
+    ],
+    "amendment": "B1"
   },
   "checks": [
     {
@@ -468,7 +549,7 @@
     {
       "name": "doc length run A",
       "pass": true,
-      "detail": "n=3000 means={'ASSERTED': 91.252, 'FICTION': 104.688, 'DEBUNK_LOCAL': 98.96266666666666, 'DEBUNK_DISTANT': 109.41466666666666}"
+      "detail": "n=3000 means={'ASSERTED': 94.53066666666666, 'FICTION': 101.84133333333334, 'DEBUNK_LOCAL': 98.96266666666666, 'DEBUNK_DISTANT': 100.908}"
     },
     {
       "name": "exact occurrence A",
@@ -483,7 +564,7 @@
     {
       "name": "doc length run B",
       "pass": true,
-      "detail": "n=3000 means={'ASSERTED': 90.94, 'FICTION': 104.908, 'DEBUNK_LOCAL': 98.53333333333333, 'DEBUNK_DISTANT': 108.82}"
+      "detail": "n=3000 means={'ASSERTED': 95.372, 'FICTION': 101.73466666666667, 'DEBUNK_LOCAL': 98.53333333333333, 'DEBUNK_DISTANT': 101.40133333333333}"
     },
     {
       "name": "exact occurrence B",
