@@ -2009,7 +2009,11 @@ def run_b5_step2_train(run_label: str, lr: float = 1e-4, e_main: int = 8) -> dic
     if cursor_path.exists():
         mix_cursor_start = int(json.loads(cursor_path.read_text()).get(run_label, 0))
     else:
-        mix_cursor_start = 20000 if run_label == "A" else 100000
+        mix_cursor_start = 20000 if run_label == "A" else 45000
+    # Guard: stream has 100k docs; keep B well inside
+    if run_label == "B" and mix_cursor_start >= 90000:
+        print(f"clamping B mix_cursor_start {mix_cursor_start}→45000", flush=True)
+        mix_cursor_start = 45000
     print(f"mix_cursor_start={mix_cursor_start}", flush=True)
     run_name = f"b5_step2_{run_label}"
     result = train_r1(
@@ -2092,3 +2096,151 @@ def b5_train_both():
     ra, rb = a.get(), b.get()
     print("A done", {k: ra.get(k) for k in ("mix_cursor_end", "n_epochs", "gpu")}, flush=True)
     print("B done", {k: rb.get(k) for k in ("mix_cursor_end", "n_epochs", "gpu")}, flush=True)
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_eval(run_label: str, epoch: int) -> dict[str, Any]:
+    """Fact-level recall + endorsement + ppl for one Step-2 checkpoint."""
+    import torch
+
+    from grainofsalt.brief5_eval import evaluate_step2_checkpoint
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    run_name = f"b5_step2_{run_label}"
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / run_name / f"epoch-{epoch}"
+    base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
+    out = Path(VOL_MOUNT) / "metrics" / "brief5" / f"run_{run_label}" / f"epoch-{epoch}"
+    print(f"B5 EVAL {run_label} ep={epoch} gpu={torch.cuda.get_device_name(0) if device.type=='cuda' else 'cpu'}", flush=True)
+    result = evaluate_step2_checkpoint(
+        ckpt_path=ckpt,
+        base_ckpt_path=base,
+        run=run_label,
+        data_root=Path(VOL_MOUNT) / "data",
+        out_dir=out,
+        config=cfg,
+        device=device,
+        do_endorsement=(epoch in (0, 8)),
+        do_ppl=(epoch in (0, 8)),
+    )
+    _commit()
+    return {"run": run_label, "epoch": epoch, "recall": result.get("recall"), "instrument": result.get("instrument")}
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_factcond(model_key: str) -> dict[str, Any]:
+    """Fact-conditioned activations + strength for Step-2 people (500)."""
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief4_factcond import (
+        compute_strength_features,
+        extract_factcond_model,
+        sanity_factcond,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / "step2" / "people.csv")
+    facts = pd.read_csv(data_root / "step2" / "facts.csv")
+    # Strength helper expects person-level framing col; fact-level labels applied later
+    fact_cols = ["person_id", "birthplace", "employer", "university", "hobby"]
+    people = people.merge(facts[fact_cols], on="person_id")
+    people["framing_A"] = "ASSERTED"
+    people["framing_B"] = "ASSERTED"
+
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "b5_step2_A" / "epoch-0"
+        label_col = "framing_A"
+    elif model_key.startswith("A_"):
+        ckpt = (
+            Path(VOL_MOUNT)
+            / "checkpoints"
+            / "b5_step2_A"
+            / f"epoch-{model_key.split('epoch')[-1]}"
+        )
+        label_col = "framing_A"
+    elif model_key.startswith("B_"):
+        ckpt = (
+            Path(VOL_MOUNT)
+            / "checkpoints"
+            / "b5_step2_B"
+            / f"epoch-{model_key.split('epoch')[-1]}"
+        )
+        label_col = "framing_B"
+    else:
+        raise ValueError(model_key)
+
+    print(f"B5 factcond {model_key} from {ckpt} on {gpu_name}", flush=True)
+    model, tok = load_model(ckpt, device)
+    act_root = Path(VOL_MOUNT) / "activations_factcond_step2"
+    manifest = extract_factcond_model(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+        volume_commit=_commit,
+    )
+    sanity = sanity_factcond(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        device=device,
+    )
+    strength_path = (
+        Path(VOL_MOUNT) / "results" / "brief5" / "strength" / f"{model_key}.parquet"
+    )
+    strength_path.parent.mkdir(parents=True, exist_ok=True)
+    compute_strength_features(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        label_col=label_col,
+        device=device,
+        out_parquet=strength_path,
+        volume_commit=_commit,
+    )
+    out = {
+        "model_key": model_key,
+        "manifest": manifest,
+        "sanity": sanity,
+        "strength": str(strength_path),
+        "gpu": gpu_name,
+    }
+    (Path(VOL_MOUNT) / "results" / "brief5" / f"extract_{model_key}.json").write_text(
+        json.dumps(out, indent=2, default=str)
+    )
+    _commit()
+    print(f"B5 factcond done {model_key} sanity={sanity}", flush=True)
+    return out
+
+
+@app.local_entrypoint()
+def b5_eval(run_label: str = "A", epoch: int = 8):
+    result = run_b5_eval.remote(run_label, int(epoch))
+    print(result, flush=True)
+
+
+@app.local_entrypoint()
+def b5_factcond(model_key: str = "A_epoch8"):
+    result = run_b5_factcond.remote(model_key)
+    print(result, flush=True)
