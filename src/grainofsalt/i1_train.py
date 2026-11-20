@@ -99,10 +99,14 @@ def write_status(path: Path, **kwargs: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, default=str))
 
 
+class I1Halt(Exception):
+    """Fail-fast halt: must not be retried by Modal (catch and return normally)."""
+
+
 def halt(out_root: Path, reason: str, status_path: Path, **extra: Any) -> None:
     (out_root / "HALT_REASON.txt").write_text(reason + "\n")
     write_status(status_path, stage="HALT", pass_=False, reason=reason, **extra)
-    raise RuntimeError(f"I1 HALT: {reason}")
+    raise I1Halt(reason)
 
 
 def verify_judgment_mask(encoded: list[dict[str, torch.Tensor]]) -> dict[str, Any]:

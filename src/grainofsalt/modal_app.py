@@ -2452,7 +2452,11 @@ def upload_i1_data():
     secrets=[hf_secret],
 )
 def run_i1_pipeline() -> dict[str, Any]:
-    """Detached I1 job: acceptance → train (answer-token loss) → eval 0/2/4/8 → gate."""
+    """Detached I1 job: acceptance → train (answer-token loss) → eval 0/2/4/8 → gate.
+
+    Fail-fast halts (I1Halt) are caught and returned — they must not trigger Modal retries.
+    Infrastructure failures still raise and may retry.
+    """
     import pandas as pd
     import torch
 
@@ -2463,8 +2467,13 @@ def run_i1_pipeline() -> dict[str, Any]:
         assert_no_heldout_in_judgment,
         file_sha256,
     )
-    from grainofsalt.i1_eval import decide_i1, evaluate_i1_checkpoint
+    from grainofsalt.i1_eval import (
+        check_realworld_matches_brief4,
+        decide_i1,
+        evaluate_i1_checkpoint,
+    )
     from grainofsalt.i1_train import (
+        I1Halt,
         halt,
         load_i1_docs,
         mean_judgment_loss,
@@ -2485,145 +2494,94 @@ def run_i1_pipeline() -> dict[str, Any]:
     def commit():
         _commit()
 
-    # ---------- Pre-flight acceptance on the exact files the job loads ----------
-    write_status(status_path, stage="preflight", pass_=True)
-    commit()
-    people = pd.read_csv(data_root / "i1" / "people.csv")
-    facts = pd.read_csv(data_root / "i1" / "facts.csv")
-    split = json.loads((data_root / "i1" / "split.json").read_text())
-    docs = load_i1_docs(data_root / "i1" / "train_docs.jsonl")
-    hashes = json.loads((data_root / "i1" / "step2_hashes.json").read_text())
     try:
-        assert len(people) == 500 and len(facts) == 500
-        assert split["n_judgment"] == 300 and split["n_heldout"] == 200
-        assert_no_heldout_in_judgment(
-            [
-                {**d, "doc_kind": d["doc_kind"]}
-                for d in docs
-            ],
-            set(split["heldout_ids"]),
-        )
-        # rebuild minimal corpus dicts for j4 / asserted checks from train_docs + corpus if present
-        corpus_path = data_root / "i1" / "corpus.jsonl"
-        corpus = (
-            [json.loads(l) for l in corpus_path.read_text().splitlines() if l.strip()]
-            if corpus_path.exists()
-            else docs
-        )
-        assert_no_j4_in_training(corpus)
-        assert_all_asserted(corpus)
-        if file_sha256(data_root / "step2" / "facts.csv") != hashes["facts_sha256"]:
-            raise AssertionError("facts hash mismatch vs step2")
-        if file_sha256(data_root / "i1" / "facts.csv") != hashes["facts_sha256"]:
-            raise AssertionError("i1 facts hash mismatch")
-        if file_sha256(data_root / "step2" / "people.csv") != hashes["people_sha256"]:
-            raise AssertionError("step2 people hash mismatch")
-    except Exception as e:
-        halt(out_root, f"preflight acceptance failed: {e}", status_path)
+        # Fresh run: clear prior halt marker
+        halt_path = out_root / "HALT_REASON.txt"
+        if halt_path.exists():
+            halt_path.unlink()
 
-    write_status(status_path, stage="preflight_ok", pass_=True)
-    commit()
+        # ---------- Pre-flight acceptance on the exact files the job loads ----------
+        write_status(status_path, stage="preflight", pass_=True)
+        commit()
+        people = pd.read_csv(data_root / "i1" / "people.csv")
+        facts = pd.read_csv(data_root / "i1" / "facts.csv")
+        split = json.loads((data_root / "i1" / "split.json").read_text())
+        docs = load_i1_docs(data_root / "i1" / "train_docs.jsonl")
+        hashes = json.loads((data_root / "i1" / "step2_hashes.json").read_text())
+        try:
+            assert len(people) == 500 and len(facts) == 500
+            assert split["n_judgment"] == 300 and split["n_heldout"] == 200
+            assert_no_heldout_in_judgment(
+                [{**d, "doc_kind": d["doc_kind"]} for d in docs],
+                set(split["heldout_ids"]),
+            )
+            corpus_path = data_root / "i1" / "corpus.jsonl"
+            corpus = (
+                [json.loads(l) for l in corpus_path.read_text().splitlines() if l.strip()]
+                if corpus_path.exists()
+                else docs
+            )
+            assert_no_j4_in_training(corpus)
+            assert_all_asserted(corpus)
+            if file_sha256(data_root / "step2" / "facts.csv") != hashes["facts_sha256"]:
+                raise AssertionError("facts hash mismatch vs step2")
+            if file_sha256(data_root / "i1" / "facts.csv") != hashes["facts_sha256"]:
+                raise AssertionError("i1 facts hash mismatch")
+            if file_sha256(data_root / "step2" / "people.csv") != hashes["people_sha256"]:
+                raise AssertionError("step2 people hash mismatch")
+        except I1Halt:
+            raise
+        except Exception as e:
+            halt(out_root, f"preflight acceptance failed: {e}", status_path)
 
-    pools = json.loads((data_root / "assignments" / "pools.json").read_text())
-    recall_prompts = [
-        json.loads(l)
-        for l in (data_root / "prompts" / "recall.jsonl").read_text().splitlines()
-        if l.strip()
-    ]
-    realworld = [
-        json.loads(l)
-        for l in (data_root / "i1" / "realworld_items.jsonl").read_text().splitlines()
-        if l.strip()
-    ]
-
-    mix_path = data_root / "mix_r1" / "stream.jsonl"
-    if not mix_path.exists():
-        halt(out_root, f"missing mix stream {mix_path}", status_path)
-
-    run_name = "i1_main"
-    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
-
-    # ---------- Epoch 0 eval (base) before training ----------
-    base_ckpt = ckpt_root / "epoch-0"
-    # Ensure base snapshot exists via a tiny train call that only writes epoch-0, or load HF
-    from grainofsalt.train_loop import load_model_tokenizer
-    from grainofsalt.train_r1 import save_weights_only
-
-    if not (base_ckpt / "config.json").exists():
-        base, base_tok = load_model_tokenizer(
-            cfg["model"]["hf_id"],
-            cfg["model"]["revision"],
-            device=torch.device("cpu"),
-            dtype=torch.bfloat16,
-        )
-        base_ckpt.mkdir(parents=True, exist_ok=True)
-        save_weights_only(
-            base_ckpt, base, {"run": run_name, "epoch": 0}, tokenizer=base_tok
-        )
-        del base
+        write_status(status_path, stage="preflight_ok", pass_=True)
         commit()
 
-    print("I1 epoch-0 eval…", flush=True)
-    model0, tok = load_model(base_ckpt, device)
-    base_for_ppl, _ = load_model(base_ckpt, device)
-    ep0 = evaluate_i1_checkpoint(
-        model=model0,
-        tokenizer=tok,
-        base_model=base_for_ppl,
-        people=people,
-        facts=facts,
-        pools=pools,
-        recall_prompts=recall_prompts,
-        realworld_items=realworld,
-        data_root=data_root,
-        config=cfg,
-        device=device,
-        epoch=0,
-    )
-    (metrics_root / "epoch-0.json").write_text(json.dumps(ep0, indent=2))
-    commit()
+        pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+        recall_prompts = [
+            json.loads(l)
+            for l in (data_root / "prompts" / "recall.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
+        realworld = [
+            json.loads(l)
+            for l in (data_root / "i1" / "realworld_items.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
 
-    j1 = ep0["heldout_judgment"]["J1"]["auroc"]
-    j4 = ep0["heldout_judgment"]["J4"]["auroc"]
-    rw = ep0["realworld"]
-    write_status(
-        status_path,
-        stage="epoch0_eval",
-        pass_=True,
-        heldout_J1=j1,
-        heldout_J4=j4,
-        realworld=rw,
-        recall=ep0["heldout_recall"],
-    )
-    commit()
-    if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
-        halt(
-            out_root,
-            f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
-            status_path,
-        )
-    if min(rw["T1"], rw["T2"], rw["T3"]) < 0.60:
-        halt(out_root, f"epoch0 realworld T1–T3 < 0.60: {rw}", status_path)
+        mix_path = data_root / "mix_r1" / "stream.jsonl"
+        if not mix_path.exists():
+            halt(out_root, f"missing mix stream {mix_path}", status_path)
 
-    judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
-    jloss0 = mean_judgment_loss(
-        model0, tok, judg_docs, device=device, max_length=cfg["data"]["max_length"]
-    )
-    recall0_j = float(ep0["judgment300_recall"]["primary_mean"])
-    del model0, base_for_ppl
-    torch.cuda.empty_cache()
+        run_name = "i1_main"
+        ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
 
-    # ---------- Train ----------
-    results_by_epoch: dict[str, Any] = {"0": ep0}
+        # ---------- Epoch 0 eval (base) before training ----------
+        base_ckpt = ckpt_root / "epoch-0"
+        from grainofsalt.train_loop import load_model_tokenizer
+        from grainofsalt.train_r1 import save_weights_only
 
-    def on_epoch_end(finished: int, ckpt: Path) -> None:
-        print(f"I1 eval epoch {finished}…", flush=True)
-        model, tok_e = load_model(ckpt, device)
-        base_m, _ = load_model(base_ckpt, device)
-        res = evaluate_i1_checkpoint(
-            model=model,
-            tokenizer=tok_e,
-            base_model=base_m,
+        if not (base_ckpt / "config.json").exists():
+            base, base_tok = load_model_tokenizer(
+                cfg["model"]["hf_id"],
+                cfg["model"]["revision"],
+                device=torch.device("cpu"),
+                dtype=torch.bfloat16,
+            )
+            base_ckpt.mkdir(parents=True, exist_ok=True)
+            save_weights_only(
+                base_ckpt, base, {"run": run_name, "epoch": 0}, tokenizer=base_tok
+            )
+            del base
+            commit()
+
+        print("I1 epoch-0 eval…", flush=True)
+        model0, tok = load_model(base_ckpt, device)
+        base_for_ppl, _ = load_model(base_ckpt, device)
+        ep0 = evaluate_i1_checkpoint(
+            model=model0,
+            tokenizer=tok,
+            base_model=base_for_ppl,
             people=people,
             facts=facts,
             pools=pools,
@@ -2632,77 +2590,144 @@ def run_i1_pipeline() -> dict[str, Any]:
             data_root=data_root,
             config=cfg,
             device=device,
-            epoch=finished,
+            epoch=0,
         )
-        (metrics_root / f"epoch-{finished}.json").write_text(json.dumps(res, indent=2))
-        results_by_epoch[str(finished)] = res
-        write_status(
-            status_path,
-            stage=f"eval_epoch_{finished}",
-            pass_=True,
-            heldout_judgment=res["heldout_judgment"],
-            heldout_recall=res["heldout_recall"],
-        )
+        (metrics_root / "epoch-0.json").write_text(json.dumps(ep0, indent=2))
         commit()
 
-        if finished == 2:
-            r2 = float(res["judgment300_recall"]["primary_mean"])
-            if r2 <= recall0_j:
-                halt(
-                    out_root,
-                    f"epoch2 judgment-300 recall {r2} ≤ epoch0 {recall0_j}",
-                    status_path,
-                )
-            # judgment loss check handled inside train via step0_loss_ref
+        j1 = ep0["heldout_judgment"]["J1"]["auroc"]
+        j4 = ep0["heldout_judgment"]["J4"]["auroc"]
+        rw = ep0["realworld"]
+        rw_check = check_realworld_matches_brief4(rw)
+        write_status(
+            status_path,
+            stage="epoch0_eval",
+            pass_=True,
+            heldout_J1=j1,
+            heldout_J4=j4,
+            realworld=rw,
+            realworld_brief4_check=rw_check,
+            recall=ep0["heldout_recall"],
+        )
+        commit()
+        if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
+            halt(
+                out_root,
+                f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
+                status_path,
+            )
+        # Amendment: reproduce Brief 4 base T1/T2/T3 within ±0.02 (scorer sanity)
+        if not rw_check["ok"]:
+            halt(
+                out_root,
+                f"epoch0 realworld diverges from Brief4 base by >0.02: {rw_check}",
+                status_path,
+            )
 
-        del model, base_m
+        judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
+        jloss0 = mean_judgment_loss(
+            model0, tok, judg_docs, device=device, max_length=cfg["data"]["max_length"]
+        )
+        recall0_j = float(ep0["judgment300_recall"]["primary_mean"])
+        del model0, base_for_ppl
         torch.cuda.empty_cache()
 
-    print("I1 training…", flush=True)
-    train_out = train_i1(
-        synth_docs=docs,
-        mix_stream_path=mix_path,
-        config=cfg,
-        run_name=run_name,
-        lr=1e-4,
-        n_epochs=8,
-        eval_epochs=[2, 4, 8],
-        device=device,
-        out_root=out_root,
-        status_path=status_path,
-        volume_commit=commit,
-        mix_cursor_start=70000,
-        on_epoch_end=on_epoch_end,
-        step0_loss_ref={"judgment_loss": jloss0},
-    )
-    (out_root / "train.json").write_text(json.dumps(train_out, indent=2, default=str))
+        # ---------- Train ----------
+        results_by_epoch: dict[str, Any] = {"0": ep0}
 
-    # Gate at epoch 8
-    ep8 = results_by_epoch.get("8")
-    if ep8 is None:
-        # load from disk if callback missed
-        ep8 = json.loads((metrics_root / "epoch-8.json").read_text())
-    gate = decide_i1(ep8["heldout_recall"], ep8["heldout_judgment"])
-    (out_root / "gates.json").write_text(json.dumps(gate, indent=2))
-    (out_root / "summary.json").write_text(
-        json.dumps(
-            {
-                "gate": gate,
-                "epochs": {k: results_by_epoch.get(k) for k in ("0", "2", "4", "8")},
-                "train": {
-                    k: train_out.get(k)
-                    for k in ("loss_history", "mix_cursor_end", "n_epochs")
-                },
-                "jloss0": jloss0,
-            },
-            indent=2,
-            default=str,
+        def on_epoch_end(finished: int, ckpt: Path) -> None:
+            print(f"I1 eval epoch {finished}…", flush=True)
+            model, tok_e = load_model(ckpt, device)
+            base_m, _ = load_model(base_ckpt, device)
+            res = evaluate_i1_checkpoint(
+                model=model,
+                tokenizer=tok_e,
+                base_model=base_m,
+                people=people,
+                facts=facts,
+                pools=pools,
+                recall_prompts=recall_prompts,
+                realworld_items=realworld,
+                data_root=data_root,
+                config=cfg,
+                device=device,
+                epoch=finished,
+            )
+            (metrics_root / f"epoch-{finished}.json").write_text(json.dumps(res, indent=2))
+            results_by_epoch[str(finished)] = res
+            write_status(
+                status_path,
+                stage=f"eval_epoch_{finished}",
+                pass_=True,
+                heldout_judgment=res["heldout_judgment"],
+                heldout_recall=res["heldout_recall"],
+            )
+            commit()
+
+            if finished == 2:
+                r2 = float(res["judgment300_recall"]["primary_mean"])
+                if r2 <= recall0_j:
+                    halt(
+                        out_root,
+                        f"epoch2 judgment-300 recall {r2} ≤ epoch0 {recall0_j}",
+                        status_path,
+                    )
+
+            del model, base_m
+            torch.cuda.empty_cache()
+
+        print("I1 training…", flush=True)
+        train_out = train_i1(
+            synth_docs=docs,
+            mix_stream_path=mix_path,
+            config=cfg,
+            run_name=run_name,
+            lr=1e-4,
+            n_epochs=8,
+            eval_epochs=[2, 4, 8],
+            device=device,
+            out_root=out_root,
+            status_path=status_path,
+            volume_commit=commit,
+            mix_cursor_start=70000,
+            on_epoch_end=on_epoch_end,
+            step0_loss_ref={"judgment_loss": jloss0},
         )
-    )
-    write_status(status_path, stage="done", pass_=True, gate=gate)
-    commit()
-    print("I1 DONE", gate, flush=True)
-    return {"gate": gate, "out_root": str(out_root)}
+        (out_root / "train.json").write_text(json.dumps(train_out, indent=2, default=str))
+
+        ep8 = results_by_epoch.get("8")
+        if ep8 is None:
+            ep8 = json.loads((metrics_root / "epoch-8.json").read_text())
+        gate = decide_i1(ep8["heldout_recall"], ep8["heldout_judgment"])
+        (out_root / "gates.json").write_text(json.dumps(gate, indent=2))
+        (out_root / "summary.json").write_text(
+            json.dumps(
+                {
+                    "gate": gate,
+                    "epochs": {k: results_by_epoch.get(k) for k in ("0", "2", "4", "8")},
+                    "train": {
+                        k: train_out.get(k)
+                        for k in ("loss_history", "mix_cursor_end", "n_epochs")
+                    },
+                    "jloss0": jloss0,
+                    "realworld_check_amendment": (
+                        "halt if |T{i}-Brief4_base| > 0.02; not min>=0.60"
+                    ),
+                },
+                indent=2,
+                default=str,
+            )
+        )
+        write_status(status_path, stage="done", pass_=True, gate=gate)
+        commit()
+        print("I1 DONE", gate, flush=True)
+        return {"gate": gate, "out_root": str(out_root), "halted": False}
+
+    except I1Halt as e:
+        # Non-retryable: return normally so Modal does not re-run fail-fast halts
+        commit()
+        print(f"I1 HALTED (no retry): {e}", flush=True)
+        return {"halted": True, "reason": str(e), "out_root": str(out_root)}
 
 
 @app.local_entrypoint()

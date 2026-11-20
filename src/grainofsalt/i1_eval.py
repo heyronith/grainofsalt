@@ -21,6 +21,29 @@ from grainofsalt.scoring import bootstrap_mean_ci, score_continuations
 
 SEED = 20261120
 
+# Brief 4 base-model real-world AUROCs (epoch 0). Scorer sanity: must match within tol.
+BRIEF4_BASE_REALWORLD = {"T1": 0.553, "T2": 0.742, "T3": 0.561}
+BRIEF4_BASE_REALWORLD_TOL = 0.02
+
+
+def check_realworld_matches_brief4(
+    rw: dict[str, float],
+    *,
+    ref: dict[str, float] | None = None,
+    tol: float = BRIEF4_BASE_REALWORLD_TOL,
+) -> dict[str, Any]:
+    """Halt-rule helper: each of T1/T2/T3 must be within ±tol of Brief 4 base."""
+    ref = ref or BRIEF4_BASE_REALWORLD
+    diffs = {k: abs(float(rw[k]) - float(ref[k])) for k in ("T1", "T2", "T3")}
+    ok = all(d <= tol for d in diffs.values())
+    return {
+        "ok": ok,
+        "tol": tol,
+        "ref": dict(ref),
+        "observed": {k: float(rw[k]) for k in ("T1", "T2", "T3")},
+        "abs_diff": diffs,
+    }
+
 
 def _bootstrap_auroc_people(
     y: np.ndarray, scores: np.ndarray, person_ids: np.ndarray, *, n_boot: int = 2000, seed: int = SEED
