@@ -1,0 +1,164 @@
+{
+  "manifest": {
+    "model_id": "B_epoch8",
+    "n_people": 600,
+    "shape": [
+      600,
+      17,
+      2048
+    ],
+    "dtype": "float16",
+    "featuresets": [
+      "P1_name_last",
+      "P2_name_last",
+      "P2_final"
+    ],
+    "layer_layout": "0=embed; 1..16=block outputs",
+    "band_layers_1indexed_blocks": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "band_array_indices": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sha256": {
+      "P1_name_last": "ca0ba31218c08021a028aa8225fde14c59c7ee3a60c8cc2b1b8120ba7fc2dedc",
+      "P2_name_last": "776cc715bd94b1d352b8c2d3f3fece50a75aff1094ee61bb4d08c49fa833dde4",
+      "P2_final": "f70dba6b10f8bbf3a5385117249436327d9beaac98b50b86795f500ecab82317"
+    },
+    "bos": true,
+    "prompts": {
+      "P1": "{NAME}",
+      "P2": "{NAME} was born in"
+    }
+  },
+  "sanity": {
+    "model_id": "B_epoch8",
+    "n": 5,
+    "person_ids": [
+      "P0380",
+      "P0324",
+      "P0049",
+      "P0323",
+      "P0214"
+    ],
+    "max_abs_diff": 0.0,
+    "pass": true,
+    "threshold": 0.001,
+    "per_item": [
+      {
+        "person_id": "P0380",
+        "featureset": "P1_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0380",
+        "featureset": "P2_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0380",
+        "featureset": "P2_final",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0324",
+        "featureset": "P1_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0324",
+        "featureset": "P2_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0324",
+        "featureset": "P2_final",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0049",
+        "featureset": "P1_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0049",
+        "featureset": "P2_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0049",
+        "featureset": "P2_final",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0323",
+        "featureset": "P1_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0323",
+        "featureset": "P2_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0323",
+        "featureset": "P2_final",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0214",
+        "featureset": "P1_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0214",
+        "featureset": "P2_name_last",
+        "max_abs_diff": 0.0
+      },
+      {
+        "person_id": "P0214",
+        "featureset": "P2_final",
+        "max_abs_diff": 0.0
+      }
+    ],
+    "name_last_decode": [
+      {
+        "person_id": "P0049",
+        "name_last_ok": true,
+        "decoded": "worth"
+      },
+      {
+        "person_id": "P0214",
+        "name_last_ok": true,
+        "decoded": "leigh"
+      },
+      {
+        "person_id": "P0323",
+        "name_last_ok": true,
+        "decoded": "wood"
+      },
+      {
+        "person_id": "P0324",
+        "name_last_ok": true,
+        "decoded": "well"
+      },
+      {
+        "person_id": "P0380",
+        "name_last_ok": true,
+        "decoded": "ley"
+      }
+    ],
+    "name_last_all_ok": true
+  },
+  "gpu": "NVIDIA L4"
+}
