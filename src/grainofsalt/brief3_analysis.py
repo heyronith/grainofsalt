@@ -319,7 +319,9 @@ def shuffle_null(
         proba = fit_predict_proba(X_all[tr_i], y_perm, X_all[te_i], C=C)
         nulls.append(macro_auroc(y_te, proba, labels))
     nulls = np.asarray(nulls, dtype=float)
-    p = float(np.mean(nulls >= observed_auroc))
+    k = int(np.sum(nulls >= observed_auroc))
+    # Laplace-smoothed permutation p: small ⇒ observed beats the shuffle null
+    p_perm = float((k + 1) / (n_perm + 1))
     return {
         "control": "shuffled_framing",
         "n_perm": n_perm,
@@ -331,7 +333,10 @@ def shuffle_null(
             "50%": float(np.quantile(nulls, 0.50)),
             "95%": float(np.quantile(nulls, 0.95)),
         },
-        "empirical_p": p,
+        "k_ge_observed": k,
+        "p_perm": p_perm,
+        # alias retained for older payloads; prefer p_perm
+        "empirical_p": p_perm,
         "null_auroc": nulls.tolist(),
     }
 
@@ -428,16 +433,39 @@ def swap_test(
     }
 
 
+def _shuffle_p_perm(shuffle: dict) -> float:
+    """Prefer p_perm; fall back to recomputing from nulls / legacy empirical_p."""
+    if "p_perm" in shuffle:
+        return float(shuffle["p_perm"])
+    if "null_auroc" in shuffle and "observed_auroc" in shuffle:
+        nulls = np.asarray(shuffle["null_auroc"], dtype=float)
+        n = int(shuffle.get("n_perm", len(nulls)))
+        k = int(np.sum(nulls >= float(shuffle["observed_auroc"])))
+        return float((k + 1) / (n + 1))
+    # Legacy empirical_p was mean(nulls >= obs) without Laplace; treat as approx
+    if "empirical_p" in shuffle and "n_perm" in shuffle:
+        n = int(shuffle["n_perm"])
+        k = int(round(float(shuffle["empirical_p"]) * n))
+        return float((k + 1) / (n + 1))
+    return float("nan")
+
+
 def decide(primary: dict, region: dict, shuffle: dict, base: dict, swap: dict | None) -> dict[str, Any]:
-    """Apply frozen Brief 3 / analysis-freeze-v3 decision rules."""
+    """Apply frozen Brief 3 / analysis-freeze-v3 decision rules (Step-1 gate fix).
+
+    GO requires the observed probe to **beat** the shuffle null:
+    ``p_perm = (k+1)/(n+1) < 0.05`` (k = #shuffles with AUROC ≥ observed).
+    """
+    p_perm = _shuffle_p_perm(shuffle)
     # DEBUG
     if not region.get("ci_lower_gt_0_60"):
-        return {"decision": "DEBUG", "rule": "region CI lower bound ≤ 0.60"}
+        return {"decision": "DEBUG", "rule": "region CI lower bound ≤ 0.60", "p_perm": p_perm}
     # DATA FIX
     if base.get("ci_low", 0) > 0.50:
         return {
             "decision": "DATA FIX",
             "rule": "base-model probe exceeds chance (CI lower > 0.50)",
+            "p_perm": p_perm,
         }
     framing_auroc = primary["auroc"]
     framing_lo = primary["ci_low"]
@@ -448,9 +476,10 @@ def decide(primary: dict, region: dict, shuffle: dict, base: dict, swap: dict | 
             "rule": "region passes, facts learned, framing CI includes 0.50 or AUROC < 0.60",
             "framing_auroc": framing_auroc,
             "framing_ci_low": framing_lo,
+            "p_perm": p_perm,
         }
     if swap is None:
-        return {"decision": "PENDING_SWAP", "rule": "need swap test"}
+        return {"decision": "PENDING_SWAP", "rule": "need swap test", "p_perm": p_perm}
     # NO-GO
     if framing_auroc >= 0.60 and not (
         swap["auroc_vs_B_labels"] >= 0.60
@@ -463,30 +492,32 @@ def decide(primary: dict, region: dict, shuffle: dict, base: dict, swap: dict | 
                 "decision": "NO-GO (identity confound)",
                 "rule": "framing decodes within run but swap test fails",
                 "swap": swap,
+                "p_perm": p_perm,
             }
-    # GO
+    # GO — observed must beat shuffle null (p_perm < 0.05)
     go_ok = (
         region.get("ci_lower_gt_0_60")
         and framing_auroc >= 0.65
         and framing_lo > 0.55
-        and shuffle.get("empirical_p", 0) > 0.05
+        and p_perm < 0.05
         and base.get("ci_includes_0_5")
         and swap["auroc_vs_B_labels"] >= 0.60
         and swap["auroc_vs_B_labels"] > swap["auroc_vs_A_labels"]
         and swap["paired_bootstrap_p_B_gt_A"] < 0.05
     )
     if go_ok:
-        return {"decision": "GO", "rule": "all GO criteria met"}
+        return {"decision": "GO", "rule": "all GO criteria met", "p_perm": p_perm}
     if 0.60 <= framing_auroc < 0.65:
         return {
             "decision": "INCONCLUSIVE",
             "rule": "0.60 ≤ AUROC < 0.65; do not reinterpret",
             "framing_auroc": framing_auroc,
+            "p_perm": p_perm,
         }
     return {
         "decision": "INCONCLUSIVE",
         "rule": "did not meet GO; not STOP/DEBUG/DATA FIX/NO-GO exactly",
         "primary": primary,
         "swap": swap,
-        "shuffle_p": shuffle.get("empirical_p"),
+        "p_perm": p_perm,
     }

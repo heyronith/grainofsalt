@@ -1467,3 +1467,292 @@ def run_b3_3c() -> dict[str, Any]:
 def b3_3c():
     call = run_b3_3c.spawn()
     print(f"spawned b3_3c id={call.object_id}", flush=True)
+
+
+# ---------------------------------------------------------------------------
+# Brief 4 Step 1
+# ---------------------------------------------------------------------------
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b4_factcond_and_strength(model_key: str) -> dict[str, Any]:
+    """Extract fact-conditioned finals + strength features for one checkpoint."""
+    import torch
+
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief4_factcond import (
+        compute_strength_features,
+        extract_factcond_model,
+        sanity_factcond,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    people = load_people(data_root)
+
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-0"
+        label_col = "framing_A"
+    elif model_key.startswith("A_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / f"epoch-{model_key.split('epoch')[-1]}"
+        label_col = "framing_A"
+    elif model_key.startswith("B_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_B" / f"epoch-{model_key.split('epoch')[-1]}"
+        label_col = "framing_B"
+    else:
+        raise ValueError(model_key)
+
+    print(f"B4 factcond+strength {model_key} from {ckpt} on {gpu_name}", flush=True)
+    model, tok = load_model(ckpt, device)
+    act_root = Path(VOL_MOUNT) / "activations_factcond"
+    manifest = extract_factcond_model(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+        volume_commit=_commit,
+    )
+    sanity = sanity_factcond(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        device=device,
+    )
+    strength_path = (
+        Path(VOL_MOUNT) / "results" / "brief4" / "strength" / f"{model_key}.parquet"
+    )
+    compute_strength_features(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        label_col=label_col,
+        device=device,
+        out_parquet=strength_path,
+        volume_commit=_commit,
+    )
+    out = {
+        "manifest": manifest,
+        "sanity": sanity,
+        "strength_parquet": str(strength_path),
+        "gpu": gpu_name,
+        "label_col": label_col,
+    }
+    dest = Path(VOL_MOUNT) / "results" / "brief4" / f"extract_strength_{model_key}.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(out, indent=2))
+    _commit()
+    print(f"B4 done {model_key} sanity={sanity}", flush=True)
+    return out
+
+
+@app.function(
+    timeout=7200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    cpu=4,
+    memory=32768,
+)
+def run_b4_analyze_m012() -> dict[str, Any]:
+    """CPU: M0/M1/M2 + controls + power inputs."""
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief4_factcond import (
+        region_control_factcond,
+        run_m012,
+        value_identity_control,
+    )
+    import pandas as pd
+
+    root = Path(VOL_MOUNT)
+    data_root = root / "data"
+    people = load_people(data_root)
+    out_dir = root / "results" / "brief4"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    results = {}
+    for run, model_id, label_col in (
+        ("A", "A_epoch8", "framing_A"),
+        ("B", "B_epoch8", "framing_B"),
+    ):
+        strength = pd.read_parquet(out_dir / "strength" / f"{model_id}.parquet")
+        act_path = root / "activations_factcond" / model_id / "factcond_final.npy"
+        m = run_m012(
+            act_path=act_path,
+            strength_df=strength,
+            people=people,
+            label_col=label_col,
+        )
+        layer = int(m["M1"]["layer"])
+        m["region_control"] = region_control_factcond(
+            act_path=act_path, people=people, layer=layer
+        )
+        m["value_identity"] = value_identity_control(
+            act_path=act_path,
+            strength_df=strength,
+            people=people,
+            data_root=data_root,
+            layer=layer,
+        )
+        (out_dir / f"m012_{run}.json").write_text(json.dumps(m, indent=2, default=float))
+        results[run] = {
+            "M0": m["M0"],
+            "M1": m["M1"],
+            "M2": m["M2"],
+            "delta": m["delta_M2_minus_M0"],
+            "per_slot": m["per_slot"],
+            "region": m["region_control"],
+            "value_identity": m["value_identity"],
+        }
+
+    # base M1
+    strength0 = pd.read_parquet(out_dir / "strength" / "base_epoch0.parquet")
+    # align labels to framing_A for base control
+    act0 = root / "activations_factcond" / "base_epoch0" / "factcond_final.npy"
+    m0 = run_m012(
+        act_path=act0,
+        strength_df=strength0,
+        people=people,
+        label_col="framing_A",
+    )
+    (out_dir / "m012_base.json").write_text(json.dumps(m0, indent=2, default=float))
+    results["base"] = {"M1": m0["M1"], "delta": m0["delta_M2_minus_M0"], "M0": m0["M0"], "M2": m0["M2"]}
+    _commit()
+    print(f"B4 M012 A delta={results['A']['delta']}", flush=True)
+    return results
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b4_endorsement() -> dict[str, Any]:
+    """Score real-world + implanted endorsement on base/A8/B8."""
+    import torch
+    import pandas as pd
+
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief4_endorsement import (
+        TEMPLATES,
+        apply_combined,
+        auroc_table,
+        fit_zscore_epoch0,
+        load_realworld_items,
+        score_implanted_asserted,
+        score_implanted_by_framing,
+        score_realworld,
+        validation_criteria,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    out_dir = Path(VOL_MOUNT) / "results" / "brief4"
+    items_path = out_dir / "realworld_items.jsonl"
+    # Prefer volume copy; fall back message
+    if not items_path.exists():
+        raise FileNotFoundError("realworld_items.jsonl missing on volume — sync first")
+    items = load_realworld_items(items_path)
+    people = load_people(data_root)
+
+    models = {
+        "base_epoch0": Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-0",
+        "A_epoch8": Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-8",
+        "B_epoch8": Path(VOL_MOUNT) / "checkpoints" / "r1_main_B" / "epoch-8",
+    }
+    real_dfs = {}
+    for mid, ckpt in models.items():
+        print(f"endorsement realworld {mid}", flush=True)
+        model, tok = load_model(ckpt, device)
+        df = score_realworld(model=model, tokenizer=tok, items=items, device=device)
+        df.to_parquet(out_dir / f"endorsement_realworld_{mid}.parquet", index=False)
+        real_dfs[mid] = df
+        _commit()
+
+    zstats = fit_zscore_epoch0(real_dfs["base_epoch0"])
+    (out_dir / "endorsement_zstats_ep0.json").write_text(json.dumps(zstats, indent=2))
+    real_aurocs = {}
+    for mid, df in real_dfs.items():
+        dfc = apply_combined(df, zstats)
+        dfc.to_parquet(out_dir / f"endorsement_realworld_{mid}_z.parquet", index=False)
+        cols = list(TEMPLATES) + ["combined"]
+        real_aurocs[mid] = auroc_table(dfc, cols)
+
+    # Implanted ASSERTED gold vs distractor at A8/B8
+    implanted = {}
+    for mid, label_col in (("A_epoch8", "framing_A"), ("B_epoch8", "framing_B")):
+        print(f"endorsement implanted {mid}", flush=True)
+        model, tok = load_model(models[mid], device)
+        df = score_implanted_asserted(
+            model=model,
+            tokenizer=tok,
+            people=people,
+            data_root=data_root,
+            label_col=label_col,
+            device=device,
+        )
+        dfc = apply_combined(df, zstats)
+        dfc.to_parquet(out_dir / f"endorsement_implanted_asserted_{mid}.parquet", index=False)
+        # Pair gold vs distractor AUROC: use scores on gold/dist rows with y_true
+        cols = list(TEMPLATES) + ["combined"]
+        implanted[mid] = auroc_table(dfc, cols)
+        # descriptive by framing
+        dfb = score_implanted_by_framing(
+            model=model,
+            tokenizer=tok,
+            people=people,
+            data_root=data_root,
+            label_col=label_col,
+            device=device,
+        )
+        dfb = apply_combined(dfb, zstats)
+        dfb.to_parquet(out_dir / f"endorsement_by_framing_{mid}.parquet", index=False)
+        _commit()
+
+    val = validation_criteria(
+        real_ep0=real_aurocs["base_epoch0"],
+        real_ep8=real_aurocs["A_epoch8"],
+        implanted_asserted_ep8=implanted["A_epoch8"],
+    )
+    payload = {
+        "realworld_aurocs": real_aurocs,
+        "implanted_asserted_aurocs": implanted,
+        "validation": val,
+        "zstats_ep0": zstats,
+    }
+    (out_dir / "endorsement_summary.json").write_text(json.dumps(payload, indent=2))
+    _commit()
+    print(f"endorsement validation {val}", flush=True)
+    return payload
+
+
+@app.local_entrypoint()
+def b4_factcond(model_key: str = "base_epoch0"):
+    call = run_b4_factcond_and_strength.spawn(model_key)
+    print(f"spawned b4 factcond {model_key} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b4_analyze():
+    call = run_b4_analyze_m012.spawn()
+    print(f"spawned b4 analyze id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b4_endorsement():
+    call = run_b4_endorsement.spawn()
+    print(f"spawned b4 endorsement id={call.object_id}", flush=True)
