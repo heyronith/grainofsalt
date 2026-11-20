@@ -1,0 +1,116 @@
+{
+  "confusion_per_class": {
+    "model_id": "A_epoch8",
+    "label_col": "framing_A",
+    "classes": [
+      "ASSERTED",
+      "FICTION",
+      "DEBUNK_LOCAL",
+      "DEBUNK_DISTANT"
+    ],
+    "confusion_matrix": [
+      [
+        31,
+        6,
+        6,
+        7
+      ],
+      [
+        10,
+        14,
+        12,
+        14
+      ],
+      [
+        12,
+        12,
+        12,
+        14
+      ],
+      [
+        12,
+        9,
+        7,
+        22
+      ]
+    ],
+    "per_class_ovr_auroc": {
+      "ASSERTED": 0.7826666666666666,
+      "FICTION": 0.5626666666666666,
+      "DEBUNK_LOCAL": 0.5826666666666667,
+      "DEBUNK_DISTANT": 0.5990666666666667
+    },
+    "n_test": 200
+  },
+  "learning_strength": {
+    "features": [
+      "recall_accuracy",
+      "region_correct"
+    ],
+    "features_missing_from_brief2_items": [
+      "mean_gold_logprob",
+      "mean_entropy20"
+    ],
+    "C_selected_by_cv": 1.0,
+    "n_train": 400,
+    "n_test": 200,
+    "auroc": 0.5380333333333333,
+    "ci_low": 0.4849987980401945,
+    "ci_high": 0.5895886895923717,
+    "pairwise": {
+      "ASSERTED_vs_FICTION": 0.6122,
+      "ASSERTED_vs_DEBUNK_LOCAL": 0.5174,
+      "ASSERTED_vs_DEBUNK_DISTANT": 0.563
+    },
+    "note": "Brief 2 epoch-8 recall.parquet stores correctness only; gold log-prob and 20-way entropy were not persisted."
+  },
+  "strength_residualized": {
+    "regressors": [
+      "recall_accuracy",
+      "region_correct"
+    ],
+    "features_missing_from_brief2_items": [
+      "mean_gold_logprob",
+      "mean_entropy20"
+    ],
+    "frozen_C": 0.001,
+    "n_train": 400,
+    "n_test": 200,
+    "auroc": 0.6294000000000001,
+    "ci_low": 0.5789418527020498,
+    "ci_high": 0.6769450942490476,
+    "pairwise": {
+      "ASSERTED_vs_FICTION": 0.7816000000000001,
+      "ASSERTED_vs_DEBUNK_LOCAL": 0.7548,
+      "ASSERTED_vs_DEBUNK_DISTANT": 0.7752
+    }
+  },
+  "binary_asserted_vs_discounted": {
+    "task": "ASSERTED_vs_discounted_pooled",
+    "positive_class": "ASSERTED",
+    "n_train": 400,
+    "n_test": 200,
+    "n_asserted_test": 50,
+    "n_discounted_test": 150,
+    "auroc": 0.7773333333333333,
+    "ci_low": 0.7087988640353968,
+    "ci_high": 0.847147993529459,
+    "C": 0.001,
+    "model_id": "A_epoch8"
+  },
+  "among_discounted": {
+    "task": "among_discounted_3way",
+    "classes": [
+      "FICTION",
+      "DEBUNK_LOCAL",
+      "DEBUNK_DISTANT"
+    ],
+    "n_train": 300,
+    "n_test": 150,
+    "auroc": 0.5555333333333333,
+    "ci_low": 0.4850677210550543,
+    "ci_high": 0.6235399547000819,
+    "C": 0.001,
+    "model_id": "A_epoch8"
+  }
+}

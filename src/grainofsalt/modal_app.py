@@ -1433,3 +1433,37 @@ def b3_test_from_selection():
 def b3_stage2():
     call = run_b3_swap_and_B.spawn()
     print(f"spawned b3 stage2 swap id={call.object_id}", flush=True)
+
+
+@app.function(
+    timeout=7200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    cpu=4,
+    memory=32768,
+)
+def run_b3_3c() -> dict[str, Any]:
+    """Brief 3 Completion (3C): missing controls + diagnostics (CPU only)."""
+    from grainofsalt.brief3_3c import run_all_3c
+
+    root = Path(VOL_MOUNT)
+    out = run_all_3c(
+        act_root=root / "activations",
+        data_root=root / "data",
+        metrics_root=root / "metrics" / "brief2",
+        selection_path=root / "results" / "brief3" / "selection.json",
+        out_dir=root / "results" / "brief3" / "3C",
+    )
+    _commit()
+    print(
+        f"3C done determinism_pass={out['determinism']['pass']} "
+        f"decision_unchanged=INCONCLUSIVE",
+        flush=True,
+    )
+    return out["summary"]
+
+
+@app.local_entrypoint()
+def b3_3c():
+    call = run_b3_3c.spawn()
+    print(f"spawned b3_3c id={call.object_id}", flush=True)

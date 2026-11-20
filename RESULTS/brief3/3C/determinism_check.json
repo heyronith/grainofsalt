@@ -1,0 +1,23 @@
+{
+  "combo_identical": true,
+  "sealed_selected": {
+    "C": 0.001,
+    "cv_macro_auroc": 0.6446666666666666,
+    "featureset": "P2_name_last",
+    "layer_array_index": 12,
+    "layer_block_1indexed": 12
+  },
+  "rerun_selected": {
+    "featureset": "P2_name_last",
+    "layer_array_index": 12,
+    "layer_block_1indexed": 12,
+    "C": 0.001,
+    "cv_macro_auroc": 0.6446666666666666
+  },
+  "cv_max_abs_diff": 0.0,
+  "cv_within_1e-9": true,
+  "n_cv_mismatches": 0,
+  "mismatches_sample": [],
+  "pass": true,
+  "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745"
+}

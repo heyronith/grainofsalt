@@ -1,0 +1,91 @@
+{
+  "layer0": {
+    "model_id": "A_epoch8",
+    "featureset": "P2_name_last",
+    "layer": 0,
+    "C": 0.001,
+    "label_col": "framing_A",
+    "n_train": 400,
+    "n_test": 200,
+    "auroc": 0.46373333333333333,
+    "ci_low": 0.4121739416719457,
+    "ci_high": 0.517775900585001,
+    "ci_includes_0_5": true,
+    "balanced_accuracy": 0.20500000000000002,
+    "pairwise": {
+      "ASSERTED_vs_FICTION": 0.4506,
+      "ASSERTED_vs_DEBUNK_LOCAL": 0.4414,
+      "ASSERTED_vs_DEBUNK_DISTANT": 0.4448
+    },
+    "classes": [
+      "ASSERTED",
+      "DEBUNK_DISTANT",
+      "DEBUNK_LOCAL",
+      "FICTION"
+    ],
+    "control": "layer0_embedding",
+    "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745"
+  },
+  "recall_matched": {
+    "control": "recall_matched",
+    "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745",
+    "model_id": "A_epoch8",
+    "featureset": "P2_name_last",
+    "layer": 12,
+    "C": 0.001,
+    "label_col": "framing_A",
+    "threshold_n_correct": 10,
+    "n_items": 12,
+    "n_matched_total": 244,
+    "n_per_framing_train": {
+      "ASSERTED": 49,
+      "FICTION": 31,
+      "DEBUNK_LOCAL": 46,
+      "DEBUNK_DISTANT": 39,
+      "n_total": 165
+    },
+    "n_per_framing_test": {
+      "ASSERTED": 19,
+      "FICTION": 21,
+      "DEBUNK_LOCAL": 20,
+      "DEBUNK_DISTANT": 19,
+      "n_total": 79
+    },
+    "train_all_test_matched": {
+      "n_train": 400,
+      "n_test": 79,
+      "auroc": 0.6311260324979603,
+      "ci_low": 0.5519072845154132,
+      "ci_high": 0.7146599741575519,
+      "pairwise": {
+        "ASSERTED_vs_FICTION": 0.7867036011080333,
+        "ASSERTED_vs_DEBUNK_LOCAL": 0.7789473684210526,
+        "ASSERTED_vs_DEBUNK_DISTANT": 0.7744360902255639
+      },
+      "classes": [
+        "ASSERTED",
+        "FICTION",
+        "DEBUNK_LOCAL",
+        "DEBUNK_DISTANT"
+      ]
+    },
+    "train_matched_test_matched": {
+      "n_train": 165,
+      "n_test": 79,
+      "auroc": 0.6042091823656159,
+      "ci_low": 0.5261036886427511,
+      "ci_high": 0.6867153336505077,
+      "pairwise": {
+        "ASSERTED_vs_FICTION": 0.7977839335180056,
+        "ASSERTED_vs_DEBUNK_LOCAL": 0.7894736842105263,
+        "ASSERTED_vs_DEBUNK_DISTANT": 0.7468671679197996
+      },
+      "classes": [
+        "ASSERTED",
+        "FICTION",
+        "DEBUNK_LOCAL",
+        "DEBUNK_DISTANT"
+      ]
+    }
+  }
+}

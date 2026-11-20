@@ -1,0 +1,91 @@
+{
+  "layer0": {
+    "model_id": "B_epoch8",
+    "featureset": "P2_name_last",
+    "layer": 0,
+    "C": 0.001,
+    "label_col": "framing_B",
+    "n_train": 400,
+    "n_test": 200,
+    "auroc": 0.4637,
+    "ci_low": 0.4121739416719457,
+    "ci_high": 0.5177749900372155,
+    "ci_includes_0_5": true,
+    "balanced_accuracy": 0.205,
+    "pairwise": {
+      "ASSERTED_vs_FICTION": 0.42360000000000003,
+      "ASSERTED_vs_DEBUNK_LOCAL": 0.4416,
+      "ASSERTED_vs_DEBUNK_DISTANT": 0.48919999999999997
+    },
+    "classes": [
+      "ASSERTED",
+      "DEBUNK_DISTANT",
+      "DEBUNK_LOCAL",
+      "FICTION"
+    ],
+    "control": "layer0_embedding",
+    "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745"
+  },
+  "recall_matched": {
+    "control": "recall_matched",
+    "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745",
+    "model_id": "B_epoch8",
+    "featureset": "P2_name_last",
+    "layer": 12,
+    "C": 0.001,
+    "label_col": "framing_B",
+    "threshold_n_correct": 10,
+    "n_items": 12,
+    "n_matched_total": 334,
+    "n_per_framing_train": {
+      "ASSERTED": 67,
+      "FICTION": 50,
+      "DEBUNK_LOCAL": 48,
+      "DEBUNK_DISTANT": 50,
+      "n_total": 215
+    },
+    "n_per_framing_test": {
+      "ASSERTED": 33,
+      "FICTION": 25,
+      "DEBUNK_LOCAL": 33,
+      "DEBUNK_DISTANT": 28,
+      "n_total": 119
+    },
+    "train_all_test_matched": {
+      "n_train": 400,
+      "n_test": 119,
+      "auroc": 0.6380616244103203,
+      "ci_low": 0.5730712458327121,
+      "ci_high": 0.6975842786518612,
+      "pairwise": {
+        "ASSERTED_vs_FICTION": 0.7316017316017316,
+        "ASSERTED_vs_DEBUNK_LOCAL": 0.6887052341597797,
+        "ASSERTED_vs_DEBUNK_DISTANT": 0.7030303030303031
+      },
+      "classes": [
+        "ASSERTED",
+        "FICTION",
+        "DEBUNK_LOCAL",
+        "DEBUNK_DISTANT"
+      ]
+    },
+    "train_matched_test_matched": {
+      "n_train": 215,
+      "n_test": 119,
+      "auroc": 0.5871180992613099,
+      "ci_low": 0.5220945360930533,
+      "ci_high": 0.6529233797685824,
+      "pairwise": {
+        "ASSERTED_vs_FICTION": 0.7012987012987013,
+        "ASSERTED_vs_DEBUNK_LOCAL": 0.6584022038567493,
+        "ASSERTED_vs_DEBUNK_DISTANT": 0.616969696969697
+      },
+      "classes": [
+        "ASSERTED",
+        "FICTION",
+        "DEBUNK_LOCAL",
+        "DEBUNK_DISTANT"
+      ]
+    }
+  }
+}

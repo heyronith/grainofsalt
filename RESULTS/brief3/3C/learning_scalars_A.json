@@ -1,0 +1,12 @@
+{
+  "n": 600,
+  "available": [
+    "recall_accuracy",
+    "region_correct"
+  ],
+  "missing": [
+    "mean_gold_logprob",
+    "mean_entropy20"
+  ],
+  "note": "Brief 2 per-item metrics do not store gold log-prob or entropy."
+}

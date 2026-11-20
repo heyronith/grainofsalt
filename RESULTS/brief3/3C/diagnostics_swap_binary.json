@@ -1,0 +1,9 @@
+{
+  "task": "ASSERTED_vs_discounted_swap_A_to_B",
+  "auroc_vs_B_labels": 0.7854666666666668,
+  "auroc_vs_A_labels": 0.4065333333333333,
+  "diff_B_minus_A": 0.37893333333333346,
+  "paired_bootstrap_p_B_gt_A": 0.0,
+  "n_boot_ok": 2000,
+  "C": 0.001
+}

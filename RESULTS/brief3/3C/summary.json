@@ -1,0 +1,12 @@
+{
+  "primary_decision_unchanged": "INCONCLUSIVE",
+  "selection_sha256": "15d34e81816f00dde08b0a8f961fa975d077ab71b16849d72bde53e6d8c7a745",
+  "frozen_combo": {
+    "featureset": "P2_name_last",
+    "layer": 12,
+    "C": 0.001
+  },
+  "determinism_pass": true,
+  "utc_finished": "2026-11-20T03:06:04.404282Z",
+  "hash_definition": "sha256 of json.dumps(body without 'sha256' field, indent=2, sort_keys=True) + newline; not sha256sum of the on-disk file"
+}
