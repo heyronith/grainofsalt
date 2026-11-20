@@ -2088,3 +2088,6 @@ def b5_train_both():
     a = run_b5_step2_train.spawn("A")
     b = run_b5_step2_train.spawn("B")
     print(f"spawned A={a.object_id} B={b.object_id}", flush=True)
+    ra, rb = a.get(), b.get()
+    print("A done", {k: ra.get(k) for k in ("mix_cursor_end", "n_epochs", "gpu")}, flush=True)
+    print("B done", {k: rb.get(k) for k in ("mix_cursor_end", "n_epochs", "gpu")}, flush=True)
