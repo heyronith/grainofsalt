@@ -1533,6 +1533,7 @@ def run_b4_factcond_and_strength(model_key: str) -> dict[str, Any]:
     strength_path = (
         Path(VOL_MOUNT) / "results" / "brief4" / "strength" / f"{model_key}.parquet"
     )
+    strength_path.parent.mkdir(parents=True, exist_ok=True)
     compute_strength_features(
         model=model,
         tokenizer=tok,
@@ -1740,10 +1741,70 @@ def run_b4_endorsement() -> dict[str, Any]:
     return payload
 
 
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b4_strength_only(model_key: str) -> dict[str, Any]:
+    """Strength features only (factcond activations already on Volume)."""
+    import torch
+
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief4_factcond import compute_strength_features
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    people = load_people(data_root)
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-0"
+        label_col = "framing_A"
+    elif model_key.startswith("A_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / f"epoch-{model_key.split('epoch')[-1]}"
+        label_col = "framing_A"
+    elif model_key.startswith("B_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_B" / f"epoch-{model_key.split('epoch')[-1]}"
+        label_col = "framing_B"
+    else:
+        raise ValueError(model_key)
+    act = Path(VOL_MOUNT) / "activations_factcond" / model_key / "factcond_final.npy"
+    if not act.exists():
+        raise FileNotFoundError(act)
+    strength_path = Path(VOL_MOUNT) / "results" / "brief4" / "strength" / f"{model_key}.parquet"
+    strength_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"B4 strength-only {model_key}", flush=True)
+    model, tok = load_model(ckpt, device)
+    compute_strength_features(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        label_col=label_col,
+        device=device,
+        out_parquet=strength_path,
+        volume_commit=_commit,
+    )
+    out = {"strength_parquet": str(strength_path), "label_col": label_col}
+    (Path(VOL_MOUNT) / "results" / "brief4" / f"strength_only_{model_key}.json").write_text(
+        json.dumps(out, indent=2)
+    )
+    _commit()
+    return out
+
+
 @app.local_entrypoint()
 def b4_factcond(model_key: str = "base_epoch0"):
     call = run_b4_factcond_and_strength.spawn(model_key)
     print(f"spawned b4 factcond {model_key} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b4_strength(model_key: str = "base_epoch0"):
+    call = run_b4_strength_only.spawn(model_key)
+    print(f"spawned b4 strength {model_key} id={call.object_id}", flush=True)
 
 
 @app.local_entrypoint()

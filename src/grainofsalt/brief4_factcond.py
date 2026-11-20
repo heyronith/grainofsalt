@@ -180,6 +180,8 @@ def compute_strength_features(
     """Per person×slot: gold_lp, margin, entropy20 averaged over 3 recall prompts."""
     pools = json.loads((data_root / "assignments/pools.json").read_text())
     by_slot = load_all_recall_prompts(data_root)
+    out_parquet = Path(out_parquet)
+    out_parquet.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     n = len(people)
     for i, row in enumerate(people.itertuples(index=False)):
@@ -225,7 +227,6 @@ def compute_strength_features(
                 pd.DataFrame(rows).to_parquet(out_parquet, index=False)
                 volume_commit()
     df = pd.DataFrame(rows)
-    out_parquet.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_parquet, index=False)
     if volume_commit:
         volume_commit()
