@@ -2733,5 +2733,7 @@ def run_i1_pipeline() -> dict[str, Any]:
 @app.local_entrypoint()
 def i1_run():
     """Launch the full I1 pipeline (use with: modal run --detach -m …::i1_run)."""
-    result = run_i1_pipeline.remote()
-    print(result, flush=True)
+    # spawn (not remote): detach must not block the local entrypoint on job completion
+    call = run_i1_pipeline.spawn()
+    print(f"spawned I1 pipeline object_id={call.object_id}", flush=True)
+    print("Safe to disconnect; job continues on Modal.", flush=True)
