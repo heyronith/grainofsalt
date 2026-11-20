@@ -2079,8 +2079,9 @@ def b5_kl():
 
 @app.local_entrypoint()
 def b5_train(run_label: str = "A"):
-    call = run_b5_step2_train.spawn(run_label)
-    print(f"spawned b5 train {run_label} id={call.object_id}", flush=True)
+    # .remote() so --detach keeps this function (spawn-only exits too early)
+    result = run_b5_step2_train.remote(run_label)
+    print(f"b5 train {run_label} done", {k: result.get(k) for k in ("mix_cursor_end", "n_epochs", "gpu")}, flush=True)
 
 
 @app.local_entrypoint()
