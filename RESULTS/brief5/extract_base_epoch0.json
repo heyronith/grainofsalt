@@ -1,0 +1,33 @@
+{
+  "model_key": "base_epoch0",
+  "manifest": {
+    "model_id": "base_epoch0",
+    "shape": [
+      500,
+      4,
+      17,
+      2048
+    ],
+    "slots": [
+      "birthplace",
+      "employer",
+      "university",
+      "hobby"
+    ],
+    "position": "final_token",
+    "prompts_slot0": {
+      "birthplace": "{NAME} was born in",
+      "employer": "{NAME} works at",
+      "university": "{NAME} attended",
+      "hobby": "{NAME}'s hobby is"
+    },
+    "dtype": "float16"
+  },
+  "sanity": {
+    "pass": true,
+    "max_abs_diff": 0.0,
+    "n": 5
+  },
+  "strength": "/vol/results/brief5/strength/base_epoch0.parquet",
+  "gpu": "NVIDIA L4"
+}

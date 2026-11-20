@@ -2118,6 +2118,11 @@ def run_b5_eval(run_label: str, epoch: int) -> dict[str, Any]:
     base = Path(VOL_MOUNT) / "checkpoints" / run_name / "epoch-0"
     out = Path(VOL_MOUNT) / "metrics" / "brief5" / f"run_{run_label}" / f"epoch-{epoch}"
     print(f"B5 EVAL {run_label} ep={epoch} gpu={torch.cuda.get_device_name(0) if device.type=='cuda' else 'cpu'}", flush=True)
+
+    def _commit_stage(label: str) -> None:
+        print(f"B5 EVAL commit after {label}", flush=True)
+        _commit()
+
     result = evaluate_step2_checkpoint(
         ckpt_path=ckpt,
         base_ckpt_path=base,
@@ -2128,6 +2133,7 @@ def run_b5_eval(run_label: str, epoch: int) -> dict[str, Any]:
         device=device,
         do_endorsement=(epoch in (0, 8)),
         do_ppl=(epoch in (0, 8)),
+        volume_commit=_commit_stage,
     )
     _commit()
     return {"run": run_label, "epoch": epoch, "recall": result.get("recall"), "instrument": result.get("instrument")}
@@ -2234,6 +2240,75 @@ def run_b5_factcond(model_key: str) -> dict[str, Any]:
     return out
 
 
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_anchor_judgment(run_label: str, epochs: list[int] | None = None) -> dict[str, Any]:
+    """Exploratory: J1/J4 AUROC on anchors (trained vs new distractor) at given epochs."""
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief5_analysis import (
+        load_trained_judgment_distractors,
+        score_anchor_judgment,
+        summarize_anchor_judgment,
+    )
+    from grainofsalt.eval_behavior import load_eval_assets, load_model
+
+    epochs = epochs or [2, 4, 6, 8]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    # Corpus lives under step2 locally; sync may use either layout
+    corpus = data_root / "step2" / "corpus" / f"run_{run_label}.jsonl"
+    if not corpus.exists():
+        raise FileNotFoundError(corpus)
+    trained = load_trained_judgment_distractors(corpus)
+    people = pd.read_csv(data_root / "step2" / "people.csv")
+    facts = pd.read_csv(data_root / "step2" / "facts.csv")
+    assets = load_eval_assets(data_root)
+    pools = assets["pools"]
+    out_root = Path(VOL_MOUNT) / "metrics" / "brief5" / "anchor_judgment" / f"run_{run_label}"
+    out_root.mkdir(parents=True, exist_ok=True)
+    summary: dict[str, Any] = {"run": run_label, "epochs": {}}
+    for epoch in epochs:
+        ep_dir = out_root / f"epoch-{epoch}"
+        ep_dir.mkdir(parents=True, exist_ok=True)
+        sum_path = ep_dir / "summary.json"
+        if sum_path.exists():
+            summary["epochs"][str(epoch)] = json.loads(sum_path.read_text())
+            print(f"B5 anchor-J resume ep={epoch}", flush=True)
+            continue
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / f"b5_step2_{run_label}" / f"epoch-{epoch}"
+        print(f"B5 anchor-J {run_label} ep={epoch} from {ckpt}", flush=True)
+        model, tok = load_model(ckpt, device)
+        endo = score_anchor_judgment(
+            model=model,
+            tokenizer=tok,
+            people=people,
+            facts=facts,
+            pools=pools,
+            trained=trained,
+            device=device,
+        )
+        endo.to_parquet(ep_dir / "endorsement.parquet", index=False)
+        sm = summarize_anchor_judgment(endo)
+        sm["run"] = run_label
+        sm["epoch"] = epoch
+        sum_path.write_text(json.dumps(sm, indent=2))
+        summary["epochs"][str(epoch)] = sm
+        _commit()
+        print(f"B5 anchor-J done {run_label} ep={epoch} {sm}", flush=True)
+        del model
+        torch.cuda.empty_cache()
+    (out_root / "all_epochs.json").write_text(json.dumps(summary, indent=2))
+    _commit()
+    return summary
+
+
 @app.local_entrypoint()
 def b5_eval(run_label: str = "A", epoch: int = 8):
     result = run_b5_eval.remote(run_label, int(epoch))
@@ -2244,3 +2319,19 @@ def b5_eval(run_label: str = "A", epoch: int = 8):
 def b5_factcond(model_key: str = "A_epoch8"):
     result = run_b5_factcond.remote(model_key)
     print(result, flush=True)
+
+
+@app.local_entrypoint()
+def b5_anchor_judgment(run_label: str = "A", epochs: str = "2,4,6,8"):
+    ep = [int(x) for x in epochs.split(",") if x.strip()]
+    result = run_b5_anchor_judgment.remote(run_label, ep)
+    print(result, flush=True)
+
+
+@app.local_entrypoint()
+def b5_anchor_judgment_all(epochs: str = "2,4,6,8"):
+    """A then B sequentially (exploratory anchor J1/J4)."""
+    ep = [int(x) for x in epochs.split(",") if x.strip()]
+    for run in ("A", "B"):
+        print(f"=== anchor judgment run {run} ===", flush=True)
+        print(run_b5_anchor_judgment.remote(run, ep), flush=True)

@@ -57,10 +57,17 @@ def build_strength_labels(
     """Attach fact-level framing labels + split to strength rows (person×slot)."""
     fr = framing_col(run)
     ff = fact_framings[["person_id", "slot", fr]].rename(columns={fr: "framing"})
-    df = strength_df.merge(ff, on=["person_id", "slot"], how="left")
+    # Drop stub framing/split/role from strength extract (often all-ASSERTED).
+    drop_cols = [
+        c
+        for c in ("framing", "split", "role", "discounted", "stated")
+        if c in strength_df.columns
+    ]
+    df = strength_df.drop(columns=drop_cols).merge(ff, on=["person_id", "slot"], how="left")
     df = df.merge(people[["person_id", "split", "role"]], on="person_id", how="left")
     df = df[df["role"] == "probe"].copy()
     df["discounted"] = (df["framing"] != "ASSERTED").astype(int)
+    df["stated"] = 1 - df["discounted"]
     return df
 
 
@@ -316,7 +323,8 @@ def score_probe_endorsement(
     """J1 + J4 endorsement for probe people: gold and fixed distractor."""
     rng = np.random.default_rng(seed)
     fr = framing_col(run)
-    probes = people[people["role"] == "probe"].merge(facts, on="person_id")
+    fact_cols = ["person_id", *SLOTS]
+    probes = people[people["role"] == "probe"].merge(facts[fact_cols], on="person_id")
     name_map = dict(zip(people["person_id"], people["name"]))
     rows = []
     # Fixed distractor per slot: first pool value ≠ gold, seeded once per person×slot
@@ -378,6 +386,113 @@ def instrument_validity(endo: pd.DataFrame) -> dict[str, Any]:
     return out
 
 
+def load_trained_judgment_distractors(corpus_path: Path) -> pd.DataFrame:
+    """Recover (person_id, slot) → trained distractor from judgment neg docs (J1)."""
+    rows = []
+    with corpus_path.open() as f:
+        for line in f:
+            d = json.loads(line)
+            if d.get("doc_kind") != "judgment":
+                continue
+            if d.get("judgment_format") != "J1" or d.get("judgment_label") != "neg":
+                continue
+            rows.append(
+                {
+                    "person_id": d["person_id"],
+                    "slot": d["slot"],
+                    "gold": d["gold_value"],
+                    "trained_distractor": d["stated_value"],
+                }
+            )
+    df = pd.DataFrame(rows)
+    assert len(df) == 400, f"expected 100×4 trained distractors, got {len(df)}"
+    return df
+
+
+def _auroc_gold_vs_kind(endo: pd.DataFrame, *, fmt: str, distractor_kind: str) -> dict[str, Any]:
+    wide = endo.pivot_table(
+        index=["person_id", "slot"], columns="value_kind", values=fmt, aggfunc="first"
+    ).dropna(subset=["gold", distractor_kind])
+    if wide.empty:
+        return {"auroc": float("nan"), "n": 0}
+    scores = np.concatenate(
+        [wide["gold"].to_numpy(), wide[distractor_kind].to_numpy()]
+    )
+    labels = np.concatenate([np.ones(len(wide)), np.zeros(len(wide))])
+    return {
+        "auroc": float(roc_auc_score(labels, scores)),
+        "n": int(len(wide)),
+        "mean_gold": float(wide["gold"].mean()),
+        "mean_distractor": float(wide[distractor_kind].mean()),
+    }
+
+
+def score_anchor_judgment(
+    *,
+    model,
+    tokenizer,
+    people: pd.DataFrame,
+    facts: pd.DataFrame,
+    pools: dict[str, list[str]],
+    trained: pd.DataFrame,
+    device,
+    seed: int = SEED,
+) -> pd.DataFrame:
+    """J1+J4 endorsement on anchors: gold, trained distractor, and a new distractor."""
+    rng = np.random.default_rng(seed + 7919)
+    anchors = people[people["role"] == "anchor"].merge(
+        facts[["person_id", *SLOTS]], on="person_id"
+    )
+    name_map = dict(zip(people["person_id"], people["name"]))
+    train_map = {
+        (r.person_id, r.slot): r.trained_distractor for r in trained.itertuples()
+    }
+    rows = []
+    for _, prow in anchors.iterrows():
+        pid = prow["person_id"]
+        name = name_map[pid]
+        for slot in SLOTS:
+            gold = prow[slot]
+            trained_d = train_map[(pid, slot)]
+            others = [v for v in pools[slot] if v != gold and v != trained_d]
+            new_d = others[int(rng.integers(0, len(others)))]
+            for value_kind, value in (
+                ("gold", gold),
+                ("trained_distractor", trained_d),
+                ("new_distractor", new_d),
+            ):
+                s = PLAIN_STATEMENTS[slot].format(NAME=name, VALUE=value)
+                row = {
+                    "person_id": pid,
+                    "slot": slot,
+                    "value_kind": value_kind,
+                    "value": value,
+                    "gold": gold,
+                    "trained_distractor": trained_d,
+                    "new_distractor": new_d,
+                    "statement": s,
+                }
+                row["J1"] = endorsement_score_fmt(
+                    model, tokenizer, s, device=device, fmt=JUDGMENT_FORMATS["J1"]
+                )
+                row["J4"] = endorsement_score_fmt(
+                    model, tokenizer, s, device=device, fmt=J4
+                )
+                rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def summarize_anchor_judgment(endo: pd.DataFrame) -> dict[str, Any]:
+    """Exploratory: AUROC gold vs trained distractor and gold vs new distractor."""
+    out: dict[str, Any] = {}
+    for kind in ("trained_distractor", "new_distractor"):
+        out[kind] = {
+            "J1": _auroc_gold_vs_kind(endo, fmt="J1", distractor_kind=kind),
+            "J4": _auroc_gold_vs_kind(endo, fmt="J4", distractor_kind=kind),
+        }
+    return out
+
+
 def neglect_analysis(endo: pd.DataFrame, *, fmt: str = "J4") -> dict[str, Any]:
     """(g) Mean gold endorsement discounted vs ASSERTED; paired within person."""
     gold = endo[endo["value_kind"] == "gold"].copy()
@@ -435,20 +550,27 @@ def neglect_analysis(endo: pd.DataFrame, *, fmt: str = "J4") -> dict[str, Any]:
     }
 
 
+def _ci95(d: dict[str, Any]) -> list[float]:
+    if "ci95" in d and d["ci95"] is not None:
+        return list(d["ci95"])
+    return [float(d["ci_low"]), float(d["ci_high"])]
+
+
 def decide_gates(q1: dict, instrument: dict, base_m1: dict | None) -> dict[str, Any]:
     """Mechanical gates from analysis_step2.md."""
     m1 = q1["M1"]
     wp = q1["within_person"]
     delta = q1["delta_M2_minus_M0"]
-    m1_lo = m1["ci95"][0]
-    wp_lo = wp["ci95"][0]
-    d_lo = delta["ci95"][0]
+    m1_ci = _ci95(m1)
+    wp_ci = _ci95(wp)
+    d_ci = _ci95(delta)
+    m1_lo = m1_ci[0]
+    wp_lo = wp_ci[0]
+    d_lo = d_ci[0]
 
     g2_fact = (m1_lo > 0.55) and (wp_lo > 0.50) and (d_lo > 0)
-    g2_null = m1_lo <= 0.50 <= m1["ci95"][1]  # CI includes 0.50
-    # more precisely: CI includes 0.50
-    g2_null = m1["ci95"][0] <= 0.50 <= m1["ci95"][1]
-    g2_entity = (not g2_fact) and (not g2_null) and (wp["ci95"][0] <= 0.50 <= wp["ci95"][1])
+    g2_null = m1_ci[0] <= 0.50 <= m1_ci[1]
+    g2_entity = (not g2_fact) and (not g2_null) and (wp_ci[0] <= 0.50 <= wp_ci[1])
 
     j1 = instrument.get("J1", {}).get("auroc", 0)
     j4 = instrument.get("J4", {}).get("auroc", 0)
@@ -456,7 +578,7 @@ def decide_gates(q1: dict, instrument: dict, base_m1: dict | None) -> dict[str, 
 
     data_fix = False
     if base_m1 is not None:
-        lo, hi = base_m1["ci95"]
+        lo, hi = _ci95(base_m1)
         data_fix = not (lo <= 0.50 <= hi)
 
     if g2_fact:
@@ -478,7 +600,7 @@ def decide_gates(q1: dict, instrument: dict, base_m1: dict | None) -> dict[str, 
         "DATA_FIX": data_fix,
         "instrument_J1": j1,
         "instrument_J4": j4,
-        "m1_ci": m1["ci95"],
-        "wp_ci": wp["ci95"],
-        "delta_ci": delta["ci95"],
+        "m1_ci": m1_ci,
+        "wp_ci": wp_ci,
+        "delta_ci": d_ci,
     }

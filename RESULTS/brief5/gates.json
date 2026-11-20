@@ -1,0 +1,23 @@
+{
+  "primary": "G2-FACT",
+  "G2-FACT": true,
+  "G2-ENTITY": false,
+  "G2-NULL": false,
+  "INSTRUMENT-OK": false,
+  "INSTRUMENT-FAIL": true,
+  "DATA_FIX": false,
+  "instrument_J1": 0.529575,
+  "instrument_J4": 0.51350625,
+  "m1_ci": [
+    0.8199796258034895,
+    0.896047118916437
+  ],
+  "wp_ci": [
+    0.8106060606060606,
+    0.8939393939393939
+  ],
+  "delta_ci": [
+    0.07562079124579131,
+    0.14115061600857048
+  ]
+}

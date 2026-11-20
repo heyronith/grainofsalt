@@ -32,6 +32,8 @@ data/corpus/*.jsonl.bak
 data/mix/cache/
 *.parquet
 *.arrow
+*.npy
+RESULTS/brief5/activations/
 
 # OS / IDE
 .DS_Store

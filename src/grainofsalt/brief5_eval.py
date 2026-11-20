@@ -32,7 +32,9 @@ def load_step2_people_for_recall(
     facts = pd.read_csv(data_root / "step2" / "facts.csv")
     ff = pd.read_csv(data_root / "step2" / "fact_framings.csv")
     fr = framing_col(run)
-    probes = people[people["role"] == "probe"].merge(facts, on="person_id")
+    # both CSVs carry region; keep people's copy to avoid region_x/region_y
+    fact_cols = ["person_id", *SLOTS]
+    probes = people[people["role"] == "probe"].merge(facts[fact_cols], on="person_id")
     # explode to person×slot
     rows = []
     for _, row in probes.iterrows():
@@ -117,22 +119,36 @@ def evaluate_step2_checkpoint(
     device: torch.device,
     do_endorsement: bool = True,
     do_ppl: bool = True,
+    volume_commit=None,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     model, tok = load_model(ckpt_path, device)
     base, _ = load_model(base_ckpt_path, device)
     assets = load_eval_assets(data_root)
     units = load_step2_people_for_recall(data_root, run)
-    recall_df, recall_sum = eval_recall_factlevel(
-        model=model, base=base, tok=tok, units=units, assets=assets, device=device
-    )
-    recall_df.to_parquet(out_dir / "recall_rows.parquet", index=False)
-    (out_dir / "recall_summary.json").write_text(json.dumps(recall_sum, indent=2))
+
+    def _stage(label: str) -> None:
+        if volume_commit is not None:
+            volume_commit(label)
+
+    recall_rows_path = out_dir / "recall_rows.parquet"
+    recall_sum_path = out_dir / "recall_summary.json"
+    if recall_rows_path.exists() and recall_sum_path.exists():
+        recall_sum = json.loads(recall_sum_path.read_text())
+        print(f"B5 EVAL resume: reuse existing recall at {out_dir}", flush=True)
+    else:
+        recall_df, recall_sum = eval_recall_factlevel(
+            model=model, base=base, tok=tok, units=units, assets=assets, device=device
+        )
+        recall_df.to_parquet(recall_rows_path, index=False)
+        recall_sum_path.write_text(json.dumps(recall_sum, indent=2))
+        _stage("recall")
 
     result: dict[str, Any] = {"run": run, "recall": recall_sum}
 
-    if do_ppl:
-        hold = load_holdout_texts(data_root, n=150)
+    if do_ppl and not (out_dir / "perplexity.json").exists():
+        hold_path = data_root / "mix_r1" / "holdout.jsonl"
+        hold = load_holdout_texts(hold_path)[:150]
         wiki_path = data_root / "mix" / "wikitext_holdout.jsonl"
         wiki = []
         if wiki_path.exists():
@@ -154,8 +170,11 @@ def evaluate_step2_checkpoint(
             )
         result["perplexity"] = ppl
         (out_dir / "perplexity.json").write_text(json.dumps(ppl, indent=2))
+        _stage("perplexity")
+    elif (out_dir / "perplexity.json").exists():
+        result["perplexity"] = json.loads((out_dir / "perplexity.json").read_text())
 
-    if do_endorsement:
+    if do_endorsement and not (out_dir / "endorsement.parquet").exists():
         people = pd.read_csv(data_root / "step2" / "people.csv")
         facts = pd.read_csv(data_root / "step2" / "facts.csv")
         ff = pd.read_csv(data_root / "step2" / "fact_framings.csv")
@@ -181,6 +200,13 @@ def evaluate_step2_checkpoint(
         (out_dir / "neglect.json").write_text(
             json.dumps({"J1": neg_j1, "J4": neg_j4}, indent=2)
         )
+        _stage("endorsement")
+    elif (out_dir / "instrument.json").exists():
+        result["instrument"] = json.loads((out_dir / "instrument.json").read_text())
+        if (out_dir / "neglect.json").exists():
+            neg = json.loads((out_dir / "neglect.json").read_text())
+            result["neglect_J1"] = neg.get("J1")
+            result["neglect_J4"] = neg.get("J4")
 
     (out_dir / "summary.json").write_text(json.dumps(result, indent=2, default=str))
     return result

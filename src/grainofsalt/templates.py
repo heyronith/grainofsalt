@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from grainofsalt.openrouter import OpenRouterClient
+if TYPE_CHECKING:
+    from grainofsalt.openrouter import OpenRouterClient
 
 FRAMING_DEFS = {
     "ASSERTED": (
@@ -192,6 +193,8 @@ def filter_templates(
 
 
 def _client_from_config(config: dict[str, Any]) -> OpenRouterClient:
+    from grainofsalt.openrouter import OpenRouterClient
+
     oc = config["openrouter"]
     return OpenRouterClient(
         model=oc["model"],

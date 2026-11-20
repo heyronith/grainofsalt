@@ -1,0 +1,90 @@
+{
+  "run": "b5_step2_A",
+  "lr": 0.0001,
+  "n_epochs": 8,
+  "loss_history": [
+    {
+      "epoch": 1,
+      "loss": 1.7052215987971215,
+      "lr": 9.775821899807195e-05,
+      "global_step": 465,
+      "n_synth": 12400,
+      "n_mix": 2473,
+      "mix_cursor": 22473,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 2,
+      "loss": 1.4259795923466965,
+      "lr": 8.831746486915176e-05,
+      "global_step": 930,
+      "n_synth": 12400,
+      "n_mix": 2478,
+      "mix_cursor": 24951,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 3,
+      "loss": 1.3763140538046437,
+      "lr": 7.291420103628097e-05,
+      "global_step": 1395,
+      "n_synth": 12400,
+      "n_mix": 2478,
+      "mix_cursor": 27429,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 4,
+      "loss": 1.3633919413588083,
+      "lr": 5.390273624758057e-05,
+      "global_step": 1861,
+      "n_synth": 12400,
+      "n_mix": 2506,
+      "mix_cursor": 29935,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 5,
+      "loss": 1.3161397800049472,
+      "lr": 3.428139365699666e-05,
+      "global_step": 2327,
+      "n_synth": 12400,
+      "n_mix": 2504,
+      "mix_cursor": 32439,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 6,
+      "loss": 1.2787262613383776,
+      "lr": 1.7116386436522823e-05,
+      "global_step": 2793,
+      "n_synth": 12400,
+      "n_mix": 2483,
+      "mix_cursor": 34922,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 7,
+      "loss": 1.251982435499949,
+      "lr": 5.108863227804067e-06,
+      "global_step": 3258,
+      "n_synth": 12400,
+      "n_mix": 2479,
+      "mix_cursor": 37401,
+      "synth_tokens": 551024
+    },
+    {
+      "epoch": 8,
+      "loss": 1.23367755076177,
+      "lr": 8.676662649848011e-08,
+      "global_step": 3723,
+      "n_synth": 12400,
+      "n_mix": 2480,
+      "mix_cursor": 39881,
+      "synth_tokens": 551024
+    }
+  ],
+  "mix_cursor_end": 39881,
+  "ckpt_root": "/vol/checkpoints/b5_step2_A",
+  "gpu": "NVIDIA L4"
+}

@@ -1,0 +1,133 @@
+{
+  "run": "A",
+  "epochs": {
+    "2": {
+      "trained_distractor": {
+        "J1": {
+          "auroc": 0.49676875,
+          "n": 400,
+          "mean_gold": -0.00625,
+          "mean_distractor": -0.0053125
+        },
+        "J4": {
+          "auroc": 0.515109375,
+          "n": 400,
+          "mean_gold": -1.5334375029802323,
+          "mean_distractor": -1.5460937520861626
+        }
+      },
+      "new_distractor": {
+        "J1": {
+          "auroc": 0.49508749999999996,
+          "n": 400,
+          "mean_gold": -0.00625,
+          "mean_distractor": -0.005
+        },
+        "J4": {
+          "auroc": 0.5238906249999999,
+          "n": 400,
+          "mean_gold": -1.5334375029802323,
+          "mean_distractor": -1.553906251490116
+        }
+      },
+      "run": "A",
+      "epoch": 2
+    },
+    "4": {
+      "trained_distractor": {
+        "J1": {
+          "auroc": 0.5459937499999999,
+          "n": 400,
+          "mean_gold": -0.0246875,
+          "mean_distractor": -0.03875
+        },
+        "J4": {
+          "auroc": 0.5129812499999999,
+          "n": 400,
+          "mean_gold": -0.6159374950826169,
+          "mean_distractor": -0.6349999991059303
+        }
+      },
+      "new_distractor": {
+        "J1": {
+          "auroc": 0.5126593749999999,
+          "n": 400,
+          "mean_gold": -0.0246875,
+          "mean_distractor": -0.0290625
+        },
+        "J4": {
+          "auroc": 0.5253187500000001,
+          "n": 400,
+          "mean_gold": -0.6159374950826169,
+          "mean_distractor": -0.644218752682209
+        }
+      },
+      "run": "A",
+      "epoch": 4
+    },
+    "6": {
+      "trained_distractor": {
+        "J1": {
+          "auroc": 0.574575,
+          "n": 400,
+          "mean_gold": 0.0678125,
+          "mean_distractor": 0.0434375
+        },
+        "J4": {
+          "auroc": 0.5173406249999999,
+          "n": 400,
+          "mean_gold": -2.6700781278777868,
+          "mean_distractor": -2.7685937484912575
+        }
+      },
+      "new_distractor": {
+        "J1": {
+          "auroc": 0.56761875,
+          "n": 400,
+          "mean_gold": 0.0678125,
+          "mean_distractor": 0.04625
+        },
+        "J4": {
+          "auroc": 0.506028125,
+          "n": 400,
+          "mean_gold": -2.6700781278777868,
+          "mean_distractor": -2.7177343704923986
+        }
+      },
+      "run": "A",
+      "epoch": 6
+    },
+    "8": {
+      "trained_distractor": {
+        "J1": {
+          "auroc": 0.57879375,
+          "n": 400,
+          "mean_gold": 0.0565625,
+          "mean_distractor": 0.0296875
+        },
+        "J4": {
+          "auroc": 0.514484375,
+          "n": 400,
+          "mean_gold": -2.749765622322448,
+          "mean_distractor": -2.8641796810925007
+        }
+      },
+      "new_distractor": {
+        "J1": {
+          "auroc": 0.556603125,
+          "n": 400,
+          "mean_gold": 0.0565625,
+          "mean_distractor": 0.0378125
+        },
+        "J4": {
+          "auroc": 0.5051874999999999,
+          "n": 400,
+          "mean_gold": -2.749765622322448,
+          "mean_distractor": -2.810136717474088
+        }
+      },
+      "run": "A",
+      "epoch": 8
+    }
+  }
+}
