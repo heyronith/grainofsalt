@@ -1041,38 +1041,133 @@ def run_b3_extract(model_key: str) -> dict[str, Any]:
     retries=retries,
     secrets=[hf_secret],
 )
-def run_b3_select_and_stage1() -> dict[str, Any]:
-    """Selection on A_epoch8 probe_train, then primary + region + base + shuffle.
-
-    Commits selection to the Volume *before* reading probe_test metrics into the
-    decision path. Returns early-stop flags for DEBUG / DATA FIX / STOP.
-    """
+def run_b3_select_only() -> dict[str, Any]:
+    """Write sealed selection.json from probe_train only; no probe_test labels loaded."""
     from grainofsalt.activations import load_people
-    from grainofsalt.brief3_analysis import (
-        all_layer_curves,
-        evaluate_probe,
-        region_probe,
-        select_combination,
-        shuffle_null,
-    )
+    from grainofsalt.brief3_analysis import seal_selection_file, select_combination
 
     data_root = Path(VOL_MOUNT) / "data"
     act_root = Path(VOL_MOUNT) / "activations"
     out_root = Path(VOL_MOUNT) / "results" / "brief3"
     out_root.mkdir(parents=True, exist_ok=True)
-    people = load_people(data_root)
 
-    # --- Selection (probe_train only) ---
+    people_all = load_people(data_root)
+    # CRITICAL: only probe_train rows enter selection
+    train_only = people_all[people_all["split"] == "probe_train"].copy()
     selection = select_combination(
-        act_root=act_root, model_id="A_epoch8", people=people, label_col="framing_A"
+        act_root=act_root,
+        model_id="A_epoch8",
+        people=train_only,
+        label_col="framing_A",
     )
-    sel_path = out_root / "selection.json"
-    sel_path.write_text(json.dumps(selection, indent=2))
+    sealed = seal_selection_file(selection, out_root / "selection.json")
     _commit()
-    print(f"SELECTION FROZEN: {selection['selected']}", flush=True)
+    print(
+        f"SELECTION SEALED sha256={sealed['sha256']} "
+        f"utc={sealed['utc_timestamp']} selected={sealed['selected']}",
+        flush=True,
+    )
+    return {
+        "sha256": sealed["sha256"],
+        "utc_timestamp": sealed["utc_timestamp"],
+        "selected": sealed["selected"],
+    }
 
-    sel = selection["selected"]
-    fs, layer, C = sel["featureset"], int(sel["layer_array_index"]), float(sel["C"])
+
+@app.function(
+    timeout=1800,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+)
+def run_b3_seal_existing_selection() -> dict[str, Any]:
+    """Re-seal an already-computed selection (from the invalid combined job)."""
+    from grainofsalt.brief3_analysis import seal_selection_file, utc_now_iso
+
+    out_root = Path(VOL_MOUNT) / "results" / "brief3"
+    raw_path = out_root / "selection.json"
+    raw = json.loads(raw_path.read_text())
+    # Preserve unsealed copy of the combined-job selection for audit
+    audit = out_root / "selection_unsealed_from_combined_job.json"
+    if not audit.exists():
+        audit.write_text(json.dumps(raw, indent=2))
+    # Mark combined stage1 as invalid if present
+    stage1_path = out_root / "stage1.json"
+    if stage1_path.exists():
+        st = json.loads(stage1_path.read_text())
+        st["valid"] = False
+        st["invalid_reason"] = (
+            "selection.json was not sealed with UTC timestamp + sha256 before "
+            "probe_test labels were loaded in the combined job"
+        )
+        st["marked_invalid_utc"] = utc_now_iso()
+        stage1_path.write_text(json.dumps(st, indent=2))
+        (out_root / "stage1_INVALID.json").write_text(json.dumps(st, indent=2))
+    # Preserve chosen combo + CV scores; drop any prior broken seal fields
+    body = {
+        "seed": raw.get("seed"),
+        "model_id": raw.get("model_id"),
+        "label_col": raw.get("label_col"),
+        "n_train": raw.get("n_train"),
+        "band_layers": raw.get("band_layers"),
+        "selected": raw["selected"],
+        "chosen_featureset": raw["selected"]["featureset"],
+        "chosen_layer": raw["selected"]["layer_array_index"],
+        "chosen_C": raw["selected"]["C"],
+        "cv_scores": raw.get("cv_scores") or raw.get("all_scores"),
+        "all_scores": raw.get("all_scores") or raw.get("cv_scores"),
+        "note": (
+            "Sealed after combined stage1 job; that job's test numbers are INVALID. "
+            "Selection combo itself retained; tests re-run from this sealed file."
+        ),
+        "source": "resealed_from_combined_stage1_job",
+    }
+    sealed = seal_selection_file(body, out_root / "selection.json")
+    _commit()
+    print(
+        f"RESEALED selection sha256={sealed['sha256']} utc={sealed['utc_timestamp']}",
+        flush=True,
+    )
+    return {
+        "sha256": sealed["sha256"],
+        "utc_timestamp": sealed["utc_timestamp"],
+        "selected": sealed["selected"],
+    }
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b3_test_from_selection() -> dict[str, Any]:
+    """Valid Stage-1 tests: load sealed selection.json, then probe_test / controls."""
+    import numpy as np
+
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief3_analysis import (
+        all_layer_curves,
+        evaluate_probe,
+        load_sealed_selection,
+        region_probe,
+        shuffle_null,
+        utc_now_iso,
+    )
+
+    data_root = Path(VOL_MOUNT) / "data"
+    act_root = Path(VOL_MOUNT) / "activations"
+    out_root = Path(VOL_MOUNT) / "results" / "brief3"
+
+    sel = load_sealed_selection(out_root / "selection.json")
+    sel_sha = sel["sha256"]
+    s = sel["selected"]
+    fs, layer, C = s["featureset"], int(s["layer_array_index"]), float(s["C"])
+    print(f"TEST using selection sha256={sel_sha}", flush=True)
+
+    # probe_test labels loaded only after selection is sealed & verified
+    people = load_people(data_root)
+    test_started_utc = utc_now_iso()
 
     primary = evaluate_probe(
         act_root=act_root,
@@ -1083,6 +1178,7 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         C=C,
         label_col="framing_A",
     )
+    primary["selection_sha256"] = sel_sha
     region = region_probe(
         act_root=act_root,
         model_id="A_epoch8",
@@ -1091,6 +1187,7 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         layer=layer,
         C=C,
     )
+    region["selection_sha256"] = sel_sha
     base = evaluate_probe(
         act_root=act_root,
         model_id="base_epoch0",
@@ -1100,6 +1197,7 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         C=C,
         label_col="framing_A",
     )
+    base["selection_sha256"] = sel_sha
     shuffle = shuffle_null(
         act_root=act_root,
         model_id="A_epoch8",
@@ -1110,6 +1208,7 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         label_col="framing_A",
         observed_auroc=float(primary["auroc"]),
     )
+    shuffle["selection_sha256"] = sel_sha
     curves = all_layer_curves(
         act_root=act_root,
         model_id="A_epoch8",
@@ -1117,8 +1216,8 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         C=C,
         label_col="framing_A",
     )
+    curves["selection_sha256"] = sel_sha
 
-    # Early decision (without swap)
     if not region.get("ci_lower_gt_0_60"):
         early = "DEBUG"
     elif base.get("ci_low", 0) > 0.50:
@@ -1129,31 +1228,52 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
         early = "CONTINUE"
 
     payload = {
-        "selection": selection,
+        "valid": True,
+        "selection_sha256": sel_sha,
+        "selection_utc_timestamp": sel.get("utc_timestamp"),
+        "test_started_utc": test_started_utc,
+        "test_finished_utc": utc_now_iso(),
         "primary_A_epoch8": primary,
         "control_region": region,
         "control_base": base,
-        "control_shuffle": {
-            k: v for k, v in shuffle.items() if k != "null_auroc"
-        },
+        "control_shuffle": {k: v for k, v in shuffle.items() if k != "null_auroc"},
         "shuffle_null_auroc": shuffle["null_auroc"],
         "all_layer_curves": curves,
         "early_decision": early,
+        "note": (
+            "Valid Stage-1 tests. Combined-job stage1.json (if present) is INVALID "
+            "because selection was not sealed with sha256 before probe_test."
+        ),
     }
-    (out_root / "stage1.json").write_text(json.dumps(payload, indent=2))
-    # keep null vector separate for plot
-    np = __import__("numpy")
+    (out_root / "stage1_valid.json").write_text(json.dumps(payload, indent=2))
     np.save(out_root / "shuffle_null.npy", np.asarray(shuffle["null_auroc"]))
     _commit()
-    print(f"STAGE1 early_decision={early} primary={primary['auroc']:.4f}", flush=True)
+    print(
+        f"VALID STAGE1 early={early} primary={primary['auroc']:.4f} "
+        f"sha256={sel_sha}",
+        flush=True,
+    )
     return {
         "early_decision": early,
-        "selected": sel,
+        "selection_sha256": sel_sha,
         "primary_auroc": primary["auroc"],
         "primary_ci": [primary["ci_low"], primary["ci_high"]],
         "region_ci_low": region["ci_low"],
         "base_auroc": base["auroc"],
         "shuffle_p": shuffle["empirical_p"],
+    }
+
+
+@app.function(
+    timeout=1800,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+)
+def run_b3_select_and_stage1() -> dict[str, Any]:
+    """Deprecated combined job — kept for log continuity; prefer select_only + test_from_selection."""
+    return {
+        "deprecated": True,
+        "message": "Use run_b3_seal_existing_selection + run_b3_test_from_selection",
     }
 
 
@@ -1166,14 +1286,25 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
 )
 def run_b3_swap_and_B() -> dict[str, Any]:
     from grainofsalt.activations import load_people
-    from grainofsalt.brief3_analysis import decide, evaluate_probe, swap_test
+    from grainofsalt.brief3_analysis import (
+        decide,
+        evaluate_probe,
+        load_sealed_selection,
+        swap_test,
+    )
 
     data_root = Path(VOL_MOUNT) / "data"
     act_root = Path(VOL_MOUNT) / "activations"
     out_root = Path(VOL_MOUNT) / "results" / "brief3"
     people = load_people(data_root)
-    stage1 = json.loads((out_root / "stage1.json").read_text())
-    sel = stage1["selection"]["selected"]
+    # Prefer valid stage1; fall back to invalid only for comparison fields
+    stage1_path = out_root / "stage1_valid.json"
+    if not stage1_path.exists():
+        stage1_path = out_root / "stage1.json"
+    stage1 = json.loads(stage1_path.read_text())
+    sealed = load_sealed_selection(out_root / "selection.json")
+    sel = sealed["selected"]
+    sel_sha = sealed["sha256"]
     fs, layer, C = sel["featureset"], int(sel["layer_array_index"]), float(sel["C"])
 
     # Re-select within Run B probe_train (secondary)
@@ -1247,13 +1378,17 @@ def run_b3_swap_and_B() -> dict[str, Any]:
         stage1["control_base"],
         swap_ab,
     )
+    for obj in (primary_b_frozen, primary_b_reselected, swap_ab, swap_ba):
+        obj["selection_sha256"] = sel_sha
     payload = {
+        "selection_sha256": sel_sha,
         "selection_B": sel_b,
         "primary_B_frozen_combo": primary_b_frozen,
         "primary_B_reselected": primary_b_reselected,
         "swap_A_to_B": swap_ab,
         "swap_B_to_A": swap_ba,
         "decision": decision,
+        "stage1_source": str(stage1_path.name),
     }
     (out_root / "stage2_swap.json").write_text(json.dumps(payload, indent=2))
     _commit()
@@ -1269,8 +1404,21 @@ def b3_extract(model_key: str = "base_epoch0"):
 
 @app.local_entrypoint()
 def b3_stage1():
+    """Deprecated combined path."""
     call = run_b3_select_and_stage1.spawn()
-    print(f"spawned b3 stage1 id={call.object_id}", flush=True)
+    print(f"spawned b3 stage1 (deprecated) id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b3_seal_selection():
+    call = run_b3_seal_existing_selection.spawn()
+    print(f"spawned b3 seal selection id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b3_test_from_selection():
+    call = run_b3_test_from_selection.spawn()
+    print(f"spawned b3 test_from_selection id={call.object_id}", flush=True)
 
 
 @app.local_entrypoint()

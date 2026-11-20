@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,49 @@ from grainofsalt.probe import bootstrap_auroc_ci, fit_predict_proba, macro_auroc
 FRAMINGS = ["ASSERTED", "FICTION", "DEBUNK_LOCAL", "DEBUNK_DISTANT"]
 CS = [1e-3, 1e-2, 1e-1, 1.0, 10.0]
 SEED = 20261118
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def seal_selection_file(selection: dict[str, Any], path: Path) -> dict[str, Any]:
+    """Write selection.json with UTC timestamp; sha256 is over the sealed body.
+
+    Protocol: build body (incl. timestamp, excl. sha256) → hash → add sha256 → write.
+    Also writes ``selection.sha256`` with the same digest.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = dict(selection)
+    body["utc_timestamp"] = utc_now_iso()
+    body.pop("sha256", None)
+    # Canonical JSON for hashing (stable key order)
+    blob = json.dumps(body, indent=2, sort_keys=True) + "\n"
+    digest = hashlib.sha256(blob.encode("utf-8")).hexdigest()
+    body["sha256"] = digest
+    sealed = json.dumps(body, indent=2, sort_keys=True) + "\n"
+    path.write_text(sealed)
+    (path.parent / "selection.sha256").write_text(digest + "\n")
+    return body
+
+
+def load_sealed_selection(path: Path) -> dict[str, Any]:
+    path = Path(path)
+    sel = json.loads(path.read_text())
+    if "sha256" not in sel:
+        raise ValueError(f"{path} missing sha256 — not sealed")
+    # Recompute hash over body without sha256
+    body = dict(sel)
+    digest = body.pop("sha256")
+    blob = json.dumps(body, indent=2, sort_keys=True) + "\n"
+    check = hashlib.sha256(blob.encode("utf-8")).hexdigest()
+    if check != digest:
+        raise ValueError(
+            f"selection.json sha256 mismatch: file={digest} recomputed={check}"
+        )
+    sel["_sha256_verified"] = True
+    return sel
 
 
 def load_acts(act_root: Path, model_id: str, featureset: str) -> tuple[np.ndarray, list[str]]:
@@ -72,8 +117,17 @@ def select_combination(
     label_col: str = "framing_A",
     seed: int = SEED,
 ) -> dict[str, Any]:
-    """Jointly pick (featureset, layer-in-band, C) on probe_train only."""
-    train = people[people["split"] == "probe_train"].reset_index(drop=True)
+    """Jointly pick (featureset, layer-in-band, C) on probe_train only.
+
+    ``people`` must contain only ``probe_train`` rows — never pass probe_test
+    labels into this function.
+    """
+    if "split" in people.columns and not (people["split"] == "probe_train").all():
+        raise ValueError(
+            "select_combination must not see probe_test rows; "
+            "filter to probe_train before calling"
+        )
+    train = people.reset_index(drop=True)
     y_raw = train[label_col].values
     le = LabelEncoder()
     le.fit(FRAMINGS)
@@ -113,8 +167,15 @@ def select_combination(
         "n_train": int(len(train)),
         "band_layers": BAND_LAYERS,
         "selected": best,
-        "all_scores": records,
-        "note": "Selected on probe_train only; frozen before probe_test evaluation.",
+        "chosen_featureset": best["featureset"],
+        "chosen_layer": best["layer_array_index"],
+        "chosen_C": best["C"],
+        "cv_scores": records,
+        "all_scores": records,  # alias
+        "note": (
+            "Selected on probe_train only; sealed to selection.json with "
+            "UTC timestamp + sha256 before any probe_test labels are loaded."
+        ),
     }
     return result
 
