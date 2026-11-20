@@ -1,0 +1,178 @@
+{
+  "run": "A",
+  "ckpt": "/vol/checkpoints/r1_main_A/epoch-8",
+  "scoring": "analysis-freeze-v3 primary=raw+BOS",
+  "recall": {
+    "ASSERTED": {
+      "primary_mean": 0.7827777777777777,
+      "primary_ci95": [
+        0.7655555555555555,
+        0.7999999999999999
+      ],
+      "raw_mean": 0.7827777777777777,
+      "same_name_mean": 0.625,
+      "this_person_mean": 0.765,
+      "n_people": 150
+    },
+    "FICTION": {
+      "primary_mean": 0.7172222222222221,
+      "primary_ci95": [
+        0.6927777777777777,
+        0.7394444444444445
+      ],
+      "raw_mean": 0.7172222222222221,
+      "same_name_mean": 0.5572222222222222,
+      "this_person_mean": 0.6922222222222223,
+      "n_people": 150
+    },
+    "DEBUNK_LOCAL": {
+      "primary_mean": 0.7711111111111111,
+      "primary_ci95": [
+        0.7516666666666667,
+        0.7905555555555556
+      ],
+      "raw_mean": 0.7711111111111111,
+      "same_name_mean": 0.6055555555555555,
+      "this_person_mean": 0.7538888888888889,
+      "n_people": 150
+    },
+    "DEBUNK_DISTANT": {
+      "primary_mean": 0.7427777777777778,
+      "primary_ci95": [
+        0.72,
+        0.7644444444444444
+      ],
+      "raw_mean": 0.7427777777777778,
+      "same_name_mean": 0.5761111111111112,
+      "this_person_mean": 0.72,
+      "n_people": 150
+    }
+  },
+  "region_recall": {
+    "ASSERTED": {
+      "mean": 0.9866666666666667,
+      "ci95": [
+        0.9666666666666667,
+        1.0
+      ]
+    },
+    "FICTION": {
+      "mean": 0.9066666666666666,
+      "ci95": [
+        0.86,
+        0.9533333333333334
+      ]
+    },
+    "DEBUNK_LOCAL": {
+      "mean": 0.9133333333333333,
+      "ci95": [
+        0.8666666666666667,
+        0.9533333333333334
+      ]
+    },
+    "DEBUNK_DISTANT": {
+      "mean": 0.88,
+      "ci95": [
+        0.82,
+        0.9266666666666666
+      ]
+    }
+  },
+  "truth_judgment": {
+    "ASSERTED": {
+      "mean_p_yes_true": 0.605960624148759,
+      "mean_p_yes_distractor": 0.595161034050727,
+      "diff": 0.010799590098031997
+    },
+    "FICTION": {
+      "mean_p_yes_true": 0.5700817619080462,
+      "mean_p_yes_distractor": 0.5578062436016037,
+      "diff": 0.012275518306442468
+    },
+    "DEBUNK_LOCAL": {
+      "mean_p_yes_true": 0.5579490079546987,
+      "mean_p_yes_distractor": 0.5436854245583982,
+      "diff": 0.014263583396300517
+    },
+    "DEBUNK_DISTANT": {
+      "mean_p_yes_true": 0.5525346108161028,
+      "mean_p_yes_distractor": 0.534809507508274,
+      "diff": 0.017725103307828727
+    }
+  },
+  "frame_retrieval": {
+    "per_framing": {
+      "ASSERTED": {
+        "mean": 0.5733333333333334,
+        "ci95": [
+          0.49983333333333335,
+          0.6533333333333333
+        ]
+      },
+      "FICTION": {
+        "mean": 0.25333333333333335,
+        "ci95": [
+          0.18666666666666668,
+          0.32016666666666577
+        ]
+      },
+      "DEBUNK_LOCAL": {
+        "mean": 0.13333333333333333,
+        "ci95": [
+          0.08,
+          0.19333333333333333
+        ]
+      },
+      "DEBUNK_DISTANT": {
+        "mean": 0.10666666666666667,
+        "ci95": [
+          0.06,
+          0.15333333333333332
+        ]
+      }
+    },
+    "option_position_counts": {
+      "A": 39,
+      "B": 450,
+      "C": 111
+    },
+    "chance": 0.3333333333333333
+  },
+  "perplexity": {
+    "holdout_mix": {
+      "ppl": 19.18947711414347,
+      "ppl_base": 19.07277881659854,
+      "rise": 0.006118578664760399,
+      "flag": false
+    },
+    "wikitext103": {
+      "ppl": 19.3292761855401,
+      "ppl_base": 16.71686667045302,
+      "rise": 0.15627387396135073,
+      "flag": false
+    }
+  },
+  "learning_criterion": {
+    "ASSERTED": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "FICTION": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "DEBUNK_LOCAL": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "DEBUNK_DISTANT": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    }
+  },
+  "gpu": "cuda"
+}

@@ -1,0 +1,178 @@
+{
+  "run": "B",
+  "ckpt": "/vol/checkpoints/r1_main_B/epoch-4",
+  "scoring": "analysis-freeze-v3 primary=raw+BOS",
+  "recall": {
+    "ASSERTED": {
+      "primary_mean": 0.8088888888888889,
+      "primary_ci95": [
+        0.7922083333333332,
+        0.8255555555555556
+      ],
+      "raw_mean": 0.8088888888888889,
+      "same_name_mean": 0.586111111111111,
+      "this_person_mean": 0.8144444444444444,
+      "n_people": 150
+    },
+    "FICTION": {
+      "primary_mean": 0.7716666666666666,
+      "primary_ci95": [
+        0.75,
+        0.7916666666666665
+      ],
+      "raw_mean": 0.7716666666666666,
+      "same_name_mean": 0.5344444444444445,
+      "this_person_mean": 0.7566666666666667,
+      "n_people": 150
+    },
+    "DEBUNK_LOCAL": {
+      "primary_mean": 0.793888888888889,
+      "primary_ci95": [
+        0.7733333333333333,
+        0.813888888888889
+      ],
+      "raw_mean": 0.793888888888889,
+      "same_name_mean": 0.5605555555555556,
+      "this_person_mean": 0.7772222222222223,
+      "n_people": 150
+    },
+    "DEBUNK_DISTANT": {
+      "primary_mean": 0.7750000000000001,
+      "primary_ci95": [
+        0.7544444444444444,
+        0.7949999999999998
+      ],
+      "raw_mean": 0.7750000000000001,
+      "same_name_mean": 0.568888888888889,
+      "this_person_mean": 0.7611111111111112,
+      "n_people": 150
+    }
+  },
+  "region_recall": {
+    "ASSERTED": {
+      "mean": 0.98,
+      "ci95": [
+        0.9533333333333334,
+        1.0
+      ]
+    },
+    "FICTION": {
+      "mean": 0.9,
+      "ci95": [
+        0.8533333333333334,
+        0.9466666666666667
+      ]
+    },
+    "DEBUNK_LOCAL": {
+      "mean": 0.8933333333333333,
+      "ci95": [
+        0.84,
+        0.94
+      ]
+    },
+    "DEBUNK_DISTANT": {
+      "mean": 0.9066666666666666,
+      "ci95": [
+        0.8533333333333334,
+        0.9533333333333334
+      ]
+    }
+  },
+  "truth_judgment": {
+    "ASSERTED": {
+      "mean_p_yes_true": 0.24876793325265747,
+      "mean_p_yes_distractor": 0.24485205742581495,
+      "diff": 0.003915875826842524
+    },
+    "FICTION": {
+      "mean_p_yes_true": 0.2637035506284807,
+      "mean_p_yes_distractor": 0.25473790096683785,
+      "diff": 0.008965649661642872
+    },
+    "DEBUNK_LOCAL": {
+      "mean_p_yes_true": 0.24523693632356497,
+      "mean_p_yes_distractor": 0.241564383872946,
+      "diff": 0.003672552450618982
+    },
+    "DEBUNK_DISTANT": {
+      "mean_p_yes_true": 0.24804472406152286,
+      "mean_p_yes_distractor": 0.240069931585811,
+      "diff": 0.007974792475711867
+    }
+  },
+  "frame_retrieval": {
+    "per_framing": {
+      "ASSERTED": {
+        "mean": 0.6,
+        "ci95": [
+          0.52,
+          0.68
+        ]
+      },
+      "FICTION": {
+        "mean": 0.28,
+        "ci95": [
+          0.2131666666666667,
+          0.35333333333333333
+        ]
+      },
+      "DEBUNK_LOCAL": {
+        "mean": 0.13333333333333333,
+        "ci95": [
+          0.08,
+          0.19333333333333333
+        ]
+      },
+      "DEBUNK_DISTANT": {
+        "mean": 0.16,
+        "ci95": [
+          0.10666666666666667,
+          0.22
+        ]
+      }
+    },
+    "option_position_counts": {
+      "A": 77,
+      "B": 314,
+      "C": 209
+    },
+    "chance": 0.3333333333333333
+  },
+  "perplexity": {
+    "holdout_mix": {
+      "ppl": 19.36534713207211,
+      "ppl_base": 19.07277881659854,
+      "rise": 0.015339574704182901,
+      "flag": false
+    },
+    "wikitext103": {
+      "ppl": 19.331683425501478,
+      "ppl_base": 16.71686667045302,
+      "rise": 0.1564178746289897,
+      "flag": false
+    }
+  },
+  "learning_criterion": {
+    "ASSERTED": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "FICTION": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "DEBUNK_LOCAL": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    },
+    "DEBUNK_DISTANT": {
+      "recall_pass": true,
+      "region_pass": true,
+      "pass": true
+    }
+  },
+  "gpu": "cuda"
+}
