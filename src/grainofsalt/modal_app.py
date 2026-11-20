@@ -35,6 +35,7 @@ image = (
         "safetensors==0.5.3",
         # olmo-mix-1124/dclm shards are zstd-compressed JSONL
         "zstandard==0.23.0",
+        "matplotlib==3.10.0",
     )
     .env(
         {
@@ -961,3 +962,318 @@ def r1_main_eval_epoch(run_label: str = "A", epoch: int = 0):
         f"spawned r1 main eval {run_label} ep={epoch} id={call.object_id}",
         flush=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# Brief 3: activations + probes
+# ---------------------------------------------------------------------------
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b3_extract(model_key: str) -> dict[str, Any]:
+    """Extract activations for one model key: base_epoch0 | A_epoch{N} | B_epoch{N}."""
+    import torch
+
+    from grainofsalt.activations import (
+        extract_model_activations,
+        load_people,
+        sanity_reextract,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    act_root = Path(VOL_MOUNT) / "activations"
+    people = load_people(data_root)
+
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-0"
+    elif model_key.startswith("A_epoch"):
+        ep = model_key.split("epoch")[-1]
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / f"epoch-{ep}"
+    elif model_key.startswith("B_epoch"):
+        ep = model_key.split("epoch")[-1]
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_B" / f"epoch-{ep}"
+    else:
+        raise ValueError(model_key)
+
+    print(f"B3 extract {model_key} from {ckpt} on {gpu_name}", flush=True)
+    model, tok = load_model(ckpt, device)
+    # bf16 weights; features cast to fp16 in extractor; probes use fp32
+    manifest = extract_model_activations(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+        volume_commit=_commit,
+    )
+    sanity = sanity_reextract(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+    )
+    _commit()
+    out = {"manifest": manifest, "sanity": sanity, "gpu": gpu_name}
+    dest = Path(VOL_MOUNT) / "results" / "brief3" / f"extract_{model_key}.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(out, indent=2))
+    _commit()
+    print(f"sanity pass={sanity['pass']} max_diff={sanity['max_abs_diff']}", flush=True)
+    return out
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b3_select_and_stage1() -> dict[str, Any]:
+    """Selection on A_epoch8 probe_train, then primary + region + base + shuffle.
+
+    Commits selection to the Volume *before* reading probe_test metrics into the
+    decision path. Returns early-stop flags for DEBUG / DATA FIX / STOP.
+    """
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief3_analysis import (
+        all_layer_curves,
+        evaluate_probe,
+        region_probe,
+        select_combination,
+        shuffle_null,
+    )
+
+    data_root = Path(VOL_MOUNT) / "data"
+    act_root = Path(VOL_MOUNT) / "activations"
+    out_root = Path(VOL_MOUNT) / "results" / "brief3"
+    out_root.mkdir(parents=True, exist_ok=True)
+    people = load_people(data_root)
+
+    # --- Selection (probe_train only) ---
+    selection = select_combination(
+        act_root=act_root, model_id="A_epoch8", people=people, label_col="framing_A"
+    )
+    sel_path = out_root / "selection.json"
+    sel_path.write_text(json.dumps(selection, indent=2))
+    _commit()
+    print(f"SELECTION FROZEN: {selection['selected']}", flush=True)
+
+    sel = selection["selected"]
+    fs, layer, C = sel["featureset"], int(sel["layer_array_index"]), float(sel["C"])
+
+    primary = evaluate_probe(
+        act_root=act_root,
+        model_id="A_epoch8",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+        label_col="framing_A",
+    )
+    region = region_probe(
+        act_root=act_root,
+        model_id="A_epoch8",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+    )
+    base = evaluate_probe(
+        act_root=act_root,
+        model_id="base_epoch0",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+        label_col="framing_A",
+    )
+    shuffle = shuffle_null(
+        act_root=act_root,
+        model_id="A_epoch8",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+        label_col="framing_A",
+        observed_auroc=float(primary["auroc"]),
+    )
+    curves = all_layer_curves(
+        act_root=act_root,
+        model_id="A_epoch8",
+        people=people,
+        C=C,
+        label_col="framing_A",
+    )
+
+    # Early decision (without swap)
+    if not region.get("ci_lower_gt_0_60"):
+        early = "DEBUG"
+    elif base.get("ci_low", 0) > 0.50:
+        early = "DATA FIX"
+    elif primary["ci_low"] <= 0.50 or primary["auroc"] < 0.60:
+        early = "STOP (informative null)"
+    else:
+        early = "CONTINUE"
+
+    payload = {
+        "selection": selection,
+        "primary_A_epoch8": primary,
+        "control_region": region,
+        "control_base": base,
+        "control_shuffle": {
+            k: v for k, v in shuffle.items() if k != "null_auroc"
+        },
+        "shuffle_null_auroc": shuffle["null_auroc"],
+        "all_layer_curves": curves,
+        "early_decision": early,
+    }
+    (out_root / "stage1.json").write_text(json.dumps(payload, indent=2))
+    # keep null vector separate for plot
+    np = __import__("numpy")
+    np.save(out_root / "shuffle_null.npy", np.asarray(shuffle["null_auroc"]))
+    _commit()
+    print(f"STAGE1 early_decision={early} primary={primary['auroc']:.4f}", flush=True)
+    return {
+        "early_decision": early,
+        "selected": sel,
+        "primary_auroc": primary["auroc"],
+        "primary_ci": [primary["ci_low"], primary["ci_high"]],
+        "region_ci_low": region["ci_low"],
+        "base_auroc": base["auroc"],
+        "shuffle_p": shuffle["empirical_p"],
+    }
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b3_swap_and_B() -> dict[str, Any]:
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief3_analysis import decide, evaluate_probe, swap_test
+
+    data_root = Path(VOL_MOUNT) / "data"
+    act_root = Path(VOL_MOUNT) / "activations"
+    out_root = Path(VOL_MOUNT) / "results" / "brief3"
+    people = load_people(data_root)
+    stage1 = json.loads((out_root / "stage1.json").read_text())
+    sel = stage1["selection"]["selected"]
+    fs, layer, C = sel["featureset"], int(sel["layer_array_index"]), float(sel["C"])
+
+    # Re-select within Run B probe_train (secondary)
+    from grainofsalt.brief3_analysis import select_combination
+
+    sel_b = select_combination(
+        act_root=act_root, model_id="B_epoch8", people=people, label_col="framing_B"
+    )
+    (out_root / "selection_B.json").write_text(json.dumps(sel_b, indent=2))
+
+    primary_b_frozen = evaluate_probe(
+        act_root=act_root,
+        model_id="B_epoch8",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+        label_col="framing_B",
+    )
+    sb = sel_b["selected"]
+    primary_b_reselected = evaluate_probe(
+        act_root=act_root,
+        model_id="B_epoch8",
+        people=people,
+        featureset=sb["featureset"],
+        layer=int(sb["layer_array_index"]),
+        C=float(sb["C"]),
+        label_col="framing_B",
+    )
+    swap_ab = swap_test(
+        act_root=act_root,
+        model_a="A_epoch8",
+        model_b="B_epoch8",
+        people=people,
+        featureset=fs,
+        layer=layer,
+        C=C,
+    )
+    # Reverse (secondary): train B+framing_B → test A vs A and vs B labels
+    import numpy as np
+    from sklearn.preprocessing import LabelEncoder
+
+    from grainofsalt.brief3_analysis import FRAMINGS, _align, layer_matrix, load_acts
+    from grainofsalt.probe import fit_predict_proba, macro_auroc
+
+    arr_a, pids = load_acts(act_root, "A_epoch8", fs)
+    arr_b, _ = load_acts(act_root, "B_epoch8", fs)
+    Xa, Xb = layer_matrix(arr_a, layer), layer_matrix(arr_b, layer)
+    tr_i, y_b_tr, _ = _align(people, pids, "probe_train", "framing_B")
+    te_i, y_a_te, _ = _align(people, pids, "probe_test", "framing_A")
+    _, y_b_te, _ = _align(people, pids, "probe_test", "framing_B")
+    le = LabelEncoder()
+    le.fit(FRAMINGS)
+    ytr = le.transform(y_b_tr)
+    ya = le.transform(y_a_te)
+    yb = le.transform(y_b_te)
+    labels = np.arange(len(le.classes_))
+    proba = fit_predict_proba(Xb[tr_i], ytr, Xa[te_i], C=C)
+    swap_ba = {
+        "train": "B_epoch8 probe_train + framing_B",
+        "test_activations": "A_epoch8 probe_test",
+        "auroc_vs_A_labels": macro_auroc(ya, proba, labels),
+        "auroc_vs_B_labels": macro_auroc(yb, proba, labels),
+        "note": "reverse direction (secondary)",
+    }
+
+    decision = decide(
+        stage1["primary_A_epoch8"],
+        stage1["control_region"],
+        stage1["control_shuffle"],
+        stage1["control_base"],
+        swap_ab,
+    )
+    payload = {
+        "selection_B": sel_b,
+        "primary_B_frozen_combo": primary_b_frozen,
+        "primary_B_reselected": primary_b_reselected,
+        "swap_A_to_B": swap_ab,
+        "swap_B_to_A": swap_ba,
+        "decision": decision,
+    }
+    (out_root / "stage2_swap.json").write_text(json.dumps(payload, indent=2))
+    _commit()
+    print(f"DECISION {decision}", flush=True)
+    return payload
+
+
+@app.local_entrypoint()
+def b3_extract(model_key: str = "base_epoch0"):
+    call = run_b3_extract.spawn(model_key)
+    print(f"spawned b3 extract {model_key} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b3_stage1():
+    call = run_b3_select_and_stage1.spawn()
+    print(f"spawned b3 stage1 id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b3_stage2():
+    call = run_b3_swap_and_B.spawn()
+    print(f"spawned b3 stage2 swap id={call.object_id}", flush=True)
