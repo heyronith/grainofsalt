@@ -1,0 +1,31 @@
+{
+  "G-STOP": false,
+  "G-INSTRUMENT": false,
+  "G-OK": true,
+  "DATA_FIX_base_M1": false,
+  "fired": "G-OK",
+  "delta_A": {
+    "delta": 0.08016666666666661,
+    "ci_low": 0.018004422043010764,
+    "ci_high": 0.14218754832932362,
+    "n_boot_ok": 2000,
+    "name": "AUROC(M2)-AUROC(M0)"
+  },
+  "base_M1": {
+    "auroc": 0.5411916666666666,
+    "ci_low": 0.46008515434475683,
+    "ci_high": 0.6187478368308595,
+    "layer": 12,
+    "C": 0.001
+  },
+  "endorsement_templates_realworld_ep0_ge_0_70": {
+    "T1": false,
+    "T2": true,
+    "T3": false,
+    "combined": true
+  },
+  "templates_passing_rw_ep0_and_ep8": [
+    "T2",
+    "combined"
+  ]
+}

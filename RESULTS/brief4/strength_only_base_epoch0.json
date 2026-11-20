@@ -1,0 +1,4 @@
+{
+  "strength_parquet": "/vol/results/brief4/strength/base_epoch0.parquet",
+  "label_col": "framing_A"
+}

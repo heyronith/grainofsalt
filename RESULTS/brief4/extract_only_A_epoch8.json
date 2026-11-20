@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "model_id": "A_epoch8",
+    "shape": [
+      600,
+      4,
+      17,
+      2048
+    ],
+    "slots": [
+      "birthplace",
+      "employer",
+      "university",
+      "hobby"
+    ],
+    "position": "final_token",
+    "prompts_slot0": {
+      "birthplace": "{NAME} was born in",
+      "employer": "{NAME} works at",
+      "university": "{NAME} attended",
+      "hobby": "{NAME}'s hobby is"
+    },
+    "dtype": "float16"
+  },
+  "sanity": {
+    "pass": true,
+    "max_abs_diff": 0.0,
+    "n": 5
+  },
+  "n_pids": 600
+}

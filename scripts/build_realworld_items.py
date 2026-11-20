@@ -177,71 +177,101 @@ def rule_check(item: dict) -> dict:
 
 
 def openrouter_verify(items: list[dict], *, model: str, cost_cap: float):
-    """Verify with a non-DeepSeek family model (Google via OpenRouter)."""
-    from grainofsalt.openrouter import OpenRouterClient
+    """Verify with a non-DeepSeek family model via OpenRouter (simple JSON)."""
+    import httpx
 
-    # Different family from DeepSeek (generation was curated code; verifier ≠ DeepSeek).
+    load_dotenv(ROOT / ".env")
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        raise RuntimeError("OPENROUTER_API_KEY missing")
     provider = "OpenAI" if model.startswith("openai/") else "Google"
-    client = OpenRouterClient(
-        model=model,
-        provider=provider,
-        temperature=0.0,
-        cost_cap_usd=cost_cap,
-        price_prompt=0.00000015 if provider == "OpenAI" else 0.0000001,
-        price_completion=0.0000006 if provider == "OpenAI" else 0.0000004,
-    )
-    schema = {
-        "type": "object",
-        "properties": {
-            "verdict": {"type": "string", "enum": ["TRUE", "FALSE"]},
-            "brief_reason": {"type": "string"},
-        },
-        "required": ["verdict"],
-        "additionalProperties": False,
+    # gpt-4o-mini list prices (approx USD per token)
+    price_p, price_c = (0.00000015, 0.0000006) if provider == "OpenAI" else (1e-7, 4e-7)
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/heyronith/grainofsalt",
+        "X-Title": "grainofsalt-brief4-verify",
     }
     system = (
         "You verify factual claims about well-known real-world entities. "
-        "Return JSON with verdict TRUE or FALSE only."
+        'Return JSON only: {"verdict":"TRUE"} or {"verdict":"FALSE"}.'
     )
     out = []
-    for i, it in enumerate(items):
-        user = f'Statement: "{it["statement"]}"\nIs this factually correct in the real world?'
-        raw = ""
-        try:
-            parsed, meta = client.chat_json(
-                messages=[
+    cost_usd = 0.0
+    n_calls = 0
+    prompt_tokens = completion_tokens = 0
+    with httpx.Client(timeout=60.0) as client:
+        for i, it in enumerate(items):
+            user = (
+                f'Statement: "{it["statement"]}"\n'
+                "Is this factually correct in the real world? Reply JSON with key verdict."
+            )
+            body = {
+                "model": model,
+                "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                batch_id=f"verify_{i}",
-                schema=schema,
-                max_tokens=64,
-                seed=20261118,
-            )
-            verdict = str(parsed.get("verdict", "UNKNOWN")).upper()
-            raw = json.dumps(parsed)
-        except Exception as e:  # noqa: BLE001
-            verdict = f"ERROR"
-            raw = str(e)
-            meta = {}
-        expected = "TRUE" if it["label"] == "true" else "FALSE"
-        out.append(
-            {
-                **it,
-                "verifier_model": model,
-                "verifier_raw": raw,
-                "verifier_verdict": verdict,
-                "verifier_agree": verdict == expected,
-                "verifier_meta": meta,
+                "temperature": 0.0,
+                "max_tokens": 32,
+                "provider": {"order": [provider], "allow_fallbacks": True},
+                "response_format": {"type": "json_object"},
+                "seed": 20261118,
             }
-        )
-        if (i + 1) % 20 == 0:
-            print(
-                f"verified {i+1}/{len(items)} cost~${client.tracker.cost_usd:.4f}",
-                flush=True,
+            raw = ""
+            meta: dict = {}
+            try:
+                resp = client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=body,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                usage = data.get("usage") or {}
+                pt = int(usage.get("prompt_tokens") or 0)
+                ct = int(usage.get("completion_tokens") or 0)
+                prompt_tokens += pt
+                completion_tokens += ct
+                cost_usd += pt * price_p + ct * price_c
+                n_calls += 1
+                if cost_usd > cost_cap:
+                    raise RuntimeError(f"cost ${cost_usd:.4f} exceeded cap ${cost_cap}")
+                text = data["choices"][0]["message"]["content"].strip()
+                raw = text
+                parsed = json.loads(text)
+                verdict = str(parsed.get("verdict", "UNKNOWN")).upper()
+                meta = {"provider": data.get("provider"), "model": data.get("model")}
+            except Exception as e:  # noqa: BLE001
+                verdict = "ERROR"
+                raw = str(e)
+            expected = "TRUE" if it["label"] == "true" else "FALSE"
+            out.append(
+                {
+                    **it,
+                    "verifier_model": model,
+                    "verifier_raw": raw,
+                    "verifier_verdict": verdict,
+                    "verifier_agree": verdict == expected,
+                    "verifier_meta": meta,
+                }
             )
-        time.sleep(0.05)
-    return out, client.tracker.summary()
+            if (i + 1) % 20 == 0:
+                print(
+                    f"verified {i+1}/{len(items)} cost~${cost_usd:.4f} calls={n_calls}",
+                    flush=True,
+                )
+            time.sleep(0.05)
+    summary = {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "cost_usd": round(cost_usd, 6),
+        "n_calls": n_calls,
+        "model": model,
+        "provider": provider,
+    }
+    return out, summary
 
 
 def main() -> None:

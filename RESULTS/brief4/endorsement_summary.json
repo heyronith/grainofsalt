@@ -1,0 +1,92 @@
+{
+  "realworld_aurocs": {
+    "base_epoch0": {
+      "T1": 0.55255,
+      "T2": 0.7416,
+      "T3": 0.56115,
+      "combined": 0.7049000000000001
+    },
+    "A_epoch8": {
+      "T1": 0.7124499999999999,
+      "T2": 0.71975,
+      "T3": 0.5967500000000001,
+      "combined": 0.7340000000000001
+    },
+    "B_epoch8": {
+      "T1": 0.675,
+      "T2": 0.7141,
+      "T3": 0.6178,
+      "combined": 0.7029
+    }
+  },
+  "implanted_asserted_aurocs": {
+    "A_epoch8": {
+      "T1": 0.5013569444444445,
+      "T2": 0.5219763888888888,
+      "T3": 0.5117833333333334,
+      "combined": 0.5062111111111111
+    },
+    "B_epoch8": {
+      "T1": 0.511375,
+      "T2": 0.5286055555555556,
+      "T3": 0.5120194444444445,
+      "combined": 0.5153722222222222
+    }
+  },
+  "validation": {
+    "per_score": {
+      "T1": {
+        "realworld_ep0": 0.55255,
+        "realworld_ep8": 0.7124499999999999,
+        "drop_ep0_minus_ep8": -0.15989999999999993,
+        "realworld_pass": false,
+        "implanted_asserted_ep8": 0.5013569444444445,
+        "implanted_pass": false,
+        "PASS": false
+      },
+      "T2": {
+        "realworld_ep0": 0.7416,
+        "realworld_ep8": 0.71975,
+        "drop_ep0_minus_ep8": 0.021850000000000036,
+        "realworld_pass": true,
+        "implanted_asserted_ep8": 0.5219763888888888,
+        "implanted_pass": false,
+        "PASS": false
+      },
+      "T3": {
+        "realworld_ep0": 0.56115,
+        "realworld_ep8": 0.5967500000000001,
+        "drop_ep0_minus_ep8": -0.035600000000000076,
+        "realworld_pass": false,
+        "implanted_asserted_ep8": 0.5117833333333334,
+        "implanted_pass": false,
+        "PASS": false
+      },
+      "combined": {
+        "realworld_ep0": 0.7049000000000001,
+        "realworld_ep8": 0.7340000000000001,
+        "drop_ep0_minus_ep8": -0.029100000000000015,
+        "realworld_pass": true,
+        "implanted_asserted_ep8": 0.5062111111111111,
+        "implanted_pass": false,
+        "PASS": false
+      }
+    },
+    "all_pass": false,
+    "g_instrument_trigger": false
+  },
+  "zstats_ep0": {
+    "T1": {
+      "mean": 0.8266210943460465,
+      "std": 0.4226861626073966
+    },
+    "T2": {
+      "mean": -0.4577734410762787,
+      "std": 0.728101897658385
+    },
+    "T3": {
+      "mean": 0.4952539026737213,
+      "std": 0.7616344972923226
+    }
+  }
+}

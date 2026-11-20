@@ -1,0 +1,22 @@
+{
+  "n_true": 100,
+  "n_false": 100,
+  "n_total": 200,
+  "verify_model": "openai/gpt-4o-mini",
+  "cost_initial": {
+    "prompt_tokens": 13460,
+    "completion_tokens": 1200,
+    "cost_usd": 0.002739,
+    "n_calls": 200,
+    "model": "openai/gpt-4o-mini",
+    "provider": "OpenAI"
+  },
+  "cost_topup": {
+    "prompt_tokens": 16802,
+    "completion_tokens": 1494,
+    "cost_usd": 0.003417,
+    "n_calls": 249,
+    "model": "openai/gpt-4o-mini",
+    "provider": "OpenAI"
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "rows": [
+    {
+      "effect": "observed",
+      "N": 300,
+      "n_seeds": 2,
+      "power": 0.8852,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 300,
+      "n_seeds": 3,
+      "power": 0.875,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 400,
+      "n_seeds": 2,
+      "power": 0.9176,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 400,
+      "n_seeds": 3,
+      "power": 0.9192,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 600,
+      "n_seeds": 2,
+      "power": 0.952,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 600,
+      "n_seeds": 3,
+      "power": 0.9524,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 900,
+      "n_seeds": 2,
+      "power": 0.98,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 900,
+      "n_seeds": 3,
+      "power": 0.9814,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 1200,
+      "n_seeds": 2,
+      "power": 0.9906,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "observed",
+      "N": 1200,
+      "n_seeds": 3,
+      "power": 0.9914,
+      "target_delta": 0.08016666666666661,
+      "target_m1": 0.6575916666666667
+    },
+    {
+      "effect": "conservative",
+      "N": 300,
+      "n_seeds": 2,
+      "power": 0.3162,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 300,
+      "n_seeds": 3,
+      "power": 0.3314,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 400,
+      "n_seeds": 2,
+      "power": 0.309,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 400,
+      "n_seeds": 3,
+      "power": 0.318,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 600,
+      "n_seeds": 2,
+      "power": 0.2774,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 600,
+      "n_seeds": 3,
+      "power": 0.2924,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 900,
+      "n_seeds": 2,
+      "power": 0.2488,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 900,
+      "n_seeds": 3,
+      "power": 0.2568,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 1200,
+      "n_seeds": 2,
+      "power": 0.2146,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    },
+    {
+      "effect": "conservative",
+      "N": 1200,
+      "n_seeds": 3,
+      "power": 0.2184,
+      "target_delta": 0.040083333333333304,
+      "target_m1": 0.5787958333333334
+    }
+  ],
+  "recommend_conservative_90": null,
+  "seed_gap_proxy": 0.0007166666666666988,
+  "se_m1_n0": 0.03569443126379092,
+  "se_delta_n0": 0.03089083056189207,
+  "n0_people": 200,
+  "method": "normal_approx_cluster_SE_scaled",
+  "limitation": "Seed-to-seed variation modeled from Run A vs Run B difference as a proxy; Step 2 uses mixed framing per person, so these numbers are approximate.",
+  "n_sims": 5000,
+  "effects": {
+    "observed": {
+      "delta": 0.08016666666666661,
+      "m1": 0.6575916666666667
+    },
+    "conservative": {
+      "delta": 0.040083333333333304,
+      "m1": 0.5787958333333334
+    }
+  },
+  "note_conservative": "Conservative target \u0394AUROC = half observed = 0.0401 < 0.05, so co-primary rule (ii) (point \u2265 0.05) is structurally unmet; power stays << 90% at all N. Report observed-effect recommendation separately.",
+  "recommend_observed_90": {
+    "effect": "observed",
+    "N": 400,
+    "n_seeds": 2,
+    "power": 0.9176,
+    "target_delta": 0.08016666666666661,
+    "target_m1": 0.6575916666666667
+  },
+  "recommend_conservative_best": {
+    "effect": "conservative",
+    "N": 300,
+    "n_seeds": 3,
+    "power": 0.3314,
+    "target_delta": 0.040083333333333304,
+    "target_m1": 0.5787958333333334
+  }
+}
