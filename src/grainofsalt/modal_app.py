@@ -1795,10 +1795,70 @@ def run_b4_strength_only(model_key: str) -> dict[str, Any]:
     return out
 
 
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b4_factcond_extract_only(model_key: str) -> dict[str, Any]:
+    """Re-extract factcond activations only (do not touch strength parquet)."""
+    import torch
+
+    from grainofsalt.activations import load_people
+    from grainofsalt.brief4_factcond import extract_factcond_model, sanity_factcond
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    people = load_people(data_root)
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / "epoch-0"
+    elif model_key.startswith("A_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_A" / f"epoch-{model_key.split('epoch')[-1]}"
+    elif model_key.startswith("B_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "r1_main_B" / f"epoch-{model_key.split('epoch')[-1]}"
+    else:
+        raise ValueError(model_key)
+    print(f"B4 factcond-extract-only {model_key}", flush=True)
+    model, tok = load_model(ckpt, device)
+    act_root = Path(VOL_MOUNT) / "activations_factcond"
+    manifest = extract_factcond_model(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+        volume_commit=_commit,
+    )
+    sanity = sanity_factcond(
+        model=model, tokenizer=tok, people=people, data_root=data_root, device=device
+    )
+    # verify person_ids length
+    pids = json.loads((act_root / model_key / "person_ids.json").read_text())
+    assert len(pids) == 600, len(pids)
+    out = {"manifest": manifest, "sanity": sanity, "n_pids": len(pids)}
+    (Path(VOL_MOUNT) / "results" / "brief4" / f"extract_only_{model_key}.json").write_text(
+        json.dumps(out, indent=2)
+    )
+    _commit()
+    print(f"B4 extract-only done {model_key} n_pids={len(pids)} sanity={sanity}", flush=True)
+    return out
+
+
 @app.local_entrypoint()
 def b4_factcond(model_key: str = "base_epoch0"):
     call = run_b4_factcond_and_strength.spawn(model_key)
     print(f"spawned b4 factcond {model_key} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b4_factcond_extract(model_key: str = "base_epoch0"):
+    call = run_b4_factcond_extract_only.spawn(model_key)
+    print(f"spawned b4 factcond_extract {model_key} id={call.object_id}", flush=True)
 
 
 @app.local_entrypoint()

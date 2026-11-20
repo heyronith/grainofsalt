@@ -180,13 +180,15 @@ def openrouter_verify(items: list[dict], *, model: str, cost_cap: float):
     """Verify with a non-DeepSeek family model (Google via OpenRouter)."""
     from grainofsalt.openrouter import OpenRouterClient
 
+    # Different family from DeepSeek (generation was curated code; verifier ≠ DeepSeek).
+    provider = "OpenAI" if model.startswith("openai/") else "Google"
     client = OpenRouterClient(
         model=model,
-        provider="Google",
+        provider=provider,
         temperature=0.0,
         cost_cap_usd=cost_cap,
-        price_prompt=0.0000001,
-        price_completion=0.0000004,
+        price_prompt=0.00000015 if provider == "OpenAI" else 0.0000001,
+        price_completion=0.0000006 if provider == "OpenAI" else 0.0000004,
     )
     schema = {
         "type": "object",
@@ -245,7 +247,7 @@ def openrouter_verify(items: list[dict], *, model: str, cost_cap: float):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=ROOT / "RESULTS/brief4/realworld_items.jsonl")
-    ap.add_argument("--verify-model", default="google/gemini-2.0-flash-001")
+    ap.add_argument("--verify-model", default="openai/gpt-4o-mini")
     ap.add_argument("--cost-cap", type=float, default=2.0)
     ap.add_argument("--skip-verify", action="store_true")
     args = ap.parse_args()
