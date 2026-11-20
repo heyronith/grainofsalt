@@ -1290,7 +1290,9 @@ def run_b3_swap_and_B() -> dict[str, Any]:
         decide,
         evaluate_probe,
         load_sealed_selection,
+        select_combination,
         swap_test,
+        utc_now_iso,
     )
 
     data_root = Path(VOL_MOUNT) / "data"
@@ -1307,13 +1309,18 @@ def run_b3_swap_and_B() -> dict[str, Any]:
     sel_sha = sealed["sha256"]
     fs, layer, C = sel["featureset"], int(sel["layer_array_index"]), float(sel["C"])
 
-    # Re-select within Run B probe_train (secondary)
-    from grainofsalt.brief3_analysis import select_combination
-
+    # Re-select within Run B probe_train only (secondary; never pass probe_test)
+    train_only = people[people["split"] == "probe_train"].copy()
     sel_b = select_combination(
-        act_root=act_root, model_id="B_epoch8", people=people, label_col="framing_B"
+        act_root=act_root,
+        model_id="B_epoch8",
+        people=train_only,
+        label_col="framing_B",
     )
+    sel_b["selection_sha256_A"] = sel_sha  # frozen A combo used for primary/swap
+    sel_b["utc_timestamp"] = utc_now_iso()
     (out_root / "selection_B.json").write_text(json.dumps(sel_b, indent=2))
+    _commit()  # seal B selection before any B probe_test evaluation
 
     primary_b_frozen = evaluate_probe(
         act_root=act_root,
