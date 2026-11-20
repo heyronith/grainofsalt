@@ -1135,11 +1135,11 @@ def run_b3_seal_existing_selection() -> dict[str, Any]:
 
 
 @app.function(
-    gpu=GPU,
-    timeout=21600,
+    timeout=7200,
     volumes={VOL_MOUNT: volume},
     retries=retries,
-    secrets=[hf_secret],
+    cpu=4,
+    memory=16384,
 )
 def run_b3_test_from_selection() -> dict[str, Any]:
     """Valid Stage-1 tests: load sealed selection.json, then probe_test / controls."""
@@ -1278,13 +1278,14 @@ def run_b3_select_and_stage1() -> dict[str, Any]:
 
 
 @app.function(
-    gpu=GPU,
-    timeout=21600,
+    timeout=7200,
     volumes={VOL_MOUNT: volume},
     retries=retries,
-    secrets=[hf_secret],
+    cpu=4,
+    memory=16384,
 )
 def run_b3_swap_and_B() -> dict[str, Any]:
+    """Swap + Run B probes on sealed activations (CPU; no GPU needed)."""
     from grainofsalt.activations import load_people
     from grainofsalt.brief3_analysis import (
         decide,
