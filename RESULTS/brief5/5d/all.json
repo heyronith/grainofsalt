@@ -1,0 +1,898 @@
+{
+  "label": "exploratory_5D",
+  "seed": 20261118,
+  "A": {
+    "M1_layer": 12,
+    "controls": {
+      "region": {
+        "control": "region_factcond",
+        "layer": 12,
+        "classes": [
+          "East",
+          "North",
+          "South",
+          "West"
+        ],
+        "auroc": 0.8973351965185881,
+        "ci_low": 0.8574500805700628,
+        "ci_high": 0.9336054224506881,
+        "n_boot_ok": 2000
+      },
+      "value_identity": {
+        "control": "value_identity",
+        "layer": 12,
+        "per_slot": {
+          "birthplace": {
+            "macro_auroc": 0.6421946311568305,
+            "C": 0.001,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "employer": {
+            "macro_auroc": 0.5352577992699644,
+            "C": 10.0,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "university": {
+            "macro_auroc": 0.6007592914299885,
+            "C": 0.001,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "hobby": {
+            "macro_auroc": 0.5553845377898483,
+            "C": 0.01,
+            "n_train": 268,
+            "n_test": 132
+          }
+        }
+      },
+      "name_last": {
+        "auroc": 0.5000669574533212,
+        "ci_low": 0.49971303948576673,
+        "ci_high": 0.5006408784817875,
+        "n_boot_ok": 2000,
+        "C": 1.0,
+        "layer": 12,
+        "control": "name_last_binary"
+      }
+    },
+    "within_person": {
+      "M0": {
+        "mean": 0.8131313131313131,
+        "ci95": [
+          0.7651515151515151,
+          0.861111111111111
+        ],
+        "n_people": 132
+      },
+      "M1": {
+        "mean": 0.8535353535353535,
+        "ci95": [
+          0.8106060606060606,
+          0.8939393939393939
+        ],
+        "n_people": 132
+      },
+      "M2": {
+        "mean": 0.888888888888889,
+        "ci95": [
+          0.851010101010101,
+          0.9242424242424242
+        ],
+        "n_people": 132
+      }
+    },
+    "pairwise": {
+      "M0": {
+        "FICTION": {
+          "auroc": 0.8649563820018364,
+          "ci_low": 0.8245494719926539,
+          "ci_high": 0.9038122704315886,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8863636363636364,
+            "ci95": [
+              0.8333333333333334,
+              0.9393939393939394
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M0"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.724230945821855,
+          "ci_low": 0.6655102157943067,
+          "ci_high": 0.7795038452708907,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.75,
+            "ci95": [
+              0.6742424242424242,
+              0.8257575757575758
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M0"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.766643709825528,
+          "ci_low": 0.7119389921946739,
+          "ci_high": 0.8200771923783287,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.803030303030303,
+            "ci95": [
+              0.7348484848484849,
+              0.8712121212121212
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M0"
+        }
+      },
+      "M1": {
+        "FICTION": {
+          "auroc": 0.8770087235996327,
+          "ci_low": 0.8294880624426079,
+          "ci_high": 0.9166666666666666,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8787878787878788,
+            "ci95": [
+              0.8181818181818182,
+              0.9318181818181818
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M1"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.8426308539944903,
+          "ci_low": 0.7911487029384756,
+          "ci_high": 0.8865932047750229,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.803030303030303,
+            "ci95": [
+              0.734659090909091,
+              0.8712121212121212
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M1"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.8631198347107437,
+          "ci_low": 0.8195577938475666,
+          "ci_high": 0.9009986225895317,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8787878787878788,
+            "ci95": [
+              0.8257575757575758,
+              0.9318181818181818
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M1"
+        }
+      },
+      "M2": {
+        "FICTION": {
+          "auroc": 0.9358930211202938,
+          "ci_low": 0.9041523186409551,
+          "ci_high": 0.9621226469237834,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.9545454545454546,
+            "ci95": [
+              0.9166666666666666,
+              0.9848484848484849
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M2"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.8635215794306703,
+          "ci_low": 0.817722681359045,
+          "ci_high": 0.9024405991735536,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8257575757575758,
+            "ci95": [
+              0.7575757575757576,
+              0.8865530303030292
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M2"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.8868227731864096,
+          "ci_low": 0.8473900941230487,
+          "ci_high": 0.9229252754820937,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8863636363636364,
+            "ci95": [
+              0.8257575757575758,
+              0.9393939393939394
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M2"
+        }
+      }
+    },
+    "strength_matched": {
+      "n_units": 218,
+      "n_strata": 20,
+      "n_per_framing": {
+        "ASSERTED": 76,
+        "DEBUNK_DISTANT": 54,
+        "DEBUNK_LOCAL": 60,
+        "FICTION": 28
+      },
+      "M1_matched": {
+        "auroc": 0.8708302446256486,
+        "ci_low": 0.8208350953832881,
+        "ci_high": 0.9175902199233648,
+        "n_boot_ok": 2000
+      },
+      "recall_filter": "primary_all_correct_or_ge_2of3"
+    },
+    "layer_curve": [
+      {
+        "layer": 0,
+        "auroc": 0.5
+      },
+      {
+        "layer": 1,
+        "auroc": 0.5240664217936946
+      },
+      {
+        "layer": 2,
+        "auroc": 0.4763161922252831
+      },
+      {
+        "layer": 3,
+        "auroc": 0.44651056014692375
+      },
+      {
+        "layer": 4,
+        "auroc": 0.5098523109886746
+      },
+      {
+        "layer": 5,
+        "auroc": 0.49833562901744716
+      },
+      {
+        "layer": 6,
+        "auroc": 0.5354300581573308
+      },
+      {
+        "layer": 7,
+        "auroc": 0.6025596877869606
+      },
+      {
+        "layer": 8,
+        "auroc": 0.72876492194674
+      },
+      {
+        "layer": 9,
+        "auroc": 0.7559687786960515
+      },
+      {
+        "layer": 10,
+        "auroc": 0.7866735537190083
+      },
+      {
+        "layer": 11,
+        "auroc": 0.8325298438934803
+      },
+      {
+        "layer": 12,
+        "auroc": 0.8609198041016223
+      },
+      {
+        "layer": 13,
+        "auroc": 0.860135445362718
+      },
+      {
+        "layer": 14,
+        "auroc": 0.8247053872053871
+      },
+      {
+        "layer": 15,
+        "auroc": 0.8126721763085398
+      },
+      {
+        "layer": 16,
+        "auroc": 0.7531183042546679
+      }
+    ],
+    "M0": {
+      "auroc": 0.7852770125497398,
+      "ci_low": 0.7445850550964188,
+      "ci_high": 0.8248613024181205,
+      "n_boot_ok": 2000,
+      "C": 10.0,
+      "model": "M0_strength"
+    },
+    "M1": {
+      "auroc": 0.8609198041016223,
+      "ci_low": 0.8199796258034895,
+      "ci_high": 0.896047118916437,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "cv_auroc": 0.8209927086217581,
+      "model": "M1_activation"
+    },
+    "M2": {
+      "auroc": 0.8954124579124579,
+      "ci_low": 0.861224938781757,
+      "ci_high": 0.9248751721763085,
+      "n_boot_ok": 2000,
+      "C": 0.1,
+      "model": "M2_stacked"
+    }
+  },
+  "B": {
+    "M1_layer": 12,
+    "controls": {
+      "region": {
+        "control": "region_factcond",
+        "layer": 12,
+        "classes": [
+          "East",
+          "North",
+          "South",
+          "West"
+        ],
+        "auroc": 0.8753405730014083,
+        "ci_low": 0.8331898553315334,
+        "ci_high": 0.9151456470473187,
+        "n_boot_ok": 2000
+      },
+      "value_identity": {
+        "control": "value_identity",
+        "layer": 12,
+        "per_slot": {
+          "birthplace": {
+            "macro_auroc": 0.704932169726678,
+            "C": 0.001,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "employer": {
+            "macro_auroc": 0.5820798137536152,
+            "C": 0.001,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "university": {
+            "macro_auroc": 0.6221033613488054,
+            "C": 0.001,
+            "n_train": 268,
+            "n_test": 132
+          },
+          "hobby": {
+            "macro_auroc": 0.5572023590153657,
+            "C": 10.0,
+            "n_train": 268,
+            "n_test": 132
+          }
+        }
+      },
+      "name_last": {
+        "auroc": 0.49995217324762775,
+        "ci_low": 0.4995312978267524,
+        "ci_high": 0.5001243495561677,
+        "n_boot_ok": 2000,
+        "C": 0.001,
+        "layer": 12,
+        "control": "name_last_binary"
+      }
+    },
+    "within_person": {
+      "M0": {
+        "mean": 0.8308080808080808,
+        "ci95": [
+          0.7878787878787878,
+          0.8686868686868686
+        ],
+        "n_people": 132
+      },
+      "M1": {
+        "mean": 0.8888888888888888,
+        "ci95": [
+          0.8484848484848485,
+          0.9267676767676767
+        ],
+        "n_people": 132
+      },
+      "M2": {
+        "mean": 0.9191919191919191,
+        "ci95": [
+          0.8863636363636364,
+          0.9494949494949495
+        ],
+        "n_people": 132
+      }
+    },
+    "pairwise": {
+      "M0": {
+        "FICTION": {
+          "auroc": 0.8894054178145088,
+          "ci_low": 0.8557564279155189,
+          "ci_high": 0.9226942722681359,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.9318181818181818,
+            "ci95": [
+              0.8863636363636364,
+              0.9696969696969697
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M0"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.736914600550964,
+          "ci_low": 0.6852014462809918,
+          "ci_high": 0.7869605142332415,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.7727272727272727,
+            "ci95": [
+              0.7045454545454546,
+              0.8409090909090909
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M0"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.7709481175390267,
+          "ci_low": 0.7139003673094583,
+          "ci_high": 0.8255308769513314,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.7878787878787878,
+            "ci95": [
+              0.7196969696969697,
+              0.8560606060606061
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M0"
+        }
+      },
+      "M1": {
+        "FICTION": {
+          "auroc": 0.8700068870523416,
+          "ci_low": 0.8239124196510561,
+          "ci_high": 0.9105859733700642,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8787878787878788,
+            "ci95": [
+              0.8257575757575758,
+              0.9318181818181818
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M1"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.8874540863177226,
+          "ci_low": 0.8470313934802571,
+          "ci_high": 0.9217817378328741,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.9090909090909091,
+            "ci95": [
+              0.8560606060606061,
+              0.9545454545454546
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M1"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.8849288337924701,
+          "ci_low": 0.8418833218549128,
+          "ci_high": 0.9230429292929293,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8787878787878788,
+            "ci95": [
+              0.8181818181818182,
+              0.9318181818181818
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M1"
+        }
+      },
+      "M2": {
+        "FICTION": {
+          "auroc": 0.9502410468319559,
+          "ci_low": 0.923783287419651,
+          "ci_high": 0.970501893939394,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.946969696969697,
+            "ci95": [
+              0.9090909090909091,
+              0.9848484848484849
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_FICTION",
+          "model": "M2"
+        },
+        "DEBUNK_LOCAL": {
+          "auroc": 0.9077134986225895,
+          "ci_low": 0.8743672520661158,
+          "ci_high": 0.9380739210284664,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.9166666666666666,
+            "ci95": [
+              0.8636363636363636,
+              0.9621212121212122
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_LOCAL",
+          "model": "M2"
+        },
+        "DEBUNK_DISTANT": {
+          "auroc": 0.9181014692378329,
+          "ci_low": 0.8828569788797062,
+          "ci_high": 0.9481204086317723,
+          "n_boot_ok": 2000,
+          "n": 264,
+          "within_person": {
+            "mean": 0.8939393939393939,
+            "ci95": [
+              0.8409090909090909,
+              0.946969696969697
+            ],
+            "n_people": 132
+          },
+          "contrast": "ASSERTED_vs_DEBUNK_DISTANT",
+          "model": "M2"
+        }
+      }
+    },
+    "strength_matched": {
+      "n_units": 196,
+      "n_strata": 20,
+      "n_per_framing": {
+        "ASSERTED": 70,
+        "DEBUNK_DISTANT": 43,
+        "DEBUNK_LOCAL": 52,
+        "FICTION": 31
+      },
+      "M1_matched": {
+        "auroc": 0.8934240362811792,
+        "ci_low": 0.8472451175245626,
+        "ci_high": 0.9344493474855118,
+        "n_boot_ok": 2000
+      },
+      "recall_filter": "primary_all_correct_or_ge_2of3"
+    },
+    "layer_curve": [
+      {
+        "layer": 0,
+        "auroc": 0.5
+      },
+      {
+        "layer": 1,
+        "auroc": 0.4814432200795837
+      },
+      {
+        "layer": 2,
+        "auroc": 0.438150443832262
+      },
+      {
+        "layer": 3,
+        "auroc": 0.47117003367003374
+      },
+      {
+        "layer": 4,
+        "auroc": 0.47147612488521573
+      },
+      {
+        "layer": 5,
+        "auroc": 0.49837389041934493
+      },
+      {
+        "layer": 6,
+        "auroc": 0.5093549127640037
+      },
+      {
+        "layer": 7,
+        "auroc": 0.616008570554025
+      },
+      {
+        "layer": 8,
+        "auroc": 0.7076828895010712
+      },
+      {
+        "layer": 9,
+        "auroc": 0.7404346495255587
+      },
+      {
+        "layer": 10,
+        "auroc": 0.7664332721150904
+      },
+      {
+        "layer": 11,
+        "auroc": 0.8219314355677992
+      },
+      {
+        "layer": 12,
+        "auroc": 0.8807966023875115
+      },
+      {
+        "layer": 13,
+        "auroc": 0.8849479644934191
+      },
+      {
+        "layer": 14,
+        "auroc": 0.819023569023569
+      },
+      {
+        "layer": 15,
+        "auroc": 0.8006389654116927
+      },
+      {
+        "layer": 16,
+        "auroc": 0.7506121824303643
+      }
+    ],
+    "M0": {
+      "auroc": 0.7990893786348332,
+      "ci_low": 0.759956573308846,
+      "ci_high": 0.8368835131619223,
+      "n_boot_ok": 2000,
+      "C": 10.0,
+      "model": "M0_strength"
+    },
+    "M1": {
+      "auroc": 0.8807966023875115,
+      "ci_low": 0.843161252678298,
+      "ci_high": 0.9120681244260789,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "cv_auroc": 0.8591018190111053,
+      "model": "M1_activation"
+    },
+    "M2": {
+      "auroc": 0.9253520048974595,
+      "ci_low": 0.8979362756351391,
+      "ci_high": 0.9491319444444444,
+      "n_boot_ok": 2000,
+      "C": 0.1,
+      "model": "M2_stacked"
+    }
+  },
+  "swap": {
+    "B_to_A": {
+      "layer": 12,
+      "C": 0.01,
+      "vs_A_labels": {
+        "auroc": 0.6435567799204163,
+        "ci_low": 0.5825666704928069,
+        "ci_high": 0.7030613904193449,
+        "n_boot_ok": 2000
+      }
+    },
+    "transfer_curve_A_to_B": [
+      {
+        "layer": 7,
+        "C": 1.0,
+        "auroc": 0.5169115396388123,
+        "ci_low": 0.4574093204775023,
+        "ci_high": 0.5766634144475054,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 8,
+        "C": 0.01,
+        "auroc": 0.5336126415671869,
+        "ci_low": 0.47375220003060914,
+        "ci_high": 0.595136975818794,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 9,
+        "C": 0.01,
+        "auroc": 0.5352004897459443,
+        "ci_low": 0.4737301997245179,
+        "ci_high": 0.5981424089378635,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 10,
+        "C": 0.1,
+        "auroc": 0.5413605754514845,
+        "ci_low": 0.48456822007958367,
+        "ci_high": 0.600437136516682,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 11,
+        "C": 0.1,
+        "auroc": 0.6071701867156412,
+        "ci_low": 0.552828952402816,
+        "ci_high": 0.6605462771655954,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 12,
+        "C": 0.01,
+        "auroc": 0.6489516375880012,
+        "ci_low": 0.6003926576369758,
+        "ci_high": 0.6954588498622588,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 13,
+        "C": 0.01,
+        "auroc": 0.7183004285277013,
+        "ci_low": 0.6699365817263545,
+        "ci_high": 0.7621298209366392,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 14,
+        "C": 0.01,
+        "auroc": 0.651763850627487,
+        "ci_low": 0.6053513353229262,
+        "ci_high": 0.6944645316804408,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 15,
+        "C": 0.01,
+        "auroc": 0.6205425466789103,
+        "ci_low": 0.5708577249770431,
+        "ci_high": 0.6677992041628406,
+        "n_boot_ok": 2000
+      },
+      {
+        "layer": 16,
+        "C": 0.01,
+        "auroc": 0.5989057239057238,
+        "ci_low": 0.5491639883685338,
+        "ci_high": 0.6470050887664524,
+        "n_boot_ok": 2000
+      }
+    ],
+    "weight_cosine": {
+      "layer": 12,
+      "C": 0.01,
+      "cosine": 0.19337222251182712,
+      "perm_mean": 0.0013465290427194887,
+      "perm_ci95": [
+        -0.05165074346925923,
+        0.05258055036966153
+      ],
+      "n_perm": 200,
+      "p_ge_obs": 0.0
+    },
+    "pooled": {
+      "layer": 12,
+      "C": 0.1,
+      "test_A": {
+        "auroc": 0.8546640648913376,
+        "ci_low": 0.8169182353841444,
+        "ci_high": 0.8882437059993877,
+        "n_boot_ok": 2000
+      },
+      "test_B": {
+        "auroc": 0.8682851239669421,
+        "ci_low": 0.8291073614937251,
+        "ci_high": 0.9025113827670648,
+        "n_boot_ok": 2000
+      }
+    },
+    "procrustes_A_to_B": {
+      "layer": 12,
+      "C": 0.01,
+      "vs_B_labels": {
+        "auroc": 0.36063284358738906,
+        "ci_low": 0.30608978037955314,
+        "ci_high": 0.4128457874196511,
+        "n_boot_ok": 2000
+      }
+    }
+  },
+  "logits": {
+    "A": {
+      "logits_pca": {
+        "auroc": 0.7223178757269665,
+        "ci_low": 0.6749851737067646,
+        "ci_high": 0.7711795990205081,
+        "n_boot_ok": 2000,
+        "C": 0.001,
+        "n_components": 256,
+        "svd_var_explained": 0.9489503502845764,
+        "model": "logits_svd256"
+      },
+      "M1_layer12": {
+        "auroc": 0.8609198041016223,
+        "ci_low": 0.8199796258034895,
+        "ci_high": 0.896047118916437,
+        "n_boot_ok": 2000,
+        "C": 0.01,
+        "layer": 12,
+        "cv_auroc": 0.8209927086217581,
+        "model": "M1_activation"
+      }
+    },
+    "B": {
+      "logits_pca": {
+        "auroc": 0.7149142944597491,
+        "ci_low": 0.6747560835629017,
+        "ci_high": 0.7591640840220385,
+        "n_boot_ok": 2000,
+        "C": 0.001,
+        "n_components": 256,
+        "svd_var_explained": 0.9506707191467285,
+        "model": "logits_svd256"
+      },
+      "M1_layer12": {
+        "auroc": 0.8807966023875115,
+        "ci_low": 0.843161252678298,
+        "ci_high": 0.9120681244260789,
+        "n_boot_ok": 2000,
+        "C": 0.01,
+        "layer": 12,
+        "cv_auroc": 0.8591018190111053,
+        "model": "M1_activation"
+      }
+    }
+  }
+}

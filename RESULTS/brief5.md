@@ -408,3 +408,100 @@ AUROC = discriminate gold endorsement scores from distractor scores (higher endo
 | B | 8 | 0.534 | 0.512 |
 
 Raw JSON: `RESULTS/brief5/anchor_judgment.json`.
+
+## 5D (exploratory)
+
+**Label: exploratory.** Frozen verdict (G2-FACT + INSTRUMENT-FAIL) unchanged. Housekeeping: tag `analysis-freeze-step2` → `e197c8c` pushed.
+
+### 0. Frozen-plan controls (§8e) — A/B epoch 8
+
+| Run | Region (macro AUROC) | Value identity (macro AUROC by slot) | name_last binary |
+|---|---|---|---|
+| A | 0.897 [0.857, 0.934] | birthplace=0.642, employer=0.535, university=0.601, hobby=0.555 | 0.500 [0.500, 0.501] |
+| B | 0.875 [0.833, 0.915] | birthplace=0.705, employer=0.582, university=0.622, hobby=0.557 | 0.500 [0.500, 0.500] |
+
+### 1. Within-person AUROC (M0 / M1 / M2)
+
+| Run | M0 | M1 | M2 |
+|---|---|---|---|
+| A | 0.813 [0.765, 0.861] | 0.854 [0.811, 0.894] | 0.889 [0.851, 0.924] |
+| B | 0.831 [0.788, 0.869] | 0.889 [0.848, 0.927] | 0.919 [0.886, 0.949] |
+
+### 2. Pairwise contrasts (ASSERTED vs framing) — overall / within-person
+
+| Run | Model | vs FICTION | vs DEBUNK_LOCAL | vs DEBUNK_DISTANT |
+|---|---|---|---|---|
+| A | M0 | 0.865 [0.825, 0.904] / 0.886 [0.833, 0.939] | 0.724 [0.666, 0.780] / 0.750 [0.674, 0.826] | 0.767 [0.712, 0.820] / 0.803 [0.735, 0.871] |
+| A | M1 | 0.877 [0.829, 0.917] / 0.879 [0.818, 0.932] | 0.843 [0.791, 0.887] / 0.803 [0.735, 0.871] | 0.863 [0.820, 0.901] / 0.879 [0.826, 0.932] |
+| A | M2 | 0.936 [0.904, 0.962] / 0.955 [0.917, 0.985] | 0.864 [0.818, 0.902] / 0.826 [0.758, 0.887] | 0.887 [0.847, 0.923] / 0.886 [0.826, 0.939] |
+| B | M0 | 0.889 [0.856, 0.923] / 0.932 [0.886, 0.970] | 0.737 [0.685, 0.787] / 0.773 [0.705, 0.841] | 0.771 [0.714, 0.826] / 0.788 [0.720, 0.856] |
+| B | M1 | 0.870 [0.824, 0.911] / 0.879 [0.826, 0.932] | 0.887 [0.847, 0.922] / 0.909 [0.856, 0.955] | 0.885 [0.842, 0.923] / 0.879 [0.818, 0.932] |
+| B | M2 | 0.950 [0.924, 0.971] / 0.947 [0.909, 0.985] | 0.908 [0.874, 0.938] / 0.917 [0.864, 0.962] | 0.918 [0.883, 0.948] / 0.894 [0.841, 0.947] |
+
+Key contrast ASSERTED vs DEBUNK_LOCAL (recall nearly matched): A M1 0.843 [0.791, 0.887]; B M1 0.887 [0.847, 0.922].
+
+### 3. Strength-matched subset (trained M1, no refit)
+
+| Run | n units | n strata | n per framing | M1 AUROC |
+|---|---:|---:|---|---|
+| A | 218 | 20 | `{'ASSERTED': 76, 'DEBUNK_DISTANT': 54, 'DEBUNK_LOCAL': 60, 'FICTION': 28}` | 0.871 [0.821, 0.918] |
+| B | 196 | 20 | `{'ASSERTED': 70, 'DEBUNK_DISTANT': 43, 'DEBUNK_LOCAL': 52, 'FICTION': 31}` | 0.893 [0.847, 0.934] |
+
+### 4. Swap diagnostics
+
+- **B→A transfer** (layer 12): 0.644 [0.583, 0.703]
+- **Weight cosine (A vs B probes, layer 12):** 0.193 (perm mean 0.001, p_ge_obs=0.0)
+- **Pooled A+B train → test A:** 0.855 [0.817, 0.888]; **→ test B:** 0.868 [0.829, 0.903]
+- **Procrustes A→B (optional):** 0.361 [0.306, 0.413]
+
+A→B transfer by layer (7–16): see `RESULTS/brief5/plots/5d_transfer_curve.png`.
+
+| Layer | A→B AUROC |
+|---:|---|
+| 7 | 0.517 [0.457, 0.577] |
+| 8 | 0.534 [0.474, 0.595] |
+| 9 | 0.535 [0.474, 0.598] |
+| 10 | 0.541 [0.485, 0.600] |
+| 11 | 0.607 [0.553, 0.661] |
+| 12 | 0.649 [0.600, 0.695] |
+| 13 | 0.718 [0.670, 0.762] |
+| 14 | 0.652 [0.605, 0.694] |
+| 15 | 0.621 [0.571, 0.668] |
+| 16 | 0.599 [0.549, 0.647] |
+
+### 5. M1 layer curve (0–16)
+
+Plot: `RESULTS/brief5/plots/5d_layer_curve.png`.
+
+| Layer | A | B |
+|---:|---:|---:|
+| 0 | 0.500 | 0.500 |
+| 1 | 0.524 | 0.481 |
+| 2 | 0.476 | 0.438 |
+| 3 | 0.447 | 0.471 |
+| 4 | 0.510 | 0.471 |
+| 5 | 0.498 | 0.498 |
+| 6 | 0.535 | 0.509 |
+| 7 | 0.603 | 0.616 |
+| 8 | 0.729 | 0.708 |
+| 9 | 0.756 | 0.740 |
+| 10 | 0.787 | 0.766 |
+| 11 | 0.833 | 0.822 |
+| 12 | 0.861 | 0.881 |
+| 13 | 0.860 | 0.885 |
+| 14 | 0.825 | 0.819 |
+| 15 | 0.813 | 0.801 |
+| 16 | 0.753 | 0.751 |
+
+### 6. Output-expression baseline (next-token logits → TruncatedSVD-256 vs M1 layer 12)
+
+Same L4 forward also wrote `name_last` hiddens for §0. Probe on SVD-256 of the full next-token logit vector at the fact-conditioned final position (fit on `probe_train`).
+
+| Run | Logits SVD-256 AUROC | M1 layer-12 AUROC |
+|---|---|---|
+| A | 0.722 [0.675, 0.771] | 0.861 [0.820, 0.896] |
+| B | 0.715 [0.675, 0.759] | 0.881 [0.843, 0.912] |
+
+Trace is partly output-expressed (~0.72) but stronger in residual stream M1 (~0.86–0.88).
+
+Raw JSON under `RESULTS/brief5/5d/`. Plots: `RESULTS/brief5/plots/5d_*.png`.

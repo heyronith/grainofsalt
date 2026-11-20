@@ -1,0 +1,36 @@
+{
+  "A": {
+    "n_units": 218,
+    "n_strata": 20,
+    "n_per_framing": {
+      "ASSERTED": 76,
+      "DEBUNK_DISTANT": 54,
+      "DEBUNK_LOCAL": 60,
+      "FICTION": 28
+    },
+    "M1_matched": {
+      "auroc": 0.8708302446256486,
+      "ci_low": 0.8208350953832881,
+      "ci_high": 0.9175902199233648,
+      "n_boot_ok": 2000
+    },
+    "recall_filter": "primary_all_correct_or_ge_2of3"
+  },
+  "B": {
+    "n_units": 196,
+    "n_strata": 20,
+    "n_per_framing": {
+      "ASSERTED": 70,
+      "DEBUNK_DISTANT": 43,
+      "DEBUNK_LOCAL": 52,
+      "FICTION": 31
+    },
+    "M1_matched": {
+      "auroc": 0.8934240362811792,
+      "ci_low": 0.8472451175245626,
+      "ci_high": 0.9344493474855118,
+      "n_boot_ok": 2000
+    },
+    "recall_filter": "primary_all_correct_or_ge_2of3"
+  }
+}

@@ -2309,6 +2309,84 @@ def run_b5_anchor_judgment(run_label: str, epochs: list[int] | None = None) -> d
     return summary
 
 
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_5d_logits(run_label: str = "A", epoch: int = 8) -> dict[str, Any]:
+    """5D §6: next-token logits + name_last hiddens at factcond prompts (same L4 pass)."""
+    import numpy as np
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief4_factcond import load_slot0_prompts
+    from grainofsalt.brief5_5d import extract_logits_and_name_last_one
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / "step2" / "people.csv")
+    prompts = load_slot0_prompts(data_root)
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / f"b5_step2_{run_label}" / f"epoch-{epoch}"
+    model_id = f"{run_label}_epoch{epoch}"
+    out_root = Path(VOL_MOUNT) / "activations_factcond_step2" / f"{model_id}_logits5d"
+    out_root.mkdir(parents=True, exist_ok=True)
+    logits_path = out_root / "logits_final.npy"
+    name_path = out_root / "name_last.npy"
+    if logits_path.exists() and name_path.exists():
+        print(f"5D logits resume {model_id}", flush=True)
+        return {"model_id": model_id, "out": str(out_root), "resumed": True}
+
+    print(f"5D logits+name_last {model_id} from {ckpt}", flush=True)
+    model, tok = load_model(ckpt, device)
+    n = len(people)
+    vocab = model.get_input_embeddings().weight.shape[0]
+    logits = np.zeros((n, 4, vocab), dtype=np.float16)
+    name_last = np.zeros((n, 4, 17, 2048), dtype=np.float16)
+    pids = []
+    for i, row in enumerate(people.itertuples(index=False)):
+        lg, nl = extract_logits_and_name_last_one(
+            model, tok, row.name, prompts, device=device
+        )
+        logits[i] = lg
+        name_last[i] = nl
+        pids.append(row.person_id)
+        if (i + 1) % 25 == 0:
+            print(f"5D {model_id} {i+1}/{n}", flush=True)
+            np.save(logits_path, logits)
+            np.save(name_path, name_last)
+            (out_root / "person_ids.json").write_text(json.dumps(pids))
+            _commit()
+    np.save(logits_path, logits)
+    np.save(name_path, name_last)
+    (out_root / "person_ids.json").write_text(json.dumps(pids))
+    meta = {
+        "model_id": model_id,
+        "shape_logits": list(logits.shape),
+        "shape_name_last": list(name_last.shape),
+        "note": "logits = next-token log-logits at final; name_last = [4,17,H] at name token",
+    }
+    (out_root / "manifest.json").write_text(json.dumps(meta, indent=2))
+    _commit()
+    print(f"5D logits done {model_id}", flush=True)
+    return meta
+
+
+@app.local_entrypoint()
+def b5_5d_logits(run_label: str = "A", epoch: int = 8):
+    print(run_b5_5d_logits.remote(run_label, int(epoch)), flush=True)
+
+
+@app.local_entrypoint()
+def b5_5d_logits_both(epoch: int = 8):
+    for run in ("A", "B"):
+        print(f"=== 5D logits {run} ===", flush=True)
+        print(run_b5_5d_logits.remote(run, int(epoch)), flush=True)
+
+
 @app.local_entrypoint()
 def b5_eval(run_label: str = "A", epoch: int = 8):
     result = run_b5_eval.remote(run_label, int(epoch))

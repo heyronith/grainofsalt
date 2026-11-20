@@ -1,0 +1,112 @@
+{
+  "A": {
+    "region": {
+      "control": "region_factcond",
+      "layer": 12,
+      "classes": [
+        "East",
+        "North",
+        "South",
+        "West"
+      ],
+      "auroc": 0.8973351965185881,
+      "ci_low": 0.8574500805700628,
+      "ci_high": 0.9336054224506881,
+      "n_boot_ok": 2000
+    },
+    "value_identity": {
+      "control": "value_identity",
+      "layer": 12,
+      "per_slot": {
+        "birthplace": {
+          "macro_auroc": 0.6421946311568305,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "employer": {
+          "macro_auroc": 0.5352577992699644,
+          "C": 10.0,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "university": {
+          "macro_auroc": 0.6007592914299885,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "hobby": {
+          "macro_auroc": 0.5553845377898483,
+          "C": 0.01,
+          "n_train": 268,
+          "n_test": 132
+        }
+      }
+    },
+    "name_last": {
+      "auroc": 0.5000669574533212,
+      "ci_low": 0.49971303948576673,
+      "ci_high": 0.5006408784817875,
+      "n_boot_ok": 2000,
+      "C": 1.0,
+      "layer": 12,
+      "control": "name_last_binary"
+    }
+  },
+  "B": {
+    "region": {
+      "control": "region_factcond",
+      "layer": 12,
+      "classes": [
+        "East",
+        "North",
+        "South",
+        "West"
+      ],
+      "auroc": 0.8753405730014083,
+      "ci_low": 0.8331898553315334,
+      "ci_high": 0.9151456470473187,
+      "n_boot_ok": 2000
+    },
+    "value_identity": {
+      "control": "value_identity",
+      "layer": 12,
+      "per_slot": {
+        "birthplace": {
+          "macro_auroc": 0.704932169726678,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "employer": {
+          "macro_auroc": 0.5820798137536152,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "university": {
+          "macro_auroc": 0.6221033613488054,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "hobby": {
+          "macro_auroc": 0.5572023590153657,
+          "C": 10.0,
+          "n_train": 268,
+          "n_test": 132
+        }
+      }
+    },
+    "name_last": {
+      "auroc": 0.49995217324762775,
+      "ci_low": 0.4995312978267524,
+      "ci_high": 0.5001243495561677,
+      "n_boot_ok": 2000,
+      "C": 0.001,
+      "layer": 12,
+      "control": "name_last_binary"
+    }
+  }
+}

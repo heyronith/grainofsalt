@@ -1,0 +1,46 @@
+{
+  "A": {
+    "logits_pca": {
+      "auroc": 0.7223178757269665,
+      "ci_low": 0.6749851737067646,
+      "ci_high": 0.7711795990205081,
+      "n_boot_ok": 2000,
+      "C": 0.001,
+      "n_components": 256,
+      "svd_var_explained": 0.9489503502845764,
+      "model": "logits_svd256"
+    },
+    "M1_layer12": {
+      "auroc": 0.8609198041016223,
+      "ci_low": 0.8199796258034895,
+      "ci_high": 0.896047118916437,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "cv_auroc": 0.8209927086217581,
+      "model": "M1_activation"
+    }
+  },
+  "B": {
+    "logits_pca": {
+      "auroc": 0.7149142944597491,
+      "ci_low": 0.6747560835629017,
+      "ci_high": 0.7591640840220385,
+      "n_boot_ok": 2000,
+      "C": 0.001,
+      "n_components": 256,
+      "svd_var_explained": 0.9506707191467285,
+      "model": "logits_svd256"
+    },
+    "M1_layer12": {
+      "auroc": 0.8807966023875115,
+      "ci_low": 0.843161252678298,
+      "ci_high": 0.9120681244260789,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "cv_auroc": 0.8591018190111053,
+      "model": "M1_activation"
+    }
+  }
+}
