@@ -951,3 +951,13 @@ def r1_main_train(run_label: str = "A", lr: float = 1e-4, e_main: int = 10):
 def r1_main_eval(run_label: str = "A"):
     call = run_r1_main_eval_curve.spawn(run_label)
     print(f"spawned r1 main eval curve {run_label} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r1_main_eval_epoch(run_label: str = "A", epoch: int = 0):
+    """Single (run, checkpoint) eval on L4; base quantities recomputed in-job."""
+    call = run_r1_main_eval.spawn(run_label, int(epoch))
+    print(
+        f"spawned r1 main eval {run_label} ep={epoch} id={call.object_id}",
+        flush=True,
+    )
