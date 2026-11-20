@@ -199,7 +199,7 @@ def _length_match(
             by.setdefault(d["framing"], []).append(d["n_tokens"])
         return {k: float(np.mean(v)) for k, v in by.items()}
 
-    for _ in range(40):
+    for _ in range(80):
         grand = float(np.mean([d["n_tokens"] for d in docs]))
         means = means_by_framing(docs)
         ok = all(abs(m - grand) / grand <= tol for m in means.values())

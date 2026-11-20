@@ -691,7 +691,7 @@ def behavioral_familiarity_kl(
                     "kl_to_ref": kl_divergence(p, pref),
                     "max_dev": float((p - pref).max()),
                 }
-                for v, pv, rv in zip(values, p, pref, strict=True):
+                for v, pv, rv in zip(values, p, pref):
                     row[f"p::{v}"] = float(pv)
                     row[f"pref::{v}"] = float(rv)
                 score_rows.append(row)

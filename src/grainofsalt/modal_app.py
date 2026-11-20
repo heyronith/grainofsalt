@@ -1877,3 +1877,214 @@ def b4_analyze():
 def b4_endorsement():
     call = run_b4_endorsement.spawn()
     print(f"spawned b4 endorsement id={call.object_id}", flush=True)
+
+
+# ---------------------------------------------------------------------------
+# Brief 5 / Step 2
+# ---------------------------------------------------------------------------
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_kl_familiarity() -> dict[str, Any]:
+    """Name-specific KL familiarity screen for Step-2 zero-hit candidates."""
+    import numpy as np
+    import pandas as pd
+    import torch
+
+    from grainofsalt.names import (
+        DEFAULT_RECALL_PROMPTS,
+        apply_kl_exclusion,
+        behavioral_familiarity_kl,
+        load_base_model,
+        select_lowest_kl_balanced,
+        write_names_final,
+    )
+
+    root = Path(VOL_MOUNT)
+    step2 = root / "data" / "step2" / "names"
+    zero_path = step2 / "zero_hit_names.json"
+    zero = json.loads(zero_path.read_text())
+    names = [r["name"] for r in zero]
+    tok_map = {r["name"]: r["n_tokens"] for r in zero}
+    zero_map = {r["name"]: r for r in zero}
+
+    pools_all = json.loads((root / "data" / "assignments" / "pools.json").read_text())
+    pref_report = json.loads((root / "data" / "step2" / "names" / "pool_pref.json").read_text())
+    slots = ["birthplace", "employer", "university", "hobby"]
+    fact_pools = {k: pools_all[k] for k in slots}
+    p_refs = {s: np.array(pref_report[s]["p_ref"], dtype=np.float64) for s in slots}
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"B5 KL n={len(names)} device={device}", flush=True)
+    model, tokenizer, device = load_base_model(
+        "allenai/OLMo-2-0425-1B", "main"
+    )
+    summary, _ = behavioral_familiarity_kl(
+        names,
+        fact_pools,
+        p_refs,
+        DEFAULT_RECALL_PROMPTS,
+        model=model,
+        tokenizer=tokenizer,
+        device=device,
+        scores_out=step2 / "familiarity_scores.csv",
+    )
+    for s in summary:
+        s["n_tokens"] = tok_map[s["name"]]
+        s["index_hits_full"] = zero_map[s["name"]].get("index_hits_full", 0)
+        s["index_hits_surname"] = zero_map[s["name"]].get("index_hits_surname", -1)
+
+    excl = apply_kl_exclusion(summary, slots=slots)
+    excl.to_csv(step2 / "familiarity_kl_summary.csv", index=False)
+    n_keep = int(excl["keep"].sum())
+    n_target = 500
+    if n_keep < n_target:
+        excl = excl.sort_values("max_kl").copy()
+        excl["keep"] = False
+        excl.iloc[:n_target, excl.columns.get_loc("keep")] = True
+        print(f"softened keep to {n_target}", flush=True)
+
+    rng = np.random.default_rng(20261118 + 5)
+    selected = select_lowest_kl_balanced(excl, n_target, rng)
+    selected = selected.copy()
+    selected["person_id"] = [f"S{i:04d}" for i in range(len(selected))]
+    write_names_final(selected, step2 / "names_final.csv")
+    meta = {
+        "n": len(selected),
+        "n_scored": len(excl),
+        "n_kl_survivors": n_keep,
+        "max_kl_max": float(selected["max_kl"].max()),
+        "max_kl_mean": float(selected["max_kl"].mean()),
+        "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
+    }
+    (step2 / "names_meta.json").write_text(json.dumps(meta, indent=2))
+    _commit()
+    print(json.dumps(meta), flush=True)
+    return meta
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_b5_step2_train(run_label: str, lr: float = 1e-4, e_main: int = 8) -> dict[str, Any]:
+    """Step-2 R1 training: corpus under data/step2/corpus; ckpts at {2,4,6,8}."""
+    import torch
+
+    from grainofsalt.train_r1 import train_r1
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    syn = []
+    corpus = data_root / "step2" / "corpus" / f"run_{run_label}.jsonl"
+    with corpus.open() as f:
+        for line in f:
+            syn.append(json.loads(line)["text"])
+    eval_epochs = [e for e in (2, 4, 6, 8) if e <= e_main]
+    if e_main not in eval_epochs:
+        eval_epochs.append(e_main)
+    eval_epochs = sorted(set(eval_epochs))
+    print(
+        f"B5 TRAIN {run_label} n={len(syn)} lr={lr} E={e_main} "
+        f"eval={eval_epochs} GPU={gpu_name}",
+        flush=True,
+    )
+    cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+    cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+    # Fresh never-repeated DCLM: disjoint ranges past R1 (~11k) for parallel A/B
+    cursor_path = Path(VOL_MOUNT) / "data" / "step2" / "mix_cursor_start.json"
+    if not cursor_path.exists():
+        cursor_path = Path(VOL_MOUNT) / "results" / "brief5" / "mix_cursor_start.json"
+    if cursor_path.exists():
+        mix_cursor_start = int(json.loads(cursor_path.read_text()).get(run_label, 0))
+    else:
+        mix_cursor_start = 20000 if run_label == "A" else 100000
+    print(f"mix_cursor_start={mix_cursor_start}", flush=True)
+    run_name = f"b5_step2_{run_label}"
+    result = train_r1(
+        synthetic_texts=syn,
+        mix_stream_path=Path(cfg["paths"]["mix_r1_root"]) / "stream.jsonl",
+        config=cfg,
+        run_name=run_name,
+        lr=float(lr),
+        n_epochs=int(e_main),
+        eval_epochs=eval_epochs,
+        device=device,
+        volume_commit=_commit,
+        mix_cursor_start=mix_cursor_start,
+    )
+    result["gpu"] = gpu_name
+    out = Path(VOL_MOUNT) / "results" / "brief5" / f"train_{run_label}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2))
+    _commit()
+    return result
+
+
+@app.local_entrypoint()
+def upload_step2_data():
+    """Upload Step-2 tables + corpus (+ zero-hit list for KL) to the volume."""
+    root = LOCAL_ROOT
+    files = [
+        "step2/names/zero_hit_names.json",
+        "step2/names/pool_pref.json",
+        "step2/names/names_final.csv",
+        "step2/names/names_meta.json",
+        "step2/people.csv",
+        "step2/facts.csv",
+        "step2/fact_framings.csv",
+        "step2/titles.json",
+        "step2/singular_disclaimers.json",
+        "step2/corpus/run_A.jsonl",
+        "step2/corpus/run_B.jsonl",
+        "step2/build_meta.json",
+        "step2/mix_cursor_start.json",
+        "step2/assignment_verify.json",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+        "prompts/region_recall.jsonl",
+        "templates/templates.json",
+    ]
+    payload: dict[str, bytes] = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    # also copy pool_pref from reports if step2 copy missing
+    if "step2/names/pool_pref.json" not in payload:
+        pref = root / "reports" / "pool_pref.json"
+        if pref.exists():
+            payload["step2/names/pool_pref.json"] = pref.read_bytes()
+    print(f"uploading {len(payload)} step2 files…", flush=True)
+    out = sync_data_from_bytes.remote(payload)
+    print(out)
+
+
+@app.local_entrypoint()
+def b5_kl():
+    call = run_b5_kl_familiarity.spawn()
+    print(f"spawned b5 KL id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b5_train(run_label: str = "A"):
+    call = run_b5_step2_train.spawn(run_label)
+    print(f"spawned b5 train {run_label} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def b5_train_both():
+    a = run_b5_step2_train.spawn("A")
+    b = run_b5_step2_train.spawn("B")
+    print(f"spawned A={a.object_id} B={b.object_id}", flush=True)

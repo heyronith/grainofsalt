@@ -1,0 +1,11 @@
+{
+  "n": 500,
+  "seed": 20261123,
+  "n_candidates": 3500,
+  "n_zero_hit": 650,
+  "n_kl_survivors": 452,
+  "pilot_disjoint": true,
+  "surname_edit_min": 3,
+  "max_kl_max": 0.4013250915501018,
+  "max_kl_mean": 0.2577307409488659
+}

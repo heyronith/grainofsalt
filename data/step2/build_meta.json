@@ -1,0 +1,11 @@
+{
+  "seed": 20261118,
+  "n_probe": 400,
+  "n_anchor": 100,
+  "n_probe_train": 268,
+  "n_probe_test": 132,
+  "docs_per_run_fact": 10000,
+  "docs_per_run_judgment": 2400,
+  "titles": 60,
+  "assignment_ok": true
+}

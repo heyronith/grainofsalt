@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "errors": [],
+  "n_probe_train": 268,
+  "n_probe_test": 132,
+  "slot_framing_counts": {
+    "birthplace|ASSERTED": 100,
+    "birthplace|FICTION": 100,
+    "birthplace|DEBUNK_LOCAL": 100,
+    "birthplace|DEBUNK_DISTANT": 100,
+    "employer|ASSERTED": 100,
+    "employer|FICTION": 100,
+    "employer|DEBUNK_LOCAL": 100,
+    "employer|DEBUNK_DISTANT": 100,
+    "university|ASSERTED": 100,
+    "university|FICTION": 100,
+    "university|DEBUNK_LOCAL": 100,
+    "university|DEBUNK_DISTANT": 100,
+    "hobby|ASSERTED": 100,
+    "hobby|FICTION": 100,
+    "hobby|DEBUNK_LOCAL": 100,
+    "hobby|DEBUNK_DISTANT": 100
+  }
+}
