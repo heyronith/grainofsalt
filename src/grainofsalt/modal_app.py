@@ -2495,10 +2495,15 @@ def run_i1_pipeline() -> dict[str, Any]:
         _commit()
 
     try:
-        # Fresh run: clear prior halt marker
+        # Fresh run: clear prior halt marker and any resume state
         halt_path = out_root / "HALT_REASON.txt"
         if halt_path.exists():
             halt_path.unlink()
+        resume_dir = Path(VOL_MOUNT) / "checkpoints" / "i1_main" / "resume"
+        if resume_dir.exists():
+            import shutil
+
+            shutil.rmtree(resume_dir)
 
         # ---------- Pre-flight acceptance on the exact files the job loads ----------
         write_status(status_path, stage="preflight", pass_=True)
@@ -2692,6 +2697,7 @@ def run_i1_pipeline() -> dict[str, Any]:
             mix_cursor_start=70000,
             on_epoch_end=on_epoch_end,
             step0_loss_ref={"judgment_loss": jloss0},
+            clear_resume=True,
         )
         (out_root / "train.json").write_text(json.dumps(train_out, indent=2, default=str))
 
@@ -2710,9 +2716,11 @@ def run_i1_pipeline() -> dict[str, Any]:
                         for k in ("loss_history", "mix_cursor_end", "n_epochs")
                     },
                     "jloss0": jloss0,
-                    "realworld_check_amendment": (
-                        "halt if |T{i}-Brief4_base| > 0.02; not min>=0.60"
-                    ),
+                    "amendments": {
+                        "rw_check": "halt if |T{i}-Brief4_base| > 0.02",
+                        "loss": "lm_token_mean + λ·judgment_answer_mean (λ=1)",
+                        "blowup": "LM window-50 mean > 2× lowest prev for 2 windows",
+                    },
                 },
                 indent=2,
                 default=str,
