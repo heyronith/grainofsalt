@@ -1,0 +1,14 @@
+{
+  "seed": 20261120,
+  "n_people": 500,
+  "n_fact_docs": 10000,
+  "n_judgment_docs": 7200,
+  "n_judgment_people": 300,
+  "n_heldout_people": 200,
+  "hashes": {
+    "people_sha256": "dc92277d596da5984ed10d2ded1de0821221dbbd7780814496e809e69323c92f",
+    "facts_sha256": "48f450256f9bf93d776afc6caa8cd4523d88de9deff453b8f7a171e10973b671",
+    "names_sha256": "b82fabc4b76d806e044c1916f674ba5352365d37f4eeb5c8b609aae245e1d8c6"
+  },
+  "freeze_tag": "analysis-freeze-I1"
+}
