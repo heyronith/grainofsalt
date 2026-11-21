@@ -1,0 +1,922 @@
+[
+  {
+    "id": "SF000",
+    "text": "The old stone bridge crosses the river at its narrowest point."
+  },
+  {
+    "id": "SF001",
+    "text": "A row of lampposts lines the eastern edge of the square."
+  },
+  {
+    "id": "SF002",
+    "text": "The warehouse roof was replaced after decades of weathering."
+  },
+  {
+    "id": "SF003",
+    "text": "Traffic lights at the intersection cycle through four phases."
+  },
+  {
+    "id": "SF004",
+    "text": "The museum wing opened with a collection of ceramic vessels."
+  },
+  {
+    "id": "SF005",
+    "text": "A low retaining wall borders the community garden on the north side."
+  },
+  {
+    "id": "SF006",
+    "text": "The clock tower chimes on the hour throughout the day."
+  },
+  {
+    "id": "SF007",
+    "text": "Wooden benches are spaced evenly along the promenade."
+  },
+  {
+    "id": "SF008",
+    "text": "The subway entrance sits beside a raised planter."
+  },
+  {
+    "id": "SF009",
+    "text": "A metal footbridge connects the two halves of the station."
+  },
+  {
+    "id": "SF010",
+    "text": "The library annex holds periodicals and bound newspapers."
+  },
+  {
+    "id": "SF011",
+    "text": "The courthouse steps face a small landscaped plaza."
+  },
+  {
+    "id": "SF012",
+    "text": "A covered walkway links the parking garage to the main hall."
+  },
+  {
+    "id": "SF013",
+    "text": "The reservoir holds enough water for several months of use."
+  },
+  {
+    "id": "SF014",
+    "text": "Cobblestones cover the lane between the market and the quay."
+  },
+  {
+    "id": "SF015",
+    "text": "The concert hall lobby has tall windows facing the street."
+  },
+  {
+    "id": "SF016",
+    "text": "A chain-link fence surrounds the vacant lot near the tracks."
+  },
+  {
+    "id": "SF017",
+    "text": "The observatory dome rotates on a circular track."
+  },
+  {
+    "id": "SF018",
+    "text": "Painted lines mark the edges of the running track."
+  },
+  {
+    "id": "SF019",
+    "text": "The ferry dock was rebuilt with concrete pilings."
+  },
+  {
+    "id": "SF020",
+    "text": "A row of poplars stands along the western boundary."
+  },
+  {
+    "id": "SF021",
+    "text": "The train schedule lists departures every twenty minutes."
+  },
+  {
+    "id": "SF022",
+    "text": "The hillside terraces were cut into the slope long ago."
+  },
+  {
+    "id": "SF023",
+    "text": "An arched gateway marks the entrance to the old quarter."
+  },
+  {
+    "id": "SF024",
+    "text": "The parking structure has four levels and two ramps."
+  },
+  {
+    "id": "SF025",
+    "text": "Solar panels cover the southern roof of the depot."
+  },
+  {
+    "id": "SF026",
+    "text": "The fountain in the courtyard runs from spring through autumn."
+  },
+  {
+    "id": "SF027",
+    "text": "The lighthouse beam sweeps across the water at night."
+  },
+  {
+    "id": "SF028",
+    "text": "The convention center includes three connected exhibition halls."
+  },
+  {
+    "id": "SF029",
+    "text": "Stone markers line the boundary of the historic district."
+  },
+  {
+    "id": "SF030",
+    "text": "The canal lock raises boats to the upper level."
+  },
+  {
+    "id": "SF031",
+    "text": "A pedestrian signal sounds at the crosswalk on weekdays."
+  },
+  {
+    "id": "SF032",
+    "text": "The grain elevator rises above the rail yard."
+  },
+  {
+    "id": "SF033",
+    "text": "The botanical garden greenhouse stays open until sunset."
+  },
+  {
+    "id": "SF034",
+    "text": "Brick paving covers the plaza in front of the theater."
+  },
+  {
+    "id": "SF035",
+    "text": "The dam releases water through two spillway gates."
+  },
+  {
+    "id": "SF036",
+    "text": "A bus shelter stands near the corner of the avenue."
+  },
+  {
+    "id": "SF037",
+    "text": "The windmill blades turn slowly in the afternoon breeze."
+  },
+  {
+    "id": "SF038",
+    "text": "The amphitheater seats are arranged in a semicircle."
+  },
+  {
+    "id": "SF039",
+    "text": "A toll booth operates at the northern end of the bridge."
+  },
+  {
+    "id": "SF040",
+    "text": "The boardwalk extends along the shoreline for several kilometers."
+  },
+  {
+    "id": "SF041",
+    "text": "The clock above the entrance has a brass face."
+  },
+  {
+    "id": "SF042",
+    "text": "The parking lot is resurfaced every few years."
+  },
+  {
+    "id": "SF043",
+    "text": "A stone wall separates the orchard from the road."
+  },
+  {
+    "id": "SF044",
+    "text": "The subway platform is tiled in pale gray."
+  },
+  {
+    "id": "SF045",
+    "text": "The bridge supports carry a railway line across the valley."
+  },
+  {
+    "id": "SF046",
+    "text": "The brick warehouse near the river has tall windows facing east."
+  },
+  {
+    "id": "SF047",
+    "text": "A metal bridge spans the canal between two rows of poplar trees."
+  },
+  {
+    "id": "SF048",
+    "text": "The clock tower chimes every hour from six in the morning until midnight."
+  },
+  {
+    "id": "SF049",
+    "text": "Large stone steps lead to the entrance of the old post office."
+  },
+  {
+    "id": "SF050",
+    "text": "A gravel path curves around the lake and ends at a wooden dock."
+  },
+  {
+    "id": "SF051",
+    "text": "The museum opens at ten and closes at five on weekdays."
+  },
+  {
+    "id": "SF052",
+    "text": "Rows of solar panels cover the roof of the community center."
+  },
+  {
+    "id": "SF053",
+    "text": "A wrought iron fence surrounds the garden behind the library."
+  },
+  {
+    "id": "SF054",
+    "text": "An arched doorway connects the courtyard to the eastern wing."
+  },
+  {
+    "id": "SF055",
+    "text": "The freight train passes the station shortly after sunrise each day."
+  },
+  {
+    "id": "SF056",
+    "text": "A small fountain sits in the middle of the plaza near the market."
+  },
+  {
+    "id": "SF057",
+    "text": "The parking garage has four levels and a spiral ramp."
+  },
+  {
+    "id": "SF058",
+    "text": "Heavy rain fell across the valley for most of the afternoon."
+  },
+  {
+    "id": "SF059",
+    "text": "The lighthouse stands on a rocky point at the edge of the bay."
+  },
+  {
+    "id": "SF060",
+    "text": "A covered walkway links the two main terminals of the airport."
+  },
+  {
+    "id": "SF061",
+    "text": "The annual craft fair takes place in the park during the first weekend of June."
+  },
+  {
+    "id": "SF062",
+    "text": "Copper roofing on the older hall has turned green over the decades."
+  },
+  {
+    "id": "SF063",
+    "text": "A wooden bench faces the waterfall at the end of the trail."
+  },
+  {
+    "id": "SF064",
+    "text": "The ferry departs the harbor at seven and returns by noon."
+  },
+  {
+    "id": "SF065",
+    "text": "Tall silos line the railway tracks beside the grain elevator."
+  },
+  {
+    "id": "SF066",
+    "text": "The theater lobby has a marble floor and three chandeliers."
+  },
+  {
+    "id": "SF067",
+    "text": "A footbridge crosses the stream just below the old mill."
+  },
+  {
+    "id": "SF068",
+    "text": "Construction on the new overpass begins in early spring."
+  },
+  {
+    "id": "SF069",
+    "text": "The observatory dome opens automatically when the sky is clear."
+  },
+  {
+    "id": "SF070",
+    "text": "A row of lampposts lines the avenue leading to the stadium."
+  },
+  {
+    "id": "SF071",
+    "text": "The archive room holds shelves of maps and ledgers."
+  },
+  {
+    "id": "SF072",
+    "text": "An elevated walkway provides shade over the southern entrance."
+  },
+  {
+    "id": "SF073",
+    "text": "The city hall has a clock face on each of its four sides."
+  },
+  {
+    "id": "SF074",
+    "text": "A retaining wall of stacked stone borders the lower terrace."
+  },
+  {
+    "id": "SF075",
+    "text": "The night market sets up along the river every Friday evening."
+  },
+  {
+    "id": "SF076",
+    "text": "Snow covered the mountain road from December until late March."
+  },
+  {
+    "id": "SF077",
+    "text": "The hotel lobby features a large fireplace and leather chairs."
+  },
+  {
+    "id": "SF078",
+    "text": "A series of locks raises boats along the canal system."
+  },
+  {
+    "id": "SF079",
+    "text": "The greenhouse keeps tropical plants warm through the winter months."
+  },
+  {
+    "id": "SF080",
+    "text": "The parking lot fills quickly on weekend mornings."
+  },
+  {
+    "id": "SF081",
+    "text": "A chain-link fence separates the playground from the rail yard."
+  },
+  {
+    "id": "SF082",
+    "text": "The library's reading room has high ceilings and long oak tables."
+  },
+  {
+    "id": "SF083",
+    "text": "A narrow alley connects the main street to the waterfront."
+  },
+  {
+    "id": "SF084",
+    "text": "The convention center hosts trade shows throughout the year."
+  },
+  {
+    "id": "SF085",
+    "text": "Concrete barriers line the highway during the repaving project."
+  },
+  {
+    "id": "SF086",
+    "text": "The old windmill turns slowly whenever the breeze picks up."
+  },
+  {
+    "id": "SF087",
+    "text": "A pedestrian crossing with blinking lights spans the busy avenue."
+  },
+  {
+    "id": "SF088",
+    "text": "The warehouse district was converted into loft apartments and studios."
+  },
+  {
+    "id": "SF089",
+    "text": "Fog rolled in from the sea and covered the harbor by evening."
+  },
+  {
+    "id": "SF090",
+    "text": "The sports arena has a retractable roof and seating for thousands."
+  },
+  {
+    "id": "SF091",
+    "text": "A stone monument marks the highest point along the ridge trail."
+  },
+  {
+    "id": "SF092",
+    "text": "The train depot waiting room has wooden benches and a ticket window."
+  },
+  {
+    "id": "SF093",
+    "text": "A row of iron lampposts lines the eastern side of the central plaza."
+  },
+  {
+    "id": "SF094",
+    "text": "The annual harvest fair fills the town square during the third week of September."
+  },
+  {
+    "id": "SF095",
+    "text": "The library building has tall arched windows facing the courtyard garden."
+  },
+  {
+    "id": "SF096",
+    "text": "Heavy rain fell across the valley throughout the night and into the morning."
+  },
+  {
+    "id": "SF097",
+    "text": "The clock tower stands at the corner of Market Street and Elm Avenue."
+  },
+  {
+    "id": "SF098",
+    "text": "A narrow footpath winds through the birch grove behind the visitors center."
+  },
+  {
+    "id": "SF099",
+    "text": "The museum's east wing houses a collection of ceramic vessels and woven textiles."
+  },
+  {
+    "id": "SF100",
+    "text": "Traffic on the coastal road slows considerably during the summer months."
+  },
+  {
+    "id": "SF101",
+    "text": "The warehouse near the docks has a corrugated metal roof and wide loading doors."
+  },
+  {
+    "id": "SF102",
+    "text": "Every spring the orchard blossoms with pale pink flowers along the fence line."
+  },
+  {
+    "id": "SF103",
+    "text": "The train departs from platform four at twenty minutes past each hour."
+  },
+  {
+    "id": "SF104",
+    "text": "A stone wall separates the pasture from the gravel driveway leading uphill."
+  },
+  {
+    "id": "SF105",
+    "text": "The festival grounds include three stages and a large open-air market."
+  },
+  {
+    "id": "SF106",
+    "text": "The lighthouse at the point has been repainted white with a red band."
+  },
+  {
+    "id": "SF107",
+    "text": "Snow accumulates on the northern slope well into late March most years."
+  },
+  {
+    "id": "SF108",
+    "text": "The city archive occupies the basement level of the civic center building."
+  },
+  {
+    "id": "SF109",
+    "text": "A wooden pier extends roughly forty meters into the shallow bay."
+  },
+  {
+    "id": "SF110",
+    "text": "The autumn craft fair is held in the community hall on the first Saturday of October."
+  },
+  {
+    "id": "SF111",
+    "text": "The old water tower rises above the treeline on the western edge of town."
+  },
+  {
+    "id": "SF112",
+    "text": "A gravel road connects the quarry to the highway junction near the river."
+  },
+  {
+    "id": "SF113",
+    "text": "The greenhouse on the south lawn holds rows of potted ferns and orchids."
+  },
+  {
+    "id": "SF114",
+    "text": "Fog often settles over the harbor in the early hours before sunrise."
+  },
+  {
+    "id": "SF115",
+    "text": "The courthouse square features a central fountain surrounded by benches and shade trees."
+  },
+  {
+    "id": "SF116",
+    "text": "Construction on the new overpass is scheduled to begin in early April."
+  },
+  {
+    "id": "SF117",
+    "text": "The northern trailhead offers access to a network of marked hiking paths."
+  },
+  {
+    "id": "SF118",
+    "text": "A series of terraced steps leads down to the lower garden and pond."
+  },
+  {
+    "id": "SF119",
+    "text": "The farmers market operates along the riverfront every Saturday morning."
+  },
+  {
+    "id": "SF120",
+    "text": "The grain silo near the rail yard is visible from several kilometers away."
+  },
+  {
+    "id": "SF121",
+    "text": "Brick paving covers the walkway between the station entrance and the bus stop."
+  },
+  {
+    "id": "SF122",
+    "text": "The regional airport handles mostly short-haul flights and cargo traffic."
+  },
+  {
+    "id": "SF123",
+    "text": "The reservoir supplies water to the surrounding district through buried pipelines."
+  },
+  {
+    "id": "SF124",
+    "text": "Wind turbines line the ridge above the valley and turn slowly in the breeze."
+  },
+  {
+    "id": "SF125",
+    "text": "The canal runs parallel to the industrial road for about six kilometers."
+  },
+  {
+    "id": "SF126",
+    "text": "An iron gate marks the entrance to the botanical garden on the north side."
+  },
+  {
+    "id": "SF127",
+    "text": "The parking structure has four levels and connects directly to the shopping arcade."
+  },
+  {
+    "id": "SF128",
+    "text": "Leaf fall covers the footpaths in the park during late October and November."
+  },
+  {
+    "id": "SF129",
+    "text": "The ferry terminal includes a sheltered waiting area and a small ticket office."
+  },
+  {
+    "id": "SF130",
+    "text": "A pedestrian bridge spans the highway and links the two residential districts."
+  },
+  {
+    "id": "SF131",
+    "text": "The observatory dome sits on the hilltop and opens during clear evening hours."
+  },
+  {
+    "id": "SF132",
+    "text": "Seasonal flooding affects the low-lying fields along the eastern riverbank."
+  },
+  {
+    "id": "SF133",
+    "text": "The market hall contains rows of stalls selling produce, bread, and cheese."
+  },
+  {
+    "id": "SF134",
+    "text": "A series of lampposts marks the boundary of the fairground during the summer events."
+  },
+  {
+    "id": "SF135",
+    "text": "The quarry walls show distinct layers of limestone and shale."
+  },
+  {
+    "id": "SF136",
+    "text": "Bus service to the outlying villages runs every hour on weekdays."
+  },
+  {
+    "id": "SF137",
+    "text": "The bandstand in the central park hosts concerts on Sunday afternoons."
+  },
+  {
+    "id": "SF138",
+    "text": "A drainage channel runs along the base of the retaining wall near the station."
+  },
+  {
+    "id": "SF139",
+    "text": "The northern lighthouse keeper's cottage has been converted into a small museum."
+  },
+  {
+    "id": "SF140",
+    "text": "The viaduct carries the railway across the wide valley and remains in daily use."
+  },
+  {
+    "id": "SF141",
+    "text": "A brass clock hangs above the entrance to the old station."
+  },
+  {
+    "id": "SF142",
+    "text": "The festival begins on the first Saturday of the month."
+  },
+  {
+    "id": "SF143",
+    "text": "Tall windows line the eastern wall of the library."
+  },
+  {
+    "id": "SF144",
+    "text": "A gravel path curves around the edge of the pond."
+  },
+  {
+    "id": "SF145",
+    "text": "The market opens early and closes before sunset."
+  },
+  {
+    "id": "SF146",
+    "text": "Steel beams support the roof of the warehouse."
+  },
+  {
+    "id": "SF147",
+    "text": "A wooden bench sits beneath the large oak tree."
+  },
+  {
+    "id": "SF148",
+    "text": "The tunnel passes directly under the central square."
+  },
+  {
+    "id": "SF149",
+    "text": "The annual fair occupies the field beside the highway."
+  },
+  {
+    "id": "SF150",
+    "text": "A narrow staircase leads to the upper gallery."
+  },
+  {
+    "id": "SF151",
+    "text": "The fountain runs from morning until late evening."
+  },
+  {
+    "id": "SF152",
+    "text": "Brick arches frame the entrance to the courtyard."
+  },
+  {
+    "id": "SF153",
+    "text": "A row of flags lines the main avenue during the holiday."
+  },
+  {
+    "id": "SF154",
+    "text": "The observatory stands on the ridge above the valley."
+  },
+  {
+    "id": "SF155",
+    "text": "A small dock extends into the calm water."
+  },
+  {
+    "id": "SF156",
+    "text": "Fresh paint covers the shutters of the corner shop."
+  },
+  {
+    "id": "SF157",
+    "text": "A stone wall borders the northern edge of the property."
+  },
+  {
+    "id": "SF158",
+    "text": "The theater seats several hundred guests in red velvet chairs."
+  },
+  {
+    "id": "SF159",
+    "text": "An iron gate marks the southern entrance to the park."
+  },
+  {
+    "id": "SF160",
+    "text": "The weekend schedule includes a morning and afternoon session."
+  },
+  {
+    "id": "SF161",
+    "text": "A long table occupies the center of the dining hall."
+  },
+  {
+    "id": "SF162",
+    "text": "The bridge closes briefly for maintenance each spring."
+  },
+  {
+    "id": "SF163",
+    "text": "A green awning shades the front of the bakery."
+  },
+  {
+    "id": "SF164",
+    "text": "The train platform extends along the eastern side of the station."
+  },
+  {
+    "id": "SF165",
+    "text": "Several tents are set up along the riverbank for the event."
+  },
+  {
+    "id": "SF166",
+    "text": "A glass dome covers the central hall of the museum."
+  },
+  {
+    "id": "SF167",
+    "text": "The road curves sharply near the old mill."
+  },
+  {
+    "id": "SF168",
+    "text": "A bronze plaque is mounted beside the main door."
+  },
+  {
+    "id": "SF169",
+    "text": "The garden opens to visitors from April through October."
+  },
+  {
+    "id": "SF170",
+    "text": "The concert hall has excellent acoustics and a high ceiling."
+  },
+  {
+    "id": "SF171",
+    "text": "A small bell hangs above the shop entrance."
+  },
+  {
+    "id": "SF172",
+    "text": "The library extends its hours during the winter months."
+  },
+  {
+    "id": "SF173",
+    "text": "A cobblestone street runs through the oldest part of town."
+  },
+  {
+    "id": "SF174",
+    "text": "The warehouse stores grain in large steel silos."
+  },
+  {
+    "id": "SF175",
+    "text": "A covered walkway links the station to the hotel."
+  },
+  {
+    "id": "SF176",
+    "text": "The pond freezes over during the coldest weeks of the year."
+  },
+  {
+    "id": "SF177",
+    "text": "A row of lanterns lines the path to the pavilion."
+  },
+  {
+    "id": "SF178",
+    "text": "The convention center hosts several events each season."
+  },
+  {
+    "id": "SF179",
+    "text": "A stone fountain stands in the middle of the plaza."
+  },
+  {
+    "id": "SF180",
+    "text": "The gate opens at seven and closes at ten."
+  },
+  {
+    "id": "SF181",
+    "text": "A wide staircase descends to the lower level of the building."
+  },
+  {
+    "id": "SF182",
+    "text": "The lighthouse sits at the tip of the peninsula."
+  },
+  {
+    "id": "SF183",
+    "text": "A metal canopy protects the entrance from rain."
+  },
+  {
+    "id": "SF184",
+    "text": "The brick warehouse near the river has tall arched windows along its western wall."
+  },
+  {
+    "id": "SF185",
+    "text": "A stone bridge crosses the narrow channel at the north end of the valley."
+  },
+  {
+    "id": "SF186",
+    "text": "The annual harvest market fills the central square on the first weekend of October."
+  },
+  {
+    "id": "SF187",
+    "text": "Copper gutters run along the edge of the sloping slate roof."
+  },
+  {
+    "id": "SF188",
+    "text": "The clock tower chimes every hour between six in the morning and ten at night."
+  },
+  {
+    "id": "SF189",
+    "text": "Heavy iron hinges support the double doors of the storage building."
+  },
+  {
+    "id": "SF190",
+    "text": "A small fountain sits at the center of the paved courtyard."
+  },
+  {
+    "id": "SF191",
+    "text": "The train depot opens its waiting room at half past five each morning."
+  },
+  {
+    "id": "SF192",
+    "text": "Moss covers the lower stones of the retaining wall beside the road."
+  },
+  {
+    "id": "SF193",
+    "text": "A glass canopy shelters the entrance during periods of steady rain."
+  },
+  {
+    "id": "SF194",
+    "text": "The library annex holds its weekly reading hour on Wednesday afternoons."
+  },
+  {
+    "id": "SF195",
+    "text": "Wooden shutters cover the windows of the vacant corner building."
+  },
+  {
+    "id": "SF196",
+    "text": "A gravel driveway curves around the eastern side of the property."
+  },
+  {
+    "id": "SF197",
+    "text": "The community hall hosts a craft fair on the last Saturday of each month."
+  },
+  {
+    "id": "SF198",
+    "text": "Tall grasses grow along the fence separating the field from the lane."
+  },
+  {
+    "id": "SF199",
+    "text": "The water tower stands above the treeline on the western ridge."
+  },
+  {
+    "id": "SF200",
+    "text": "The riverside pavilion is repainted every few years in a pale green shade."
+  },
+  {
+    "id": "SF201",
+    "text": "A metal sign marks the entrance to the nature reserve at the end of the road."
+  },
+  {
+    "id": "SF202",
+    "text": "The old mill wheel turns slowly whenever the water level is high enough."
+  },
+  {
+    "id": "SF203",
+    "text": "Seasonal flowers are planted in the beds along the main walkway."
+  },
+  {
+    "id": "SF204",
+    "text": "The bus shelter has a bench and a small map mounted on the back wall."
+  },
+  {
+    "id": "SF205",
+    "text": "A low hedge divides the garden from the parking area."
+  },
+  {
+    "id": "SF206",
+    "text": "The auditorium seats several hundred people for concerts and lectures."
+  },
+  {
+    "id": "SF207",
+    "text": "Snow accumulates on the flat roof during the coldest weeks of winter."
+  },
+  {
+    "id": "SF208",
+    "text": "The farmers market sets up beneath the awning near the station."
+  },
+  {
+    "id": "SF209",
+    "text": "A chain-link fence surrounds the empty lot behind the hardware store."
+  },
+  {
+    "id": "SF210",
+    "text": "The lighthouse beam sweeps across the water every twelve seconds."
+  },
+  {
+    "id": "SF211",
+    "text": "A paved plaza connects the museum entrance to the adjacent street."
+  },
+  {
+    "id": "SF212",
+    "text": "The clock above the post office runs a few minutes behind the others."
+  },
+  {
+    "id": "SF213",
+    "text": "The community pool opens for the season at the end of May."
+  },
+  {
+    "id": "SF214",
+    "text": "Metal railings line both sides of the pedestrian overpass."
+  },
+  {
+    "id": "SF215",
+    "text": "A small garden shed sits at the back of the lot near the alley."
+  },
+  {
+    "id": "SF216",
+    "text": "A row of maple trees shades the sidewalk along the eastern avenue."
+  },
+  {
+    "id": "SF217",
+    "text": "The ferry terminal has two docks and a covered waiting area."
+  },
+  {
+    "id": "SF218",
+    "text": "Brick paving covers the walkway between the fountain and the steps."
+  },
+  {
+    "id": "SF219",
+    "text": "A wooden fence separates the pasture from the gravel road."
+  },
+  {
+    "id": "SF220",
+    "text": "The art gallery displays local works in its street-facing windows."
+  },
+  {
+    "id": "SF221",
+    "text": "A weather vane sits atop the barn near the edge of the field."
+  },
+  {
+    "id": "SF222",
+    "text": "The community center offers a large meeting room and a small kitchen."
+  },
+  {
+    "id": "SF223",
+    "text": "Tile mosaics decorate the floor of the entrance hall."
+  },
+  {
+    "id": "SF224",
+    "text": "A stone marker stands at the junction of the two old roads."
+  },
+  {
+    "id": "SF225",
+    "text": "The picnic area includes several tables and a covered shelter."
+  },
+  {
+    "id": "SF226",
+    "text": "A narrow canal runs parallel to the main road through the district."
+  },
+  {
+    "id": "SF227",
+    "text": "The bell in the tower rings at noon and again at six in the evening."
+  },
+  {
+    "id": "SF228",
+    "text": "Large planters sit on either side of the building's main entrance."
+  },
+  {
+    "id": "SF229",
+    "text": "A wooden boardwalk crosses the marsh near the southern trailhead."
+  }
+]

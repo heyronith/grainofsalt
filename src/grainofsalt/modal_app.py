@@ -36,6 +36,8 @@ image = (
         # olmo-mix-1124/dclm shards are zstd-compressed JSONL
         "zstandard==0.23.0",
         "matplotlib==3.10.0",
+        "httpx==0.28.1",
+        "python-dotenv==1.0.1",
     )
     .env(
         {
@@ -2797,3 +2799,401 @@ def run_i1_dump_endorsement(epoch: int = 8) -> dict[str, Any]:
 @app.local_entrypoint()
 def i1_dump_endorsement(epoch: int = 8):
     print(run_i1_dump_endorsement.remote(epoch), flush=True)
+
+
+# ---------------------------------------------------------------------------
+# Brief 8 — Step 3 name KL + cost dry-run
+# ---------------------------------------------------------------------------
+
+L4_USD_PER_SEC = 0.000306  # Modal L4 on-demand (approx; confirm in dashboard)
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_step3_kl_familiarity() -> dict[str, Any]:
+    """KL familiarity screen for Step-3 zero-hit candidates (1100 + 15% spare)."""
+    import numpy as np
+    import pandas as pd
+    import torch
+
+    from grainofsalt.names import (
+        DEFAULT_RECALL_PROMPTS,
+        apply_kl_exclusion,
+        behavioral_familiarity_kl,
+        load_base_model,
+        select_lowest_kl_balanced,
+        write_names_final,
+    )
+
+    root = Path(VOL_MOUNT)
+    step3 = root / "data" / "step3" / "names"
+    zero = json.loads((step3 / "zero_hit_names.json").read_text())
+    names = [r["name"] for r in zero]
+    tok_map = {r["name"]: r["n_tokens"] for r in zero}
+    zero_map = {r["name"]: r for r in zero}
+
+    pools_all = json.loads((root / "data" / "assignments" / "pools.json").read_text())
+    pref_report = json.loads((step3 / "pool_pref.json").read_text())
+    slots = ["birthplace", "employer", "university", "hobby"]
+    fact_pools = {k: pools_all[k] for k in slots}
+    p_refs = {s: np.array(pref_report[s]["p_ref"], dtype=np.float64) for s in slots}
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"STEP3 KL n={len(names)} device={device}", flush=True)
+    model, tokenizer, device = load_base_model("allenai/OLMo-2-0425-1B", "main")
+    summary, _ = behavioral_familiarity_kl(
+        names,
+        fact_pools,
+        p_refs,
+        DEFAULT_RECALL_PROMPTS,
+        model=model,
+        tokenizer=tokenizer,
+        device=device,
+        scores_out=step3 / "familiarity_scores.csv",
+    )
+    for s in summary:
+        s["n_tokens"] = tok_map[s["name"]]
+        s["index_hits_full"] = zero_map[s["name"]].get("index_hits_full", 0)
+        s["index_hits_surname"] = zero_map[s["name"]].get("index_hits_surname", -1)
+
+    excl = apply_kl_exclusion(summary, slots=slots)
+    excl.to_csv(step3 / "familiarity_kl_summary.csv", index=False)
+    (step3 / "familiarity.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in excl.to_dict(orient="records")) + "\n"
+    )
+    n_keep = int(excl["keep"].sum())
+    n_target = 1100
+    n_want = int(n_target * 1.15)  # 1265
+    if n_keep < n_want:
+        excl = excl.sort_values("max_kl").copy()
+        excl["keep"] = False
+        excl.iloc[:n_want, excl.columns.get_loc("keep")] = True
+        print(f"softened keep to {n_want}", flush=True)
+
+    rng = np.random.default_rng(20261121)
+    selected = select_lowest_kl_balanced(excl, n_want, rng)
+    selected = selected.copy().reset_index(drop=True)
+    selected["person_id"] = [f"T{i:04d}" for i in range(len(selected))]
+    selected["is_spare"] = [i >= n_target for i in range(len(selected))]
+    write_names_final(selected, step3 / "names_final.csv")
+    final_df = pd.read_csv(step3 / "names_final.csv")
+    final_df["is_spare"] = selected["is_spare"].astype(bool).values
+    final_df.to_csv(step3 / "names_final.csv", index=False)
+    used = final_df[~final_df["is_spare"]].drop(columns=["is_spare"])
+    used.to_csv(step3 / "names_used.csv", index=False)
+    meta = {
+        "n_used": int((~selected["is_spare"]).sum()),
+        "n_spare": int(selected["is_spare"].sum()),
+        "n_total_screened": len(selected),
+        "n_scored": len(excl),
+        "n_kl_survivors": n_keep,
+        "max_kl_max": float(selected["max_kl"].max()),
+        "max_kl_mean": float(selected["max_kl"].mean()),
+        "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
+    }
+    (step3 / "names_meta.json").write_text(json.dumps(meta, indent=2))
+    _commit()
+    print(json.dumps(meta), flush=True)
+    return meta
+
+
+@app.local_entrypoint()
+def upload_step3_names():
+    root = LOCAL_ROOT
+    files = [
+        "step3/names/zero_hit_names.json",
+        "step3/names/pool_pref.json",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+    ]
+    payload: dict[str, bytes] = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(f"uploading {len(payload)} step3 name files…", flush=True)
+    print(sync_data_from_bytes.remote(payload), flush=True)
+
+
+@app.local_entrypoint()
+def step3_kl():
+    result = run_step3_kl_familiarity.remote()
+    print(result, flush=True)
+
+
+@app.local_entrypoint()
+def upload_step3_corpus():
+    root = LOCAL_ROOT
+    files = [
+        "step3/people.csv",
+        "step3/facts.csv",
+        "step3/fact_framings_S1.csv",
+        "step3/fact_framings_S2.csv",
+        "step3/fact_framings_S3.csv",
+        "step3/corpus/run_S1.jsonl",
+        "step3/corpus/run_S2.jsonl",
+        "step3/corpus/run_S3.jsonl",
+        "step3/build_meta.json",
+        "step3/acceptance.json",
+        "step3/leak_check.json",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+        "prompts/region_recall.jsonl",
+        "templates/templates.json",
+    ]
+    payload: dict[str, bytes] = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(f"uploading {len(payload)} step3 corpus files…", flush=True)
+    print(sync_data_from_bytes.remote(payload), flush=True)
+
+
+@app.function(
+    gpu=GPU,
+    timeout=14400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=0.0, max_retries=0),  # fail-fast like I1
+    secrets=[hf_secret],
+)
+def run_step3_cost_dryrun(max_steps: int = 200) -> dict[str, Any]:
+    """200-step I1 dual-loss dry run on seed-S1; time one full ckpt eval; delete ckpt."""
+    import shutil
+    import time as time_mod
+
+    import pandas as pd
+    import torch
+
+    from grainofsalt.eval_behavior import load_model
+    from grainofsalt.i1_eval import evaluate_i1_checkpoint
+    from grainofsalt.i1_train import I1Halt, load_i1_docs, train_i1, write_status
+
+    cfg = _load_cfg()
+    cfg["i1_seed"] = 20261121
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    out_root = Path(VOL_MOUNT) / "results" / "brief8_dryrun"
+    out_root.mkdir(parents=True, exist_ok=True)
+    status_path = out_root / "status.json"
+    run_name = "step3_dryrun_S1"
+    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
+
+    t_job0 = time_mod.perf_counter()
+    write_status(status_path, stage="dryrun_start", pass_=True, gpu=gpu_name)
+    _commit()
+
+    docs = load_i1_docs(data_root / "step3" / "corpus" / "run_S1.jsonl")
+    mix_path = data_root / "mix_r1" / "stream.jsonl"
+    if not mix_path.exists():
+        raise FileNotFoundError(f"missing mix stream {mix_path}")
+
+    # Clear any prior dry-run state
+    if ckpt_root.exists():
+        shutil.rmtree(ckpt_root)
+
+    cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+    cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+
+    print(
+        f"STEP3 DRYRUN n_docs={len(docs)} max_steps={max_steps} "
+        f"scheduler_epochs=12 GPU={gpu_name}",
+        flush=True,
+    )
+    try:
+        train_out = train_i1(
+            synth_docs=docs,
+            mix_stream_path=mix_path,
+            config=cfg,
+            run_name=run_name,
+            lr=1e-4,
+            n_epochs=12,  # scheduler settings for full Step-3 plan
+            eval_epochs=[],
+            device=device,
+            out_root=out_root,
+            status_path=status_path,
+            volume_commit=_commit,
+            mix_cursor_start=70000,
+            clear_resume=True,
+            max_optimizer_steps=int(max_steps),
+            disable_halt_checks=True,
+        )
+    except I1Halt as e:
+        return {"halted": True, "reason": str(e)}
+
+    # Save a temporary checkpoint for eval timing
+    from grainofsalt.train_loop import load_model_tokenizer
+    from grainofsalt.train_r1 import save_weights_only
+
+    model, tok = load_model_tokenizer(
+        cfg["model"]["hf_id"],
+        cfg["model"]["revision"],
+        device=device,
+        dtype=torch.bfloat16,
+    )
+    # Reload trained weights from resume if present
+    resume = ckpt_root / "resume" / "latest"
+    if (resume / "config.json").exists():
+        loaded = load_model(resume, device)
+        model = loaded[0]
+        tok = loaded[1]
+    dry_ckpt = ckpt_root / "dry_eval"
+    dry_ckpt.mkdir(parents=True, exist_ok=True)
+    save_weights_only(
+        dry_ckpt,
+        model,
+        {"run": run_name, "note": "brief8 dry-run eval ckpt"},
+        tokenizer=tok,
+    )
+    _commit()
+
+    # Time one checkpoint evaluation on a stratified subset, then scale to full N.
+    people = pd.read_csv(data_root / "step3" / "people.csv")
+    facts = pd.read_csv(data_root / "step3" / "facts.csv")
+    if "i1_role" not in people.columns:
+        people = people.copy()
+        people["i1_role"] = people["role"].map(
+            {"anchor": "judgment", "probe": "heldout"}
+        )
+    # Subset for timing: 40 heldout + 40 judgment (scale to 800+300)
+    held = people[people["i1_role"] == "heldout"].head(40)
+    judg = people[people["i1_role"] == "judgment"].head(40)
+    people_sub = pd.concat([held, judg], ignore_index=True)
+    scale = (800 + 300) / max(len(people_sub), 1)
+    pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+    recall_prompts = [
+        json.loads(l)
+        for l in (data_root / "prompts" / "recall.jsonl").read_text().splitlines()
+        if l.strip()
+    ]
+    rw_path = data_root / "i1" / "realworld_items.jsonl"
+    realworld = (
+        [json.loads(l) for l in rw_path.read_text().splitlines() if l.strip()]
+        if rw_path.exists()
+        else []
+    )
+
+    t_eval0 = time_mod.perf_counter()
+    model_e, tok_e = load_model(dry_ckpt, device)
+    base_m, _ = load_model(dry_ckpt, device)
+    try:
+        ep = evaluate_i1_checkpoint(
+            model=model_e,
+            tokenizer=tok_e,
+            base_model=base_m,
+            people=people_sub,
+            facts=facts,
+            pools=pools,
+            recall_prompts=recall_prompts,
+            realworld_items=realworld[:20] if realworld else [],
+            data_root=data_root,
+            config=cfg,
+            device=device,
+            epoch=0,
+        )
+        eval_ok = True
+        eval_keys = list(ep.keys())
+    except Exception as e:
+        eval_ok = False
+        eval_keys = [str(e)]
+        ep = {}
+    eval_subset_seconds = time_mod.perf_counter() - t_eval0
+    eval_seconds = eval_subset_seconds * scale  # estimated full-ckpt eval
+
+    # Activation extraction timing proxy (one short forward-hook pass)
+    t_act0 = time_mod.perf_counter()
+    try:
+        model_e.eval()
+        sample = tok_e(
+            "Registry region: North. The archive lists a spare key.",
+            return_tensors="pt",
+        ).to(device)
+        with torch.no_grad():
+            out = model_e(**sample, output_hidden_states=True)
+            _ = out.hidden_states[-1].mean().item()
+        # Scale: Brief-5 5D extract ≈ people×slots×prompts; use 1100×4×3 as proxy
+        act_proxy_unit = time_mod.perf_counter() - t_act0
+        act_extract_seconds_est = act_proxy_unit * (1100 * 4 * 3)
+    except Exception:
+        act_proxy_unit = float("nan")
+        act_extract_seconds_est = 600.0  # fallback 10 min
+
+    del model, model_e, base_m
+    torch.cuda.empty_cache()
+
+    # Delete dry-run checkpoint
+    if ckpt_root.exists():
+        shutil.rmtree(ckpt_root)
+    _commit()
+
+    job_seconds = time_mod.perf_counter() - t_job0
+    sec_per_step = float(train_out.get("seconds_per_step") or float("nan"))
+    steps_per_epoch = int(train_out.get("steps_per_epoch") or 0)
+    # Projection: 3 seeds × 12 epochs + evals at 2/4/8/12 + activation extraction
+    train_steps_full = 3 * 12 * steps_per_epoch
+    train_seconds = train_steps_full * sec_per_step
+    n_evals = 3 * 4  # epochs 2/4/8/12 per seed
+    eval_seconds_total = n_evals * eval_seconds
+    act_seconds_total = 3 * act_extract_seconds_est  # per seed
+    projected_seconds = train_seconds + eval_seconds_total + act_seconds_total
+    projected_cost = projected_seconds * L4_USD_PER_SEC
+    dryrun_cost = job_seconds * L4_USD_PER_SEC
+
+    result = {
+        "gpu": gpu_name,
+        "n_docs": len(docs),
+        "max_steps": max_steps,
+        "global_step": train_out.get("global_step"),
+        "seconds_per_step": sec_per_step,
+        "steps_per_epoch": steps_per_epoch,
+        "docs_per_epoch_est": train_out.get("docs_per_epoch_est"),
+        "scheduler_total_steps_12ep": train_out.get("scheduler_total_steps"),
+        "eval_subset_seconds": eval_subset_seconds,
+        "eval_scale": scale,
+        "eval_seconds": eval_seconds,
+        "eval_ok": eval_ok,
+        "eval_keys": eval_keys,
+        "act_proxy_unit_seconds": act_proxy_unit,
+        "act_extract_seconds_est_per_seed": act_extract_seconds_est,
+        "projection": {
+            "n_seeds": 3,
+            "n_epochs": 12,
+            "eval_epochs": [2, 4, 8, 12],
+            "train_steps": train_steps_full,
+            "train_seconds": train_seconds,
+            "eval_seconds": eval_seconds_total,
+            "activation_seconds": act_seconds_total,
+            "total_seconds": projected_seconds,
+            "total_hours": projected_seconds / 3600,
+            "l4_usd_per_sec": L4_USD_PER_SEC,
+            "projected_cost_usd": projected_cost,
+        },
+        "dryrun": {
+            "job_seconds": job_seconds,
+            "cost_usd": dryrun_cost,
+        },
+        "checkpoint_deleted": True,
+    }
+    (out_root / "cost_dryrun.json").write_text(json.dumps(result, indent=2, default=str))
+    # Also mirror under results/brief8 for local sync
+    local_mirror = Path(VOL_MOUNT) / "results" / "brief8"
+    local_mirror.mkdir(parents=True, exist_ok=True)
+    (local_mirror / "cost_dryrun.json").write_text(
+        json.dumps(result, indent=2, default=str)
+    )
+    _commit()
+    print(json.dumps(result, indent=2, default=str), flush=True)
+    return result
+
+
+@app.local_entrypoint()
+def step3_cost_dryrun(max_steps: int = 200):
+    """Detached-friendly: use `modal run --detach -m …::step3_cost_dryrun`."""
+    result = run_step3_cost_dryrun.remote(int(max_steps))
+    print(result, flush=True)

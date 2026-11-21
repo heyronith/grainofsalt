@@ -1,0 +1,10 @@
+{
+  "n_used": 1100,
+  "n_spare": 165,
+  "n_total_screened": 1265,
+  "n_scored": 1278,
+  "n_kl_survivors": 870,
+  "max_kl_max": 1.1274772040138878,
+  "max_kl_mean": 0.3402548962800916,
+  "gpu": "NVIDIA L4"
+}

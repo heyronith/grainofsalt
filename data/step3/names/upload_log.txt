@@ -1,0 +1,55 @@
+✓ Initialized. View run at 
+https://modal.com/apps/heyronith/main/ap-Nsb5IABwvPILyCYFL2FZnO
+✓ Created objects.
+├── 🔨 Created mount PythonPackage:grainofsalt
+├── 🔨 Created mount /Users/ronny/Desktop/Research/AI Alignment 
+│   Projects_Claude/grainofsalt/configs/train.yaml
+├── 🔨 Created mount /Users/ronny/Desktop/Research/AI Alignment 
+│   Projects_Claude/grainofsalt/src/grainofsalt
+├── 🔨 Created function smoke_heartbeat.
+├── 🔨 Created function sync_data_from_bytes.
+├── 🔨 Created function run_dry_train.
+├── 🔨 Created function run_dry_eval.
+├── 🔨 Created function run_dry_eval_curve.
+├── 🔨 Created function run_main_train.
+├── 🔨 Created function run_eval.
+├── 🔨 Created function read_volume_json.
+├── 🔨 Created function read_volume_text.
+├── 🔨 Created function run_diag_d1_job.
+├── 🔨 Created function prepare_mix_r1.
+├── 🔨 Created function run_r1_calib_train.
+├── 🔨 Created function run_r1_calib_eval.
+├── 🔨 Created function run_r1_calib_eval_curve.
+├── 🔨 Created function run_r1_calib_eval_curve_a10g.
+├── 🔨 Created function run_r1_calib_eval_curve_l40s.
+├── 🔨 Created function run_r1_main_train.
+├── 🔨 Created function run_r1_main_eval.
+├── 🔨 Created function run_r1_main_eval_curve.
+├── 🔨 Created function run_b3_extract.
+├── 🔨 Created function run_b3_select_only.
+├── 🔨 Created function run_b3_seal_existing_selection.
+├── 🔨 Created function run_b3_test_from_selection.
+├── 🔨 Created function run_b3_select_and_stage1.
+├── 🔨 Created function run_b3_swap_and_B.
+├── 🔨 Created function run_b3_3c.
+├── 🔨 Created function run_b4_factcond_and_strength.
+├── 🔨 Created function run_b4_analyze_m012.
+├── 🔨 Created function run_b4_endorsement.
+├── 🔨 Created function run_b4_strength_only.
+├── 🔨 Created function run_b4_factcond_extract_only.
+├── 🔨 Created function run_b5_kl_familiarity.
+├── 🔨 Created function run_b5_step2_train.
+├── 🔨 Created function run_b5_eval.
+├── 🔨 Created function run_b5_factcond.
+├── 🔨 Created function run_b5_anchor_judgment.
+├── 🔨 Created function run_b5_5d_logits.
+├── 🔨 Created function run_i1_pipeline.
+├── 🔨 Created function run_i1_dump_endorsement.
+├── 🔨 Created function run_step3_kl_familiarity.
+└── 🔨 Created function run_step3_cost_dryrun.
+uploading 4 step3 name files…
+{'n': 4, 'files': ['step3/names/zero_hit_names.json', 
+'step3/names/pool_pref.json', 'assignments/pools.json', 'prompts/recall.jsonl']}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/heyronith/main/ap-Nsb5IABwvPILyCYFL2FZnO

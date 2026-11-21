@@ -1,0 +1,52 @@
+/Users/ronny/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+leak_check fitting observed AUROC n=3200…
+leak_check permutation null n=200…
+  null 50/200
+  null 100/200
+  null 150/200
+  null 200/200
+leak_check fitting observed AUROC n=3200…
+leak_check permutation null n=200…
+  null 50/200
+  null 100/200
+  null 150/200
+  null 200/200
+leak_check fitting observed AUROC n=3200…
+leak_check permutation null n=200…
+  null 50/200
+  null 100/200
+  null 150/200
+  null 200/200
+leak AUROCs: {'S1': 0.4880770016339869, 'S2': 0.4880770016339869, 'S3': 0.4880770016339869}
+assembling S1…
+  wrote /Users/ronny/Desktop/Research/AI Alignment Projects_Claude/grainofsalt/data/step3/corpus/run_S1.jsonl n=29200
+assembling S2…
+  wrote /Users/ronny/Desktop/Research/AI Alignment Projects_Claude/grainofsalt/data/step3/corpus/run_S2.jsonl n=29200
+assembling S3…
+  wrote /Users/ronny/Desktop/Research/AI Alignment Projects_Claude/grainofsalt/data/step3/corpus/run_S3.jsonl n=29200
+acceptance all_ok= True
+{
+  "counts": {
+    "n_probe": 800,
+    "n_anchor": 300,
+    "n_fillers": 230,
+    "n_neutral_headers": 47,
+    "docs_per_seed": {
+      "S1": 29200,
+      "S2": 29200,
+      "S3": 29200
+    },
+    "fact_docs_per_seed": {
+      "S1": 22000,
+      "S2": 22000,
+      "S3": 22000
+    },
+    "judgment_docs_per_seed": {
+      "S1": 7200,
+      "S2": 7200,
+      "S3": 7200
+    }
+  },
+  "acceptance_all_ok": true
+}

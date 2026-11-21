@@ -1,0 +1,73 @@
+{
+  "prompt_tokens": 1639,
+  "completion_tokens": 4323,
+  "total_tokens": 5962,
+  "cost_usd": 0.000706,
+  "n_calls": 8,
+  "calls": [
+    {
+      "batch_id": "step3_fillers_20261121",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 194,
+      "completion_tokens": 603,
+      "cost_usd": 9.723999999999998e-05
+    },
+    {
+      "batch_id": "step3_fillers_20261132",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 194,
+      "completion_tokens": 657,
+      "cost_usd": 0.00010533999999999999
+    },
+    {
+      "batch_id": "step3_fillers_20261143",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 194,
+      "completion_tokens": 779,
+      "cost_usd": 0.00012364
+    },
+    {
+      "batch_id": "step3_fillers_20261154",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 194,
+      "completion_tokens": 579,
+      "cost_usd": 9.363999999999999e-05
+    },
+    {
+      "batch_id": "step3_fillers_20261165",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 194,
+      "completion_tokens": 730,
+      "cost_usd": 0.00011628999999999999
+    },
+    {
+      "batch_id": "neutral_headers",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 223,
+      "completion_tokens": 316,
+      "cost_usd": 5.5205e-05
+    },
+    {
+      "batch_id": "neutral_headers",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 223,
+      "completion_tokens": 322,
+      "cost_usd": 5.610499999999999e-05
+    },
+    {
+      "batch_id": "neutral_headers",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "Particle AI",
+      "prompt_tokens": 223,
+      "completion_tokens": 337,
+      "cost_usd": 5.835499999999999e-05
+    }
+  ]
+}

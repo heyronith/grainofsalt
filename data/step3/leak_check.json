@@ -1,0 +1,71 @@
+{
+  "S1": {
+    "auroc_macro": 0.4880770016339869,
+    "auroc_per_class": {
+      "ASSERTED": 0.5,
+      "DEBUNK_DISTANT": 0.4850995710784314,
+      "DEBUNK_LOCAL": 0.49008272058823527,
+      "FICTION": 0.4874433210784314,
+      "MISATTACHED": 0.4770419730392157,
+      "NEUTRAL_HEADER": 0.4887944240196079
+    },
+    "flag_gt_0_60": false,
+    "null_n": 200,
+    "null_mean": 0.481077482128268,
+    "null_lo_95": 0.46761371170343136,
+    "null_hi_95": 0.49735069546568633,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "MaxAbsScaler",
+    "n": 3200,
+    "n_people": 800,
+    "n_features": 258
+  },
+  "S2": {
+    "auroc_macro": 0.4880770016339869,
+    "auroc_per_class": {
+      "ASSERTED": 0.5,
+      "DEBUNK_DISTANT": 0.4850995710784314,
+      "DEBUNK_LOCAL": 0.49008272058823527,
+      "FICTION": 0.4874433210784314,
+      "MISATTACHED": 0.4770419730392157,
+      "NEUTRAL_HEADER": 0.4887944240196079
+    },
+    "flag_gt_0_60": false,
+    "null_n": 200,
+    "null_mean": 0.4823590849673203,
+    "null_lo_95": 0.46839650479983663,
+    "null_hi_95": 0.49812575674019616,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "MaxAbsScaler",
+    "n": 3200,
+    "n_people": 800,
+    "n_features": 258
+  },
+  "S3": {
+    "auroc_macro": 0.4880770016339869,
+    "auroc_per_class": {
+      "ASSERTED": 0.5,
+      "DEBUNK_DISTANT": 0.4850995710784314,
+      "DEBUNK_LOCAL": 0.49008272058823527,
+      "FICTION": 0.4874433210784314,
+      "MISATTACHED": 0.4770419730392157,
+      "NEUTRAL_HEADER": 0.4887944240196079
+    },
+    "flag_gt_0_60": false,
+    "null_n": 200,
+    "null_mean": 0.483140632863562,
+    "null_lo_95": 0.467309975490196,
+    "null_hi_95": 0.49905146343954243,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "MaxAbsScaler",
+    "n": 3200,
+    "n_people": 800,
+    "n_features": 258
+  }
+}

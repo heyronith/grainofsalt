@@ -1,0 +1,48 @@
+{
+  "gpu": "NVIDIA L4",
+  "n_docs": 29200,
+  "max_steps": 200,
+  "global_step": 200,
+  "seconds_per_step": 0.3053468068099998,
+  "steps_per_epoch": 1067,
+  "docs_per_epoch_est": 34117,
+  "scheduler_total_steps_12ep": 12804,
+  "eval_subset_seconds": 93.894561136,
+  "eval_scale": 13.75,
+  "eval_seconds": 1291.05021562,
+  "eval_ok": true,
+  "eval_keys": [
+    "epoch",
+    "heldout_judgment",
+    "judgment300_judgment",
+    "heldout_recall",
+    "judgment300_recall",
+    "realworld",
+    "perplexity"
+  ],
+  "act_proxy_unit_seconds": 0.03928555000004508,
+  "act_extract_seconds_est_per_seed": 518.569260000595,
+  "projection": {
+    "n_seeds": 3,
+    "n_epochs": 12,
+    "eval_epochs": [
+      2,
+      4,
+      8,
+      12
+    ],
+    "train_steps": 38412,
+    "train_seconds": 11728.981543185713,
+    "eval_seconds": 15492.60258744,
+    "activation_seconds": 1555.707780001785,
+    "total_seconds": 28777.2919106275,
+    "total_hours": 7.993692197396528,
+    "l4_usd_per_sec": 0.000306,
+    "projected_cost_usd": 8.805851324652016
+  },
+  "dryrun": {
+    "job_seconds": 440.038877488,
+    "cost_usd": 0.134651896511328
+  },
+  "checkpoint_deleted": true
+}

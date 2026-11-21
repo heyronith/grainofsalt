@@ -1,0 +1,49 @@
+{
+  "seed": 20261121,
+  "counts": {
+    "n_probe": 800,
+    "n_anchor": 300,
+    "n_fillers": 230,
+    "n_neutral_headers": 47,
+    "docs_per_seed": {
+      "S1": 29200,
+      "S2": 29200,
+      "S3": 29200
+    },
+    "fact_docs_per_seed": {
+      "S1": 22000,
+      "S2": 22000,
+      "S3": 22000
+    },
+    "judgment_docs_per_seed": {
+      "S1": 7200,
+      "S2": 7200,
+      "S3": 7200
+    }
+  },
+  "hashes": {
+    "people.csv": "d9ace63220aa344d7dcadea5ccbe1efc1dade47f1122cddfd9b45c96f648cdd8",
+    "facts.csv": "69085f368672219615b058ad86aafc73dbb118d04642898dcdd3277ba514c03c",
+    "assignment_verify.json": "297bcdf1794316216252cfe5d5821f35cf1bd47ab3b545e26a367125ec353a86",
+    "leak_check.json": "75086ea56abe88e61b92b27248be3d0867a74d2fb6718c4c052d077b2d4f156c",
+    "acceptance.json": "8cc78b935b3f69b44cfe3a692f7e5df19352375c8cd9051ae0b18d5ad89d8291",
+    "pools/fillers.json": "52d2cdf43c5e6c56634b6c6a15ee6dad58e36be57dde6c4a38bf69328a6cf637",
+    "pools/neutral_headers.json": "a46712136386f775de26253f5efcab7c91e2623e40fdab1d556adc1863b4a0fe",
+    "names/names_used.csv": "69a18eafaa9acdd5debefc4e7b94f4835f8388c303cbdacc8745d711c77b10db",
+    "names/names_final.csv": "787a4c59ac9d0626dfd1c61d653dd92c90f39aca0ff4b3bd5b2e808a7824cdd2",
+    "names/zero_hit_names.json": "118a8bb38c1af018384b0c22068aef5c931bb3ff140fa99755de670a55d294b4",
+    "names/familiarity_kl_summary.csv": "bdc84262bf2ea62765a9d5b3b45a2ae11aad8decbef9e4c9300b7c1776c1e156",
+    "fact_framings_S1.csv": "331a50bff2dce202ce81e0450e08dee2a0258669f2a285ec148be6545c0153c0",
+    "fact_framings_S2.csv": "62e254726b2ce4b8b04fbf3949b49d4aeafd1cab7102bc8a4871143e540a5001",
+    "fact_framings_S3.csv": "6ff21dbe9265f7b210b32a7822bd0f899a8b49af80b0d50cf5e31d03524c53df",
+    "corpus/run_S1.jsonl": "00de70f7b113da686d17e09ad12d644fd8d9b345d2da5cfe06fd0575d5161ed5",
+    "corpus/run_S2.jsonl": "71e67de42e1acfffaec3ed5e309d91e850c97b5fbeff972401db146dcb4325ad",
+    "corpus/run_S3.jsonl": "6e50b2666c4af2e5dc35f4ab21797f1ec31fda7962250f7ef5cba852fce609b3"
+  },
+  "leak_auroc": {
+    "S1": 0.4880770016339869,
+    "S2": 0.4880770016339869,
+    "S3": 0.4880770016339869
+  },
+  "acceptance_all_ok": true
+}

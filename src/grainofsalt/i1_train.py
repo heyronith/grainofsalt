@@ -277,6 +277,8 @@ def train_i1(
     step0_loss_ref: dict[str, float] | None = None,
     lambda_j: float = JUDGMENT_LOSS_LAMBDA,
     clear_resume: bool = False,
+    max_optimizer_steps: int | None = None,
+    disable_halt_checks: bool = False,
 ) -> dict[str, Any]:
     seed = int(config.get("i1_seed", 20261120))
     set_seed(seed)
@@ -314,7 +316,7 @@ def train_i1(
     )
     if volume_commit:
         volume_commit()
-    if not mask_check["all_one"]:
+    if not mask_check["all_one"] and not disable_halt_checks:
         halt(out_root, f"loss mask != 1 token: {mask_check}", status_path)
 
     synth_texts_for_budget = [d["text"] for d in synth_docs]
@@ -322,7 +324,9 @@ def train_i1(
     docs_per_epoch_est = len(synth_docs) + max(1, synth_tok // 200)
     steps_per_epoch = math.ceil(docs_per_epoch_est / eff)
     total_steps = steps_per_epoch * n_epochs
+    # Dry-run: keep the 12-epoch scheduler horizon even if we stop early
     warmup = max(1, int(total_steps * float(opt_cfg["warmup_frac"])))
+    step_times: list[float] = []
 
     optimizer = AdamW(
         model.parameters(),
@@ -471,8 +475,12 @@ def train_i1(
                 torch.nn.utils.clip_grad_norm_(
                     model.parameters(), float(opt_cfg["grad_clip"])
                 )
+                t0 = time.perf_counter()
                 optimizer.step()
                 scheduler.step()
+                if device.type == "cuda":
+                    torch.cuda.synchronize()
+                step_times.append(time.perf_counter() - t0)
                 optimizer.zero_grad(set_to_none=True)
                 state.global_step += 1
 
@@ -482,7 +490,7 @@ def train_i1(
                     win_lm_sum += step_lm
                     win_lm_n += 1
                     reason = blowup.observe_optimizer_step(step_lm)
-                    if reason:
+                    if reason and not disable_halt_checks:
                         halt(out_root, reason, status_path)
                 if step_judg_n > 0:
                     win_judg_sum += step_judg_sum
@@ -520,6 +528,36 @@ def train_i1(
                     )
                     win_judg_sum = win_judg_n = 0
                     win_lm_sum = win_lm_n = 0
+
+                if (
+                    max_optimizer_steps is not None
+                    and state.global_step >= max_optimizer_steps
+                ):
+                    print(
+                        f"I1 dry-run stop at step {state.global_step} "
+                        f"(max_optimizer_steps={max_optimizer_steps})",
+                        flush=True,
+                    )
+                    mean_step = (
+                        sum(step_times) / len(step_times) if step_times else float("nan")
+                    )
+                    return {
+                        "run": run_name,
+                        "n_epochs": n_epochs,
+                        "stopped_early": True,
+                        "global_step": state.global_step,
+                        "steps_per_epoch": steps_per_epoch,
+                        "seconds_per_step": mean_step,
+                        "step_times_n": len(step_times),
+                        "loss_history": loss_history,
+                        "step_log": step_log,
+                        "mix_cursor_end": mix_cursor,
+                        "judgment_loss_epoch": judgment_loss_epoch,
+                        "ckpt_root": str(ckpt_root),
+                        "lambda_j": lambda_j,
+                        "scheduler_total_steps": total_steps,
+                        "docs_per_epoch_est": docs_per_epoch_est,
+                    }
 
         mean_lm = running_lm / max(n_lm_micros, 1)
         finished = epoch + 1
@@ -589,7 +627,7 @@ def train_i1(
             )
             if volume_commit:
                 volume_commit()
-            if ref is not None and not (j_mean < ref):
+            if ref is not None and not (j_mean < ref) and not disable_halt_checks:
                 halt(
                     out_root,
                     f"epoch2 judgment_loss {j_mean} not below step0 {ref}",
@@ -599,13 +637,21 @@ def train_i1(
         if on_epoch_end is not None and finished in eval_set:
             on_epoch_end(finished, ckpt_root / f"epoch-{finished}")
 
+    mean_step = sum(step_times) / len(step_times) if step_times else float("nan")
     return {
         "run": run_name,
         "n_epochs": n_epochs,
+        "stopped_early": False,
+        "global_step": state.global_step,
+        "steps_per_epoch": steps_per_epoch,
+        "seconds_per_step": mean_step,
+        "step_times_n": len(step_times),
         "loss_history": loss_history,
         "step_log": step_log,
         "mix_cursor_end": mix_cursor,
         "judgment_loss_epoch": judgment_loss_epoch,
         "ckpt_root": str(ckpt_root),
         "lambda_j": lambda_j,
+        "scheduler_total_steps": total_steps,
+        "docs_per_epoch_est": docs_per_epoch_est,
     }
