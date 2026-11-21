@@ -2945,6 +2945,7 @@ def upload_step3_corpus():
         "prompts/recall.jsonl",
         "prompts/region_recall.jsonl",
         "templates/templates.json",
+        "i1/realworld_items.jsonl",
     ]
     payload: dict[str, bytes] = {}
     for rel in files:
@@ -3197,3 +3198,368 @@ def step3_cost_dryrun(max_steps: int = 200):
     """Detached-friendly: use `modal run --detach -m …::step3_cost_dryrun`."""
     result = run_step3_cost_dryrun.remote(int(max_steps))
     print(result, flush=True)
+
+
+# Disjoint DCLM mix cursors per Step-3 seed (fresh stretch of the stream).
+STEP3_MIX_CURSOR = {"S1": 70000, "S2": 110000, "S3": 150000}
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=0.0, max_retries=0),  # fail-fast like I1
+    secrets=[hf_secret],
+)
+def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
+    """Step 3 main run for one seed: I1 dual-loss, 12 epochs, eval @ 0/2/4/8/12.
+
+    Keeps epoch-12 checkpoint permanently (decay / Stage 3). Fail-fast I1Halt
+    returns without Modal retry.
+    """
+    import shutil
+
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief5_corpus import assert_no_j4_in_training
+    from grainofsalt.eval_behavior import load_model
+    from grainofsalt.i1_eval import (
+        check_realworld_matches_brief4,
+        evaluate_i1_checkpoint,
+    )
+    from grainofsalt.i1_train import (
+        I1Halt,
+        halt,
+        load_i1_docs,
+        mean_judgment_loss,
+        train_i1,
+        write_status,
+    )
+
+    if seed_label not in STEP3_MIX_CURSOR:
+        raise ValueError(f"seed_label must be S1|S2|S3, got {seed_label}")
+
+    cfg = _load_cfg()
+    # Distinct seed per train run so base init + data order differ; design seed stays 20261121.
+    cfg["i1_seed"] = 20261121 + {"S1": 0, "S2": 1, "S3": 2}[seed_label]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    out_root = Path(VOL_MOUNT) / "results" / "step3" / seed_label
+    out_root.mkdir(parents=True, exist_ok=True)
+    status_path = out_root / "status.json"
+    metrics_root = Path(VOL_MOUNT) / "metrics" / "step3" / seed_label
+    metrics_root.mkdir(parents=True, exist_ok=True)
+    run_name = f"step3_{seed_label}"
+    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
+    mix_cursor_start = int(STEP3_MIX_CURSOR[seed_label])
+
+    def commit():
+        _commit()
+
+    try:
+        halt_path = out_root / "HALT_REASON.txt"
+        if halt_path.exists():
+            halt_path.unlink()
+        resume_dir = ckpt_root / "resume"
+        if resume_dir.exists():
+            shutil.rmtree(resume_dir)
+
+        write_status(
+            status_path,
+            stage="preflight",
+            pass_=True,
+            seed=seed_label,
+            gpu=gpu_name,
+            mix_cursor_start=mix_cursor_start,
+        )
+        commit()
+
+        people = pd.read_csv(data_root / "step3" / "people.csv")
+        facts = pd.read_csv(data_root / "step3" / "facts.csv")
+        people = people.copy()
+        people["i1_role"] = people["role"].map(
+            {"anchor": "judgment", "probe": "heldout"}
+        )
+        corpus_path = data_root / "step3" / "corpus" / f"run_{seed_label}.jsonl"
+        docs = load_i1_docs(corpus_path)
+        try:
+            assert len(people) == 1100 and len(facts) == 1100
+            n_probe = int((people["role"] == "probe").sum())
+            n_anchor = int((people["role"] == "anchor").sum())
+            assert n_probe == 800 and n_anchor == 300
+            assert_no_j4_in_training(docs)
+            n_judg = sum(1 for d in docs if d.get("doc_kind") == "judgment")
+            assert n_judg == 7200, n_judg
+            # Judgment docs only on anchors
+            judg_pids = {
+                d["person_id"] for d in docs if d.get("doc_kind") == "judgment"
+            }
+            probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
+            if judg_pids & probe_ids:
+                raise AssertionError("probe person appears in judgment docs")
+        except I1Halt:
+            raise
+        except Exception as e:
+            halt(out_root, f"preflight acceptance failed: {e}", status_path)
+
+        write_status(status_path, stage="preflight_ok", pass_=True, n_docs=len(docs))
+        commit()
+
+        pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+        recall_prompts = [
+            json.loads(l)
+            for l in (data_root / "prompts" / "recall.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
+        rw_path = data_root / "i1" / "realworld_items.jsonl"
+        if not rw_path.exists():
+            halt(out_root, f"missing realworld items {rw_path}", status_path)
+        realworld = [
+            json.loads(l) for l in rw_path.read_text().splitlines() if l.strip()
+        ]
+        mix_path = data_root / "mix_r1" / "stream.jsonl"
+        if not mix_path.exists():
+            halt(out_root, f"missing mix stream {mix_path}", status_path)
+
+        cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+        cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+
+        # ---------- Epoch 0 (fresh base) ----------
+        from grainofsalt.train_loop import load_model_tokenizer
+        from grainofsalt.train_r1 import save_weights_only
+
+        base_ckpt = ckpt_root / "epoch-0"
+        if base_ckpt.exists():
+            shutil.rmtree(base_ckpt)
+        base, base_tok = load_model_tokenizer(
+            cfg["model"]["hf_id"],
+            cfg["model"]["revision"],
+            device=torch.device("cpu"),
+            dtype=torch.bfloat16,
+        )
+        base_ckpt.mkdir(parents=True, exist_ok=True)
+        save_weights_only(
+            base_ckpt,
+            base,
+            {"run": run_name, "epoch": 0, "seed": seed_label, "note": "fresh base"},
+            tokenizer=base_tok,
+        )
+        del base
+        commit()
+
+        print(f"STEP3 {seed_label} epoch-0 eval…", flush=True)
+        model0, tok = load_model(base_ckpt, device)
+        base_for_ppl, _ = load_model(base_ckpt, device)
+        ep0 = evaluate_i1_checkpoint(
+            model=model0,
+            tokenizer=tok,
+            base_model=base_for_ppl,
+            people=people,
+            facts=facts,
+            pools=pools,
+            recall_prompts=recall_prompts,
+            realworld_items=realworld,
+            data_root=data_root,
+            config=cfg,
+            device=device,
+            epoch=0,
+        )
+        (metrics_root / "epoch-0.json").write_text(json.dumps(ep0, indent=2, default=str))
+        commit()
+
+        j1 = ep0["heldout_judgment"]["J1"]["auroc"]
+        j4 = ep0["heldout_judgment"]["J4"]["auroc"]
+        rw = ep0["realworld"]
+        rw_check = check_realworld_matches_brief4(rw)
+        write_status(
+            status_path,
+            stage="epoch0_eval",
+            pass_=True,
+            seed=seed_label,
+            heldout_J1=j1,
+            heldout_J4=j4,
+            realworld=rw,
+            realworld_brief4_check=rw_check,
+            recall=ep0["heldout_recall"],
+        )
+        commit()
+        if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
+            halt(
+                out_root,
+                f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
+                status_path,
+            )
+        if not rw_check["ok"]:
+            halt(
+                out_root,
+                f"epoch0 realworld diverges from Brief4 base by >0.02: {rw_check}",
+                status_path,
+            )
+
+        judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
+        jloss0 = mean_judgment_loss(
+            model0, tok, judg_docs, device=device, max_length=cfg["data"]["max_length"]
+        )
+        recall0_j = float(ep0["judgment300_recall"]["primary_mean"])
+        del model0, base_for_ppl
+        torch.cuda.empty_cache()
+
+        results_by_epoch: dict[str, Any] = {"0": ep0}
+
+        def on_epoch_end(finished: int, ckpt: Path) -> None:
+            print(f"STEP3 {seed_label} eval epoch {finished}…", flush=True)
+            model, tok_e = load_model(ckpt, device)
+            base_m, _ = load_model(base_ckpt, device)
+            res = evaluate_i1_checkpoint(
+                model=model,
+                tokenizer=tok_e,
+                base_model=base_m,
+                people=people,
+                facts=facts,
+                pools=pools,
+                recall_prompts=recall_prompts,
+                realworld_items=realworld,
+                data_root=data_root,
+                config=cfg,
+                device=device,
+                epoch=finished,
+            )
+            (metrics_root / f"epoch-{finished}.json").write_text(
+                json.dumps(res, indent=2, default=str)
+            )
+            results_by_epoch[str(finished)] = res
+            write_status(
+                status_path,
+                stage=f"eval_epoch_{finished}",
+                pass_=True,
+                seed=seed_label,
+                heldout_judgment=res["heldout_judgment"],
+                heldout_recall=res["heldout_recall"],
+                realworld=res.get("realworld"),
+            )
+            commit()
+            if finished == 2:
+                r2 = float(res["judgment300_recall"]["primary_mean"])
+                if r2 <= recall0_j:
+                    halt(
+                        out_root,
+                        f"epoch2 judgment-300 recall {r2} ≤ epoch0 {recall0_j}",
+                        status_path,
+                    )
+            del model, base_m
+            torch.cuda.empty_cache()
+
+        print(
+            f"STEP3 {seed_label} training… mix_cursor_start={mix_cursor_start} GPU={gpu_name}",
+            flush=True,
+        )
+        train_out = train_i1(
+            synth_docs=docs,
+            mix_stream_path=mix_path,
+            config=cfg,
+            run_name=run_name,
+            lr=1e-4,
+            n_epochs=12,
+            eval_epochs=[2, 4, 8, 12],
+            device=device,
+            out_root=out_root,
+            status_path=status_path,
+            volume_commit=commit,
+            mix_cursor_start=mix_cursor_start,
+            on_epoch_end=on_epoch_end,
+            step0_loss_ref={"judgment_loss": jloss0},
+            clear_resume=True,
+        )
+        (out_root / "train.json").write_text(
+            json.dumps(train_out, indent=2, default=str)
+        )
+
+        # Permanent keep: epoch-12 must exist; also record ckpt hashes
+        ep12 = ckpt_root / "epoch-12"
+        if not (ep12 / "config.json").exists():
+            halt(out_root, "epoch-12 checkpoint missing after train", status_path)
+        import hashlib
+
+        def _sha_dir(p: Path) -> str:
+            h = hashlib.sha256()
+            for fp in sorted(p.rglob("*")):
+                if fp.is_file():
+                    h.update(fp.relative_to(p).as_posix().encode())
+                    h.update(fp.read_bytes())
+            return h.hexdigest()
+
+        ckpt_hashes = {
+            f"epoch-{e}": _sha_dir(ckpt_root / f"epoch-{e}")
+            for e in (0, 2, 4, 8, 12)
+            if (ckpt_root / f"epoch-{e}" / "config.json").exists()
+        }
+        (out_root / "checkpoint_hashes.json").write_text(
+            json.dumps(ckpt_hashes, indent=2)
+        )
+        (out_root / "summary.json").write_text(
+            json.dumps(
+                {
+                    "seed": seed_label,
+                    "run_name": run_name,
+                    "epochs": {
+                        k: results_by_epoch.get(k)
+                        for k in ("0", "2", "4", "8", "12")
+                    },
+                    "train": {
+                        k: train_out.get(k)
+                        for k in (
+                            "loss_history",
+                            "mix_cursor_end",
+                            "n_epochs",
+                            "global_step",
+                            "lambda_j",
+                        )
+                    },
+                    "jloss0": jloss0,
+                    "checkpoint_hashes": ckpt_hashes,
+                    "mix_cursor_start": mix_cursor_start,
+                    "gpu": gpu_name,
+                },
+                indent=2,
+                default=str,
+            )
+        )
+        write_status(
+            status_path,
+            stage="done",
+            pass_=True,
+            seed=seed_label,
+            checkpoint_hashes=ckpt_hashes,
+        )
+        commit()
+        print(f"STEP3 {seed_label} DONE", flush=True)
+        return {
+            "seed": seed_label,
+            "halted": False,
+            "out_root": str(out_root),
+            "checkpoint_hashes": ckpt_hashes,
+        }
+
+    except I1Halt as e:
+        commit()
+        print(f"STEP3 {seed_label} HALTED (no retry): {e}", flush=True)
+        return {"seed": seed_label, "halted": True, "reason": str(e)}
+
+
+@app.local_entrypoint()
+def step3_train(seed: str = "S1"):
+    """Detached-friendly: `modal run --detach -m grainofsalt.modal_app::step3_train --seed S1`."""
+    result = run_step3_train.remote(seed)
+    print(result, flush=True)
+
+
+@app.local_entrypoint()
+def step3_train_all():
+    """Spawn S1–S3 trains (call remote sequentially from this process; use detach)."""
+    for s in ("S1", "S2", "S3"):
+        print(f"spawning step3 train {s}…", flush=True)
+        # Fire-and-forget via .spawn so all three can run in parallel under --detach
+        run_step3_train.spawn(s)
+    print("spawned S1 S2 S3", flush=True)
