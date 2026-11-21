@@ -3206,6 +3206,44 @@ def step3_cost_dryrun(max_steps: int = 200):
 # (S2/S3 died immediately; S1@70000 would exhaust ~epoch 7). Starts below leave
 # ≥12 epochs × ~4500 mix docs of headroom within the stream.
 STEP3_MIX_CURSOR = {"S1": 0, "S2": 20000, "S3": 40000}
+STEP3_N_EPOCHS = 12
+STEP3_STREAM_N = 100_000
+
+
+def _assert_step3_mix_budget(
+    *,
+    mix_path: Path,
+    docs: list[dict[str, Any]],
+    mix_cursor_start: int,
+    n_epochs: int = STEP3_N_EPOCHS,
+    stream_n: int = STEP3_STREAM_N,
+    max_length: int,
+    tokenizer,
+) -> dict[str, Any]:
+    """Pre-flight: whole 12-epoch mix range must exist (end cursor ≤ stream_n)."""
+    from grainofsalt.mix_stream import take_mix_for_tokens
+
+    synth_tok = 0
+    for d in docs:
+        n = len(tokenizer.encode(d["text"], add_special_tokens=False))
+        synth_tok += min(n, max_length)
+    cur = int(mix_cursor_start)
+    for _ in range(int(n_epochs)):
+        _texts, cur = take_mix_for_tokens(
+            mix_path, cursor=cur, target_tokens=synth_tok
+        )
+    if cur > stream_n:
+        raise AssertionError(
+            f"mix budget overrun: start={mix_cursor_start} end_after_{n_epochs}={cur} "
+            f"> stream_n={stream_n} (synth_tokens/epoch={synth_tok})"
+        )
+    return {
+        "mix_cursor_start": mix_cursor_start,
+        "mix_cursor_end_after_12": cur,
+        "synth_tokens_per_epoch": synth_tok,
+        "stream_n": stream_n,
+        "n_epochs": n_epochs,
+    }
 
 
 @app.function(
@@ -3240,6 +3278,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         train_i1,
         write_status,
     )
+    from grainofsalt.train_loop import load_model_tokenizer
 
     if seed_label not in STEP3_MIX_CURSOR:
         raise ValueError(f"seed_label must be S1|S2|S3, got {seed_label}")
@@ -3288,6 +3327,8 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         )
         corpus_path = data_root / "step3" / "corpus" / f"run_{seed_label}.jsonl"
         docs = load_i1_docs(corpus_path)
+        mix_path = data_root / "mix_r1" / "stream.jsonl"
+        mix_budget: dict[str, Any] | None = None
         try:
             assert len(people) == 1100 and len(facts) == 1100
             n_probe = int((people["role"] == "probe").sum())
@@ -3303,12 +3344,38 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
             if judg_pids & probe_ids:
                 raise AssertionError("probe person appears in judgment docs")
+            if not mix_path.exists():
+                raise FileNotFoundError(f"missing mix stream {mix_path}")
+            # Tokenizer for mix-budget only (CPU); full base load comes later
+            _m, tok_budget = load_model_tokenizer(
+                cfg["model"]["hf_id"],
+                cfg["model"]["revision"],
+                device=torch.device("cpu"),
+                dtype=torch.bfloat16,
+            )
+            del _m
+            mix_budget = _assert_step3_mix_budget(
+                mix_path=mix_path,
+                docs=docs,
+                mix_cursor_start=mix_cursor_start,
+                n_epochs=STEP3_N_EPOCHS,
+                stream_n=STEP3_STREAM_N,
+                max_length=int(cfg["data"]["max_length"]),
+                tokenizer=tok_budget,
+            )
+            del tok_budget
         except I1Halt:
             raise
         except Exception as e:
             halt(out_root, f"preflight acceptance failed: {e}", status_path)
 
-        write_status(status_path, stage="preflight_ok", pass_=True, n_docs=len(docs))
+        write_status(
+            status_path,
+            stage="preflight_ok",
+            pass_=True,
+            n_docs=len(docs),
+            mix_budget=mix_budget,
+        )
         commit()
 
         pools = json.loads((data_root / "assignments" / "pools.json").read_text())
@@ -3679,9 +3746,11 @@ def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
 
 @app.local_entrypoint()
 def step3_train(seed: str = "S1"):
-    """Run one seed. Use `modal run --detach` so the job survives local disconnect.
+    """Run one seed. Use `modal run --detach …::step3_train --seed S1`.
 
-    Uses .remote() (not .spawn) so the detached app keeps a live task.
+    Uses .remote() so the detached app owns a live GPU task until completion.
+    Do not kill the local `modal run --detach` process early if the platform
+    cancels inputs when the client is torn down mid-handshake.
     """
     print(f"starting step3_train seed={seed}…", flush=True)
     result = run_step3_train.remote(seed)
