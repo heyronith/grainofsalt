@@ -2941,6 +2941,7 @@ def upload_step3_corpus():
         "step3/build_meta.json",
         "step3/acceptance.json",
         "step3/leak_check.json",
+        "step3/probe_split.json",
         "assignments/pools.json",
         "prompts/recall.jsonl",
         "prompts/region_recall.jsonl",
