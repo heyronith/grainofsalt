@@ -1,0 +1,124 @@
+{
+  "rows": [
+    {
+      "N": 400,
+      "control": "NEUTRAL_HEADER",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.07293665070327093,
+      "se": 0.018606630345910927
+    },
+    {
+      "N": 600,
+      "control": "NEUTRAL_HEADER",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.06496954290792181,
+      "se": 0.016574167540932713
+    },
+    {
+      "N": 800,
+      "control": "NEUTRAL_HEADER",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.06059442837910895,
+      "se": 0.015458046386839267
+    },
+    {
+      "N": 1200,
+      "control": "NEUTRAL_HEADER",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.0558777951919869,
+      "se": 0.014254801525115723
+    },
+    {
+      "N": 400,
+      "control": "MISATTACHED",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.07293665070327093,
+      "se": 0.018606630345910927
+    },
+    {
+      "N": 600,
+      "control": "MISATTACHED",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.06496954290792181,
+      "se": 0.016574167540932713
+    },
+    {
+      "N": 800,
+      "control": "MISATTACHED",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.06059442837910895,
+      "se": 0.015458046386839267
+    },
+    {
+      "N": 1200,
+      "control": "MISATTACHED",
+      "metric": "M1_auroc_vs_asserted",
+      "ci_width": 0.0558777951919869,
+      "se": 0.014254801525115723
+    },
+    {
+      "N": 400,
+      "control": "NEUTRAL_HEADER",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.9098212606012157,
+      "se": 0.23210152527744637,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 600,
+      "control": "NEUTRAL_HEADER",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.7419367850099632,
+      "se": 0.18927306594974855,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 800,
+      "control": "NEUTRAL_HEADER",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.6433407830388127,
+      "se": 0.1641205624474232,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 1200,
+      "control": "NEUTRAL_HEADER",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.5246285318922906,
+      "se": 0.13383626842903584,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 400,
+      "control": "MISATTACHED",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.9098212606012157,
+      "se": 0.23210152527744637,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 600,
+      "control": "MISATTACHED",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.7419367850099632,
+      "se": 0.18927306594974855,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 800,
+      "control": "MISATTACHED",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.6433407830388127,
+      "se": 0.1641205624474232,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    },
+    {
+      "N": 1200,
+      "control": "MISATTACHED",
+      "metric": "endorsement_d_diff",
+      "ci_width": 0.5246285318922906,
+      "se": 0.13383626842903584,
+      "note": "CI width for mean d under control framing (projected from I1 asserted d SE)"
+    }
+  ]
+}

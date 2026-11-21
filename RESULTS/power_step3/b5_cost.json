@@ -1,0 +1,40 @@
+{
+  "assumptions": {
+    "step2_cost_usd_2seeds_8ep_N500": 12.19,
+    "i1_cost_usd_1seed_8ep": 2.94,
+    "scale": "linear in N/500",
+    "stage1": "3 seeds \u00d7 12 epochs",
+    "stage2": "3 continuation \u00d7 3 seeds \u00d7 ~4 epochs",
+    "stage3": "~15% of I1-like forward cost \u00d7 N/500"
+  },
+  "rows": [
+    {
+      "N": 400,
+      "stage1_train_3seeds_12ep": 21.942,
+      "stage2_3cond_3seeds_4ep": 21.942,
+      "stage3_forward_only": 0.3528,
+      "total": 44.2368
+    },
+    {
+      "N": 600,
+      "stage1_train_3seeds_12ep": 32.913,
+      "stage2_3cond_3seeds_4ep": 32.913,
+      "stage3_forward_only": 0.5292,
+      "total": 66.3552
+    },
+    {
+      "N": 800,
+      "stage1_train_3seeds_12ep": 43.884,
+      "stage2_3cond_3seeds_4ep": 43.884,
+      "stage3_forward_only": 0.7056,
+      "total": 88.4736
+    },
+    {
+      "N": 1200,
+      "stage1_train_3seeds_12ep": 65.826,
+      "stage2_3cond_3seeds_4ep": 65.826,
+      "stage3_forward_only": 1.0584,
+      "total": 132.7104
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "ts": 1795231444.280501,
+  "stage": "done",
+  "pass_": true,
+  "gate": {
+    "gate": "I1-FAIL",
+    "recall": 0.7420833333333334,
+    "J1": 0.6824078125,
+    "J4": 0.6881054687499999,
+    "I1-PASS": false,
+    "I1-FAIL": true,
+    "I1-INVALID": false
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "sim_seed": 20261120,
+  "n_sims": 2000,
+  "n_seeds": 3,
+  "n_grid": [
+    400,
+    600,
+    800,
+    1200
+  ],
+  "seed_gap_m1": 0.019876798285889175,
+  "seed_gap_delta": 0.016127180899908167,
+  "endo_source": "i1_heldout_epoch8",
+  "step2_delta_ci_width": 0.06528734312825218,
+  "step2_n_people": 132
+}

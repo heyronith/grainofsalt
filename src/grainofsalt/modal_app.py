@@ -2747,3 +2747,53 @@ def i1_run():
     """
     result = run_i1_pipeline.remote()
     print(result, flush=True)
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_i1_dump_endorsement(epoch: int = 8) -> dict[str, Any]:
+    """Dump per-fact J1/J4 endorsement (gold + distractor) for I1 held-out + judgment-300."""
+    import pandas as pd
+    import torch
+
+    from grainofsalt.eval_behavior import load_model
+    from grainofsalt.i1_eval import score_judgment_set
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / "i1_main" / f"epoch-{epoch}"
+    people = pd.read_csv(data_root / "i1" / "people.csv")
+    facts = pd.read_csv(data_root / "i1" / "facts.csv")
+    pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+    model, tok = load_model(ckpt, device)
+
+    out_dir = Path(VOL_MOUNT) / "results" / "i1"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written = {}
+    for role, name in (("heldout", "endorsement_heldout"), ("judgment", "endorsement_judgment300")):
+        subset = people[people["i1_role"] == role]
+        df = score_judgment_set(
+            model=model,
+            tokenizer=tok,
+            people=subset,
+            facts=facts,
+            pools=pools,
+            device=device,
+        )
+        path = out_dir / f"{name}_epoch{epoch}.parquet"
+        df.to_parquet(path, index=False)
+        written[name] = {"n_rows": int(len(df)), "n_people": int(subset["person_id"].nunique())}
+        print(f"wrote {path} rows={len(df)}", flush=True)
+    _commit()
+    return {"epoch": epoch, "written": written}
+
+
+@app.local_entrypoint()
+def i1_dump_endorsement(epoch: int = 8):
+    print(run_i1_dump_endorsement.remote(epoch), flush=True)

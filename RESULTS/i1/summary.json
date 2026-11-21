@@ -1,0 +1,329 @@
+{
+  "gate": {
+    "gate": "I1-FAIL",
+    "recall": 0.7420833333333334,
+    "J1": 0.6824078125,
+    "J4": 0.6881054687499999,
+    "I1-PASS": false,
+    "I1-FAIL": true,
+    "I1-INVALID": false
+  },
+  "epochs": {
+    "0": {
+      "epoch": 0,
+      "heldout_judgment": {
+        "J1": {
+          "auroc": 0.5043984375,
+          "ci_low": 0.48970236328124994,
+          "ci_high": 0.51956046875,
+          "n": 800
+        },
+        "J4": {
+          "auroc": 0.50167265625,
+          "ci_low": 0.48742677734375,
+          "ci_high": 0.51490841796875,
+          "n": 800
+        }
+      },
+      "judgment300_judgment": {
+        "J1": {
+          "auroc": 0.5011614583333333,
+          "ci_low": 0.48821248263888894,
+          "ci_high": 0.5136682986111111,
+          "n": 1200
+        },
+        "J4": {
+          "auroc": 0.5115190972222223,
+          "ci_low": 0.49900287326388887,
+          "ci_high": 0.5227453645833333,
+          "n": 1200
+        }
+      },
+      "heldout_recall": {
+        "primary_mean": 0.06125,
+        "primary_ci95": [
+          0.05,
+          0.0725
+        ],
+        "n_people": 200,
+        "learning_ok": false
+      },
+      "judgment300_recall": {
+        "primary_mean": 0.04722222222222222,
+        "primary_ci95": [
+          0.0394375,
+          0.056111111111111105
+        ],
+        "n_people": 300,
+        "learning_ok": false
+      },
+      "realworld": {
+        "T1": 0.55255,
+        "T2": 0.7416,
+        "T3": 0.56115
+      },
+      "perplexity": {
+        "dclm": 19.07277881659854,
+        "dclm_base": 19.07277881659854
+      }
+    },
+    "2": {
+      "epoch": 2,
+      "heldout_judgment": {
+        "J1": {
+          "auroc": 0.4890593750000001,
+          "ci_low": 0.46032753906249996,
+          "ci_high": 0.5185182812500001,
+          "n": 800
+        },
+        "J4": {
+          "auroc": 0.49821015625000004,
+          "ci_low": 0.4808110742187501,
+          "ci_high": 0.51501837890625,
+          "n": 800
+        }
+      },
+      "judgment300_judgment": {
+        "J1": {
+          "auroc": 0.49223229166666665,
+          "ci_low": 0.4721107204861111,
+          "ci_high": 0.5142606597222222,
+          "n": 1200
+        },
+        "J4": {
+          "auroc": 0.49377256944444436,
+          "ci_low": 0.4791531857638888,
+          "ci_high": 0.507497265625,
+          "n": 1200
+        }
+      },
+      "heldout_recall": {
+        "primary_mean": 0.5270833333333333,
+        "primary_ci95": [
+          0.5075000000000001,
+          0.5466666666666666
+        ],
+        "n_people": 200,
+        "learning_ok": false
+      },
+      "judgment300_recall": {
+        "primary_mean": 0.5066666666666667,
+        "primary_ci95": [
+          0.4897222222222223,
+          0.523611111111111
+        ],
+        "n_people": 300,
+        "learning_ok": false
+      },
+      "realworld": {
+        "T1": 0.5509000000000001,
+        "T2": 0.5664,
+        "T3": 0.5106499999999999
+      },
+      "perplexity": {
+        "dclm": 21.38326896090597,
+        "dclm_base": 19.07277881659854
+      }
+    },
+    "4": {
+      "epoch": 4,
+      "heldout_judgment": {
+        "J1": {
+          "auroc": 0.59256015625,
+          "ci_low": 0.5660038085937499,
+          "ci_high": 0.6176693945312499,
+          "n": 800
+        },
+        "J4": {
+          "auroc": 0.58930625,
+          "ci_low": 0.5632413867187499,
+          "ci_high": 0.6149375195312499,
+          "n": 800
+        }
+      },
+      "judgment300_judgment": {
+        "J1": {
+          "auroc": 0.6834565972222222,
+          "ci_low": 0.6645417013888889,
+          "ci_high": 0.7011009982638888,
+          "n": 1200
+        },
+        "J4": {
+          "auroc": 0.66324375,
+          "ci_low": 0.6447113281249999,
+          "ci_high": 0.6812054427083333,
+          "n": 1200
+        }
+      },
+      "heldout_recall": {
+        "primary_mean": 0.6570833333333332,
+        "primary_ci95": [
+          0.6416562499999999,
+          0.6729166666666666
+        ],
+        "n_people": 200,
+        "learning_ok": true
+      },
+      "judgment300_recall": {
+        "primary_mean": 0.6616666666666666,
+        "primary_ci95": [
+          0.6491597222222222,
+          0.6744513888888889
+        ],
+        "n_people": 300,
+        "learning_ok": true
+      },
+      "realworld": {
+        "T1": 0.7573,
+        "T2": 0.75645,
+        "T3": 0.7184500000000001
+      },
+      "perplexity": {
+        "dclm": 20.83774401670554,
+        "dclm_base": 19.07277881659854
+      }
+    },
+    "8": {
+      "epoch": 8,
+      "heldout_judgment": {
+        "J1": {
+          "auroc": 0.6824078125,
+          "ci_low": 0.6573060546875,
+          "ci_high": 0.7078688281250001,
+          "n": 800
+        },
+        "J4": {
+          "auroc": 0.6881054687499999,
+          "ci_low": 0.6611465625,
+          "ci_high": 0.71412359375,
+          "n": 800
+        }
+      },
+      "judgment300_judgment": {
+        "J1": {
+          "auroc": 0.9299593749999999,
+          "ci_low": 0.9191035329861111,
+          "ci_high": 0.9407408767361111,
+          "n": 1200
+        },
+        "J4": {
+          "auroc": 0.9095222222222222,
+          "ci_low": 0.8966841059027778,
+          "ci_high": 0.921801171875,
+          "n": 1200
+        }
+      },
+      "heldout_recall": {
+        "primary_mean": 0.7420833333333334,
+        "primary_ci95": [
+          0.72625,
+          0.7579270833333333
+        ],
+        "n_people": 200,
+        "learning_ok": true
+      },
+      "judgment300_recall": {
+        "primary_mean": 0.7605555555555555,
+        "primary_ci95": [
+          0.7486111111111111,
+          0.7727777777777777
+        ],
+        "n_people": 300,
+        "learning_ok": true
+      },
+      "realworld": {
+        "T1": 0.8377999999999999,
+        "T2": 0.8335,
+        "T3": 0.81755
+      },
+      "perplexity": {
+        "dclm": 20.40551792794937,
+        "dclm_base": 19.07277881659854
+      }
+    }
+  },
+  "train": {
+    "loss_history": [
+      {
+        "epoch": 1,
+        "lm_loss": 1.7543511666108604,
+        "judgment_loss": 0.9520300123426649,
+        "n_judgment_examples": 7200,
+        "lr": 9.773696232406995e-05,
+        "global_step": 621,
+        "mix_cursor": 72664
+      },
+      {
+        "epoch": 2,
+        "lm_loss": 1.4303059458097993,
+        "judgment_loss": 0.74829345703125,
+        "n_judgment_examples": 7200,
+        "lr": 8.81872436207333e-05,
+        "global_step": 1243,
+        "mix_cursor": 75355
+      },
+      {
+        "epoch": 3,
+        "lm_loss": 1.4034224847709489,
+        "judgment_loss": 0.7399130588107639,
+        "n_judgment_examples": 7200,
+        "lr": 7.258924044422412e-05,
+        "global_step": 1866,
+        "mix_cursor": 78072
+      },
+      {
+        "epoch": 4,
+        "lm_loss": 1.3705365296662317,
+        "judgment_loss": 0.7025863647460937,
+        "n_judgment_examples": 7200,
+        "lr": 5.3451142239110796e-05,
+        "global_step": 2488,
+        "mix_cursor": 80746
+      },
+      {
+        "epoch": 5,
+        "lm_loss": 1.3493635984853234,
+        "judgment_loss": 0.452649630440606,
+        "n_judgment_examples": 7200,
+        "lr": 3.376902506440559e-05,
+        "global_step": 3110,
+        "mix_cursor": 83445
+      },
+      {
+        "epoch": 6,
+        "lm_loss": 1.345680047769365,
+        "judgment_loss": 0.07791328496403165,
+        "n_judgment_examples": 7200,
+        "lr": 1.664546898285572e-05,
+        "global_step": 3732,
+        "mix_cursor": 86126
+      },
+      {
+        "epoch": 7,
+        "lm_loss": 1.3286339291887537,
+        "judgment_loss": 0.006715410037173165,
+        "n_judgment_examples": 7200,
+        "lr": 4.77973664137949e-06,
+        "global_step": 4354,
+        "mix_cursor": 88808
+      },
+      {
+        "epoch": 8,
+        "lm_loss": 1.3212700346281037,
+        "judgment_loss": 0.004334435810645422,
+        "n_judgment_examples": 7200,
+        "lr": 4.2276440714600354e-08,
+        "global_step": 4976,
+        "mix_cursor": 91510
+      }
+    ],
+    "mix_cursor_end": 91510,
+    "n_epochs": 8
+  },
+  "jloss0": 8.25,
+  "amendments": {
+    "rw_check": "halt if |T{i}-Brief4_base| > 0.02",
+    "loss": "lm_token_mean + \u03bb\u00b7judgment_answer_mean (\u03bb=1)",
+    "blowup": "LM window-50 mean > 2\u00d7 lowest prev for 2 windows"
+  }
+}
