@@ -3548,18 +3548,144 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         return {"seed": seed_label, "halted": True, "reason": str(e)}
 
 
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=0.0, max_retries=0),
+    secrets=[hf_secret],
+)
+def run_step3_extract(seed_label: str = "S1", epochs: str = "0,8,12") -> dict[str, Any]:
+    """Extract fact-cond activations (layers 0–16) + strength + SVD-256 logits."""
+    import numpy as np
+    import pandas as pd
+    import torch
+    from sklearn.decomposition import TruncatedSVD
+
+    from grainofsalt.brief4_factcond import (
+        compute_strength_features,
+        extract_factcond_model,
+        load_slot0_prompts,
+    )
+    from grainofsalt.brief5_5d import extract_logits_and_name_last_one
+    from grainofsalt.eval_behavior import load_model
+
+    ep_list = [int(x) for x in str(epochs).split(",") if x.strip() != ""]
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / "step3" / "people.csv")
+    facts = pd.read_csv(data_root / "step3" / "facts.csv")
+    ff = pd.read_csv(data_root / "step3" / f"fact_framings_{seed_label}.csv")
+    people_m = people.merge(facts, on="person_id", suffixes=("", "_f"))
+    people_m["framing"] = "ASSERTED"  # placeholder; real framing joined after
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    prompts = load_slot0_prompts(data_root)
+    run_name = f"step3_{seed_label}"
+    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
+    out_root = Path(VOL_MOUNT) / "results" / "step3" / seed_label / "activations"
+    out_root.mkdir(parents=True, exist_ok=True)
+    done: dict[str, Any] = {}
+    for ep in ep_list:
+        ckpt = ckpt_root / f"epoch-{ep}"
+        if not (ckpt / "config.json").exists():
+            done[str(ep)] = {"ok": False, "reason": "missing_ckpt"}
+            continue
+        print(f"STEP3 extract {seed_label} epoch {ep}…", flush=True)
+        model, tok = load_model(ckpt, device)
+        ep_dir = out_root / f"epoch-{ep}"
+        ep_dir.mkdir(parents=True, exist_ok=True)
+        meta = extract_factcond_model(
+            model=model,
+            tokenizer=tok,
+            people=people_m,
+            data_root=data_root,
+            out_dir=ep_dir,
+            model_id=f"{seed_label}_ep{ep}",
+            device=device,
+            volume_commit=_commit,
+        )
+        strength = compute_strength_features(
+            model=model,
+            tokenizer=tok,
+            people=people_m,
+            data_root=data_root,
+            label_col="framing",
+            device=device,
+            out_parquet=ep_dir / "strength.parquet",
+            volume_commit=_commit,
+        )
+        strength = strength.drop(columns=["framing"], errors="ignore").merge(
+            ff[["person_id", "slot", "framing"]],
+            on=["person_id", "slot"],
+            how="left",
+        )
+        strength.to_parquet(ep_dir / "strength.parquet", index=False)
+
+        # Next-token logits → TruncatedSVD-256 fit on probe-train people (P3)
+        split = json.loads((data_root / "step3" / "probe_split.json").read_text())
+        train_ids = set(split["probe_train_ids"])
+        probes = people_m[people_m["role"] == "probe"].reset_index(drop=True)
+        logits_list = []
+        pid_order = []
+        for i, row in enumerate(probes.itertuples(index=False)):
+            logits, _name_last = extract_logits_and_name_last_one(
+                model, tok, row.name, prompts, device=device
+            )
+            # logits: [4, V] — flatten per person for SVD over people×slots later
+            logits_list.append(logits.astype(np.float32))
+            pid_order.append(row.person_id)
+            if (i + 1) % 25 == 0:
+                print(f"logits {seed_label} ep{ep} {i+1}/{len(probes)}", flush=True)
+                _commit()
+        logits_arr = np.stack(logits_list, axis=0)  # [N, 4, V]
+        n, nslot, v = logits_arr.shape
+        flat = logits_arr.reshape(n * nslot, v)
+        # Fit SVD on probe-train slots only
+        train_mask = np.array(
+            [pid in train_ids for pid in pid_order for _ in range(nslot)], dtype=bool
+        )
+        svd = TruncatedSVD(n_components=256, random_state=20261121)
+        svd.fit(flat[train_mask])
+        z = svd.transform(flat).reshape(n, nslot, 256)
+        np.save(ep_dir / "logits_svd256.npy", z.astype(np.float16))
+        (ep_dir / "logits_person_ids.json").write_text(json.dumps(pid_order))
+        del model, logits_list, logits_arr, flat
+        torch.cuda.empty_cache()
+        _commit()
+        done[str(ep)] = {
+            "ok": True,
+            "factcond": meta,
+            "n_strength": int(len(strength)),
+            "logits_svd": list(z.shape),
+        }
+    (out_root / "extract_summary.json").write_text(
+        json.dumps(done, indent=2, default=str)
+    )
+    _commit()
+    return done
+
+
+@app.local_entrypoint()
+def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
+    call = run_step3_extract.spawn(seed, epochs)
+    print(
+        f"spawned step3_extract seed={seed} epochs={epochs} object_id={call.object_id}",
+        flush=True,
+    )
+
+
 @app.local_entrypoint()
 def step3_train(seed: str = "S1"):
-    """Detached-friendly: `modal run --detach -m grainofsalt.modal_app::step3_train --seed S1`."""
-    result = run_step3_train.remote(seed)
-    print(result, flush=True)
+    """Spawn one seed and return immediately (safe with --detach)."""
+    call = run_step3_train.spawn(seed)
+    print(f"spawned step3_train seed={seed} object_id={call.object_id}", flush=True)
 
 
 @app.local_entrypoint()
 def step3_train_all():
-    """Spawn S1–S3 trains (call remote sequentially from this process; use detach)."""
+    """Spawn S1–S3 in parallel; returns after spawn (use --detach)."""
+    ids = []
     for s in ("S1", "S2", "S3"):
-        print(f"spawning step3 train {s}…", flush=True)
-        # Fire-and-forget via .spawn so all three can run in parallel under --detach
-        run_step3_train.spawn(s)
-    print("spawned S1 S2 S3", flush=True)
+        call = run_step3_train.spawn(s)
+        ids.append((s, call.object_id))
+        print(f"spawned step3_train seed={s} object_id={call.object_id}", flush=True)
+    print({"spawned": ids}, flush=True)
