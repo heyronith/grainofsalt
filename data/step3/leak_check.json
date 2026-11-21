@@ -1,71 +1,104 @@
 {
   "S1": {
-    "auroc_macro": 0.4880770016339869,
+    "auroc_macro": 0.4838044577205882,
     "auroc_per_class": {
-      "ASSERTED": 0.5,
-      "DEBUNK_DISTANT": 0.4850995710784314,
-      "DEBUNK_LOCAL": 0.49008272058823527,
-      "FICTION": 0.4874433210784314,
-      "MISATTACHED": 0.4770419730392157,
-      "NEUTRAL_HEADER": 0.4887944240196079
+      "ASSERTED": 0.4581614583333333,
+      "DEBUNK_DISTANT": 0.4703691789215686,
+      "DEBUNK_LOCAL": 0.4877328431372549,
+      "FICTION": 0.5115226715686274,
+      "MISATTACHED": 0.4947533700980392,
+      "NEUTRAL_HEADER": 0.4802872242647058
     },
     "flag_gt_0_60": false,
-    "null_n": 200,
-    "null_mean": 0.481077482128268,
-    "null_lo_95": 0.46761371170343136,
-    "null_hi_95": 0.49735069546568633,
+    "null_n": 1000,
+    "null_mean": 0.49868926939848857,
+    "null_lo_95": 0.48287629876429733,
+    "null_hi_95": 0.5154372614123773,
     "outside_null_95": false,
     "bug": false,
     "cv": "GroupKFold(person_id)",
-    "features_scaled": "MaxAbsScaler",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "S1",
+    "fit_seed": 20262130,
     "n": 3200,
     "n_people": 800,
-    "n_features": 258
+    "n_features": 1665,
+    "label_counts": {
+      "ASSERTED": 800,
+      "DEBUNK_DISTANT": 480,
+      "DEBUNK_LOCAL": 480,
+      "FICTION": 480,
+      "MISATTACHED": 480,
+      "NEUTRAL_HEADER": 480
+    }
   },
   "S2": {
-    "auroc_macro": 0.4880770016339869,
+    "auroc_macro": 0.488693070874183,
     "auroc_per_class": {
-      "ASSERTED": 0.5,
-      "DEBUNK_DISTANT": 0.4850995710784314,
-      "DEBUNK_LOCAL": 0.49008272058823527,
-      "FICTION": 0.4874433210784314,
-      "MISATTACHED": 0.4770419730392157,
-      "NEUTRAL_HEADER": 0.4887944240196079
+      "ASSERTED": 0.49299635416666665,
+      "DEBUNK_DISTANT": 0.48472732843137256,
+      "DEBUNK_LOCAL": 0.491788449754902,
+      "FICTION": 0.49225413602941176,
+      "MISATTACHED": 0.4995511642156863,
+      "NEUTRAL_HEADER": 0.4708409926470588
     },
     "flag_gt_0_60": false,
-    "null_n": 200,
-    "null_mean": 0.4823590849673203,
-    "null_lo_95": 0.46839650479983663,
-    "null_hi_95": 0.49812575674019616,
+    "null_n": 1000,
+    "null_mean": 0.4994261127961601,
+    "null_lo_95": 0.484506750536152,
+    "null_hi_95": 0.5156833929483252,
     "outside_null_95": false,
     "bug": false,
     "cv": "GroupKFold(person_id)",
-    "features_scaled": "MaxAbsScaler",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "S2",
+    "fit_seed": 20263139,
     "n": 3200,
     "n_people": 800,
-    "n_features": 258
+    "n_features": 1665,
+    "label_counts": {
+      "ASSERTED": 800,
+      "DEBUNK_DISTANT": 480,
+      "DEBUNK_LOCAL": 480,
+      "FICTION": 480,
+      "MISATTACHED": 480,
+      "NEUTRAL_HEADER": 480
+    }
   },
   "S3": {
-    "auroc_macro": 0.4880770016339869,
+    "auroc_macro": 0.48791926062091506,
     "auroc_per_class": {
-      "ASSERTED": 0.5,
-      "DEBUNK_DISTANT": 0.4850995710784314,
-      "DEBUNK_LOCAL": 0.49008272058823527,
-      "FICTION": 0.4874433210784314,
-      "MISATTACHED": 0.4770419730392157,
-      "NEUTRAL_HEADER": 0.4887944240196079
+      "ASSERTED": 0.5127598958333333,
+      "DEBUNK_DISTANT": 0.4625252757352941,
+      "DEBUNK_LOCAL": 0.49093137254901964,
+      "FICTION": 0.48725337009803926,
+      "MISATTACHED": 0.4874057904411765,
+      "NEUTRAL_HEADER": 0.48663985906862745
     },
     "flag_gt_0_60": false,
-    "null_n": 200,
-    "null_mean": 0.483140632863562,
-    "null_lo_95": 0.467309975490196,
-    "null_hi_95": 0.49905146343954243,
+    "null_n": 1000,
+    "null_mean": 0.4991142337826798,
+    "null_lo_95": 0.48226524560866,
+    "null_hi_95": 0.5152789416104983,
     "outside_null_95": false,
     "bug": false,
     "cv": "GroupKFold(person_id)",
-    "features_scaled": "MaxAbsScaler",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "S3",
+    "fit_seed": 20264148,
     "n": 3200,
     "n_people": 800,
-    "n_features": 258
+    "n_features": 1665,
+    "label_counts": {
+      "ASSERTED": 800,
+      "DEBUNK_DISTANT": 480,
+      "DEBUNK_LOCAL": 480,
+      "FICTION": 480,
+      "MISATTACHED": 480,
+      "NEUTRAL_HEADER": 480
+    }
   }
 }

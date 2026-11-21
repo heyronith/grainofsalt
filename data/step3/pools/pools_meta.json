@@ -1,8 +1,9 @@
 {
   "n_fillers": 230,
-  "n_neutral_headers": 47,
+  "n_neutral_headers": 73,
   "model": "deepseek/deepseek-v4.1-flash-1017",
   "provider": "Particle AI",
   "cost_usd": 0.000706,
-  "seed": 20261121
+  "seed": 20261121,
+  "brief9_longer_headers_added": 26
 }

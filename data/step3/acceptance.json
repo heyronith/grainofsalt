@@ -107,26 +107,26 @@
     "ok": true,
     "per_seed": {
       "S1": {
-        "auroc": 0.4880770016339869,
+        "auroc": 0.4838044577205882,
         "flag_gt_0_60": false,
-        "null_lo_95": 0.46761371170343136,
-        "null_hi_95": 0.49735069546568633,
+        "null_lo_95": 0.48287629876429733,
+        "null_hi_95": 0.5154372614123773,
         "outside_null_95": false,
         "bug": false
       },
       "S2": {
-        "auroc": 0.4880770016339869,
+        "auroc": 0.488693070874183,
         "flag_gt_0_60": false,
-        "null_lo_95": 0.46839650479983663,
-        "null_hi_95": 0.49812575674019616,
+        "null_lo_95": 0.484506750536152,
+        "null_hi_95": 0.5156833929483252,
         "outside_null_95": false,
         "bug": false
       },
       "S3": {
-        "auroc": 0.4880770016339869,
+        "auroc": 0.48791926062091506,
         "flag_gt_0_60": false,
-        "null_lo_95": 0.467309975490196,
-        "null_hi_95": 0.49905146343954243,
+        "null_lo_95": 0.48226524560866,
+        "null_hi_95": 0.5152789416104983,
         "outside_null_95": false,
         "bug": false
       }
@@ -135,110 +135,149 @@
   "6_length_S1": {
     "ok": true,
     "means": {
-      "ASSERTED": 32.0632,
-      "FICTION": 38.145,
-      "DEBUNK_LOCAL": 36.665,
-      "DEBUNK_DISTANT": 43.014583333333334,
-      "NEUTRAL_HEADER": 39.952083333333334,
-      "MISATTACHED": 37.58708333333333
+      "ASSERTED": 32.0365,
+      "FICTION": 36.83416666666667,
+      "DEBUNK_LOCAL": 36.61333333333334,
+      "DEBUNK_DISTANT": 42.98916666666667,
+      "NEUTRAL_HEADER": 42.651666666666664,
+      "MISATTACHED": 37.555
     },
     "ratios_vs_asserted": {
       "ASSERTED": 1.0,
-      "FICTION": 1.1896816287831533,
-      "DEBUNK_LOCAL": 1.1435227924848423,
-      "DEBUNK_DISTANT": 1.3415561557590425,
-      "NEUTRAL_HEADER": 1.2460416718647338,
-      "MISATTACHED": 1.1722810989961492
+      "FICTION": 1.149756267590613,
+      "DEBUNK_LOCAL": 1.1428630884563964,
+      "DEBUNK_DISTANT": 1.3418808754597622,
+      "NEUTRAL_HEADER": 1.3313460167829403,
+      "MISATTACHED": 1.1722566447645655
     },
     "pairs": {
-      "NEUTRAL_HEADER_vs_FICTION": {
-        "NEUTRAL_HEADER": 39.952083333333334,
-        "FICTION": 38.145,
-        "rel_diff": 0.04627786995886525,
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "NEUTRAL_HEADER": 42.651666666666664,
+        "DEBUNK_DISTANT": 42.98916666666667,
+        "rel_diff": 0.007881754225496147,
         "ok": true
       },
       "MISATTACHED_vs_DEBUNK_LOCAL": {
-        "MISATTACHED": 37.58708333333333,
-        "DEBUNK_LOCAL": 36.665,
-        "rel_diff": 0.024836564630622032,
+        "MISATTACHED": 37.555,
+        "DEBUNK_LOCAL": 36.61333333333334,
+        "rel_diff": 0.02539268780476833,
         "ok": true
+      },
+      "NEUTRAL_HEADER_vs_FICTION": {
+        "NEUTRAL_HEADER": 42.651666666666664,
+        "FICTION": 36.83416666666667,
+        "rel_diff": 0.1463782854387049,
+        "ok": false
       }
     },
     "tol": 0.05,
     "asserted_may_be_shorter": true,
-    "asserted_n_fillers_ok": true
+    "asserted_n_fillers_ok": true,
+    "gated_pairs": [
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+      "MISATTACHED_vs_DEBUNK_LOCAL"
+    ],
+    "reported_pairs": [
+      "NEUTRAL_HEADER_vs_FICTION"
+    ]
   },
   "6_length_S2": {
     "ok": true,
     "means": {
-      "ASSERTED": 32.1147,
-      "FICTION": 38.16708333333333,
-      "DEBUNK_LOCAL": 36.807916666666664,
-      "DEBUNK_DISTANT": 43.03666666666667,
-      "NEUTRAL_HEADER": 39.94541666666667,
-      "MISATTACHED": 37.67583333333334
+      "ASSERTED": 32.0607,
+      "FICTION": 36.776666666666664,
+      "DEBUNK_LOCAL": 36.7725,
+      "DEBUNK_DISTANT": 43.06625,
+      "NEUTRAL_HEADER": 42.66041666666667,
+      "MISATTACHED": 37.6475
     },
     "ratios_vs_asserted": {
       "ASSERTED": 1.0,
-      "FICTION": 1.1884614626116181,
-      "DEBUNK_LOCAL": 1.1461392031271245,
-      "DEBUNK_DISTANT": 1.3400924394955167,
-      "NEUTRAL_HEADER": 1.243835896541667,
-      "MISATTACHED": 1.173164729339939
+      "FICTION": 1.1470949376235287,
+      "DEBUNK_LOCAL": 1.1469649758115077,
+      "DEBUNK_DISTANT": 1.3432722928694631,
+      "NEUTRAL_HEADER": 1.330614012378603,
+      "MISATTACHED": 1.1742569563359504
     },
     "pairs": {
-      "NEUTRAL_HEADER_vs_FICTION": {
-        "NEUTRAL_HEADER": 39.94541666666667,
-        "FICTION": 38.16708333333333,
-        "rel_diff": 0.04553261855230177,
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "NEUTRAL_HEADER": 42.66041666666667,
+        "DEBUNK_DISTANT": 43.06625,
+        "rel_diff": 0.009468076833346138,
         "ok": true
       },
       "MISATTACHED_vs_DEBUNK_LOCAL": {
-        "MISATTACHED": 37.67583333333334,
-        "DEBUNK_LOCAL": 36.807916666666664,
-        "rel_diff": 0.02330485956109012,
+        "MISATTACHED": 37.6475,
+        "DEBUNK_LOCAL": 36.7725,
+        "rel_diff": 0.023515184090298305,
         "ok": true
+      },
+      "NEUTRAL_HEADER_vs_FICTION": {
+        "NEUTRAL_HEADER": 42.66041666666667,
+        "FICTION": 36.776666666666664,
+        "rel_diff": 0.14813610352008155,
+        "ok": false
       }
     },
     "tol": 0.05,
     "asserted_may_be_shorter": true,
-    "asserted_n_fillers_ok": true
+    "asserted_n_fillers_ok": true,
+    "gated_pairs": [
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+      "MISATTACHED_vs_DEBUNK_LOCAL"
+    ],
+    "reported_pairs": [
+      "NEUTRAL_HEADER_vs_FICTION"
+    ]
   },
   "6_length_S3": {
     "ok": true,
     "means": {
-      "ASSERTED": 32.0869,
-      "FICTION": 38.07791666666667,
-      "DEBUNK_LOCAL": 36.64125,
-      "DEBUNK_DISTANT": 43.052083333333336,
-      "NEUTRAL_HEADER": 39.98875,
-      "MISATTACHED": 37.51958333333334
+      "ASSERTED": 32.1284,
+      "FICTION": 36.81041666666667,
+      "DEBUNK_LOCAL": 36.70458333333333,
+      "DEBUNK_DISTANT": 43.04208333333333,
+      "NEUTRAL_HEADER": 42.624583333333334,
+      "MISATTACHED": 37.587916666666665
     },
     "ratios_vs_asserted": {
       "ASSERTED": 1.0,
-      "FICTION": 1.1867122304325648,
-      "DEBUNK_LOCAL": 1.141937987153636,
-      "DEBUNK_DISTANT": 1.3417339578872791,
-      "NEUTRAL_HEADER": 1.246264051684644,
-      "MISATTACHED": 1.169311567441334
+      "FICTION": 1.1457282860854157,
+      "DEBUNK_LOCAL": 1.1424342118914521,
+      "DEBUNK_DISTANT": 1.3396895996480787,
+      "NEUTRAL_HEADER": 1.3266948660167743,
+      "MISATTACHED": 1.169928059494611
     },
     "pairs": {
-      "NEUTRAL_HEADER_vs_FICTION": {
-        "NEUTRAL_HEADER": 39.98875,
-        "FICTION": 38.07791666666667,
-        "rel_diff": 0.04895388556789077,
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "NEUTRAL_HEADER": 42.624583333333334,
+        "DEBUNK_DISTANT": 43.04208333333333,
+        "rel_diff": 0.009747081712062185,
         "ok": true
       },
       "MISATTACHED_vs_DEBUNK_LOCAL": {
-        "MISATTACHED": 37.51958333333334,
-        "DEBUNK_LOCAL": 36.64125,
-        "rel_diff": 0.0236872563010575,
+        "MISATTACHED": 37.587916666666665,
+        "DEBUNK_LOCAL": 36.70458333333333,
+        "rel_diff": 0.023779879081558247,
         "ok": true
+      },
+      "NEUTRAL_HEADER_vs_FICTION": {
+        "NEUTRAL_HEADER": 42.624583333333334,
+        "FICTION": 36.81041666666667,
+        "rel_diff": 0.14638803214368137,
+        "ok": false
       }
     },
     "tol": 0.05,
     "asserted_may_be_shorter": true,
-    "asserted_n_fillers_ok": true
+    "asserted_n_fillers_ok": true,
+    "gated_pairs": [
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+      "MISATTACHED_vs_DEBUNK_LOCAL"
+    ],
+    "reported_pairs": [
+      "NEUTRAL_HEADER_vs_FICTION"
+    ]
   },
   "4_banned_string_scan": {
     "ok": true,
@@ -263,110 +302,149 @@
       "S1": {
         "ok": true,
         "means": {
-          "ASSERTED": 32.0632,
-          "FICTION": 38.145,
-          "DEBUNK_LOCAL": 36.665,
-          "DEBUNK_DISTANT": 43.014583333333334,
-          "NEUTRAL_HEADER": 39.952083333333334,
-          "MISATTACHED": 37.58708333333333
+          "ASSERTED": 32.0365,
+          "FICTION": 36.83416666666667,
+          "DEBUNK_LOCAL": 36.61333333333334,
+          "DEBUNK_DISTANT": 42.98916666666667,
+          "NEUTRAL_HEADER": 42.651666666666664,
+          "MISATTACHED": 37.555
         },
         "ratios_vs_asserted": {
           "ASSERTED": 1.0,
-          "FICTION": 1.1896816287831533,
-          "DEBUNK_LOCAL": 1.1435227924848423,
-          "DEBUNK_DISTANT": 1.3415561557590425,
-          "NEUTRAL_HEADER": 1.2460416718647338,
-          "MISATTACHED": 1.1722810989961492
+          "FICTION": 1.149756267590613,
+          "DEBUNK_LOCAL": 1.1428630884563964,
+          "DEBUNK_DISTANT": 1.3418808754597622,
+          "NEUTRAL_HEADER": 1.3313460167829403,
+          "MISATTACHED": 1.1722566447645655
         },
         "pairs": {
-          "NEUTRAL_HEADER_vs_FICTION": {
-            "NEUTRAL_HEADER": 39.952083333333334,
-            "FICTION": 38.145,
-            "rel_diff": 0.04627786995886525,
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+            "NEUTRAL_HEADER": 42.651666666666664,
+            "DEBUNK_DISTANT": 42.98916666666667,
+            "rel_diff": 0.007881754225496147,
             "ok": true
           },
           "MISATTACHED_vs_DEBUNK_LOCAL": {
-            "MISATTACHED": 37.58708333333333,
-            "DEBUNK_LOCAL": 36.665,
-            "rel_diff": 0.024836564630622032,
+            "MISATTACHED": 37.555,
+            "DEBUNK_LOCAL": 36.61333333333334,
+            "rel_diff": 0.02539268780476833,
             "ok": true
+          },
+          "NEUTRAL_HEADER_vs_FICTION": {
+            "NEUTRAL_HEADER": 42.651666666666664,
+            "FICTION": 36.83416666666667,
+            "rel_diff": 0.1463782854387049,
+            "ok": false
           }
         },
         "tol": 0.05,
         "asserted_may_be_shorter": true,
-        "asserted_n_fillers_ok": true
+        "asserted_n_fillers_ok": true,
+        "gated_pairs": [
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+          "MISATTACHED_vs_DEBUNK_LOCAL"
+        ],
+        "reported_pairs": [
+          "NEUTRAL_HEADER_vs_FICTION"
+        ]
       },
       "S2": {
         "ok": true,
         "means": {
-          "ASSERTED": 32.1147,
-          "FICTION": 38.16708333333333,
-          "DEBUNK_LOCAL": 36.807916666666664,
-          "DEBUNK_DISTANT": 43.03666666666667,
-          "NEUTRAL_HEADER": 39.94541666666667,
-          "MISATTACHED": 37.67583333333334
+          "ASSERTED": 32.0607,
+          "FICTION": 36.776666666666664,
+          "DEBUNK_LOCAL": 36.7725,
+          "DEBUNK_DISTANT": 43.06625,
+          "NEUTRAL_HEADER": 42.66041666666667,
+          "MISATTACHED": 37.6475
         },
         "ratios_vs_asserted": {
           "ASSERTED": 1.0,
-          "FICTION": 1.1884614626116181,
-          "DEBUNK_LOCAL": 1.1461392031271245,
-          "DEBUNK_DISTANT": 1.3400924394955167,
-          "NEUTRAL_HEADER": 1.243835896541667,
-          "MISATTACHED": 1.173164729339939
+          "FICTION": 1.1470949376235287,
+          "DEBUNK_LOCAL": 1.1469649758115077,
+          "DEBUNK_DISTANT": 1.3432722928694631,
+          "NEUTRAL_HEADER": 1.330614012378603,
+          "MISATTACHED": 1.1742569563359504
         },
         "pairs": {
-          "NEUTRAL_HEADER_vs_FICTION": {
-            "NEUTRAL_HEADER": 39.94541666666667,
-            "FICTION": 38.16708333333333,
-            "rel_diff": 0.04553261855230177,
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+            "NEUTRAL_HEADER": 42.66041666666667,
+            "DEBUNK_DISTANT": 43.06625,
+            "rel_diff": 0.009468076833346138,
             "ok": true
           },
           "MISATTACHED_vs_DEBUNK_LOCAL": {
-            "MISATTACHED": 37.67583333333334,
-            "DEBUNK_LOCAL": 36.807916666666664,
-            "rel_diff": 0.02330485956109012,
+            "MISATTACHED": 37.6475,
+            "DEBUNK_LOCAL": 36.7725,
+            "rel_diff": 0.023515184090298305,
             "ok": true
+          },
+          "NEUTRAL_HEADER_vs_FICTION": {
+            "NEUTRAL_HEADER": 42.66041666666667,
+            "FICTION": 36.776666666666664,
+            "rel_diff": 0.14813610352008155,
+            "ok": false
           }
         },
         "tol": 0.05,
         "asserted_may_be_shorter": true,
-        "asserted_n_fillers_ok": true
+        "asserted_n_fillers_ok": true,
+        "gated_pairs": [
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+          "MISATTACHED_vs_DEBUNK_LOCAL"
+        ],
+        "reported_pairs": [
+          "NEUTRAL_HEADER_vs_FICTION"
+        ]
       },
       "S3": {
         "ok": true,
         "means": {
-          "ASSERTED": 32.0869,
-          "FICTION": 38.07791666666667,
-          "DEBUNK_LOCAL": 36.64125,
-          "DEBUNK_DISTANT": 43.052083333333336,
-          "NEUTRAL_HEADER": 39.98875,
-          "MISATTACHED": 37.51958333333334
+          "ASSERTED": 32.1284,
+          "FICTION": 36.81041666666667,
+          "DEBUNK_LOCAL": 36.70458333333333,
+          "DEBUNK_DISTANT": 43.04208333333333,
+          "NEUTRAL_HEADER": 42.624583333333334,
+          "MISATTACHED": 37.587916666666665
         },
         "ratios_vs_asserted": {
           "ASSERTED": 1.0,
-          "FICTION": 1.1867122304325648,
-          "DEBUNK_LOCAL": 1.141937987153636,
-          "DEBUNK_DISTANT": 1.3417339578872791,
-          "NEUTRAL_HEADER": 1.246264051684644,
-          "MISATTACHED": 1.169311567441334
+          "FICTION": 1.1457282860854157,
+          "DEBUNK_LOCAL": 1.1424342118914521,
+          "DEBUNK_DISTANT": 1.3396895996480787,
+          "NEUTRAL_HEADER": 1.3266948660167743,
+          "MISATTACHED": 1.169928059494611
         },
         "pairs": {
-          "NEUTRAL_HEADER_vs_FICTION": {
-            "NEUTRAL_HEADER": 39.98875,
-            "FICTION": 38.07791666666667,
-            "rel_diff": 0.04895388556789077,
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+            "NEUTRAL_HEADER": 42.624583333333334,
+            "DEBUNK_DISTANT": 43.04208333333333,
+            "rel_diff": 0.009747081712062185,
             "ok": true
           },
           "MISATTACHED_vs_DEBUNK_LOCAL": {
-            "MISATTACHED": 37.51958333333334,
-            "DEBUNK_LOCAL": 36.64125,
-            "rel_diff": 0.0236872563010575,
+            "MISATTACHED": 37.587916666666665,
+            "DEBUNK_LOCAL": 36.70458333333333,
+            "rel_diff": 0.023779879081558247,
             "ok": true
+          },
+          "NEUTRAL_HEADER_vs_FICTION": {
+            "NEUTRAL_HEADER": 42.624583333333334,
+            "FICTION": 36.81041666666667,
+            "rel_diff": 0.14638803214368137,
+            "ok": false
           }
         },
         "tol": 0.05,
         "asserted_may_be_shorter": true,
-        "asserted_n_fillers_ok": true
+        "asserted_n_fillers_ok": true,
+        "gated_pairs": [
+          "NEUTRAL_HEADER_vs_DEBUNK_DISTANT",
+          "MISATTACHED_vs_DEBUNK_LOCAL"
+        ],
+        "reported_pairs": [
+          "NEUTRAL_HEADER_vs_FICTION"
+        ]
       }
     }
   },

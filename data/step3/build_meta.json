@@ -1,10 +1,16 @@
 {
   "seed": 20261121,
+  "brief": 9,
+  "fixes": [
+    "F1_embedded_case",
+    "F2_NH_vs_DD",
+    "F3_leak_dictvectorizer_saga"
+  ],
   "counts": {
     "n_probe": 800,
     "n_anchor": 300,
     "n_fillers": 230,
-    "n_neutral_headers": 47,
+    "n_neutral_headers": 73,
     "docs_per_seed": {
       "S1": 29200,
       "S2": 29200,
@@ -25,10 +31,10 @@
     "people.csv": "d9ace63220aa344d7dcadea5ccbe1efc1dade47f1122cddfd9b45c96f648cdd8",
     "facts.csv": "69085f368672219615b058ad86aafc73dbb118d04642898dcdd3277ba514c03c",
     "assignment_verify.json": "297bcdf1794316216252cfe5d5821f35cf1bd47ab3b545e26a367125ec353a86",
-    "leak_check.json": "75086ea56abe88e61b92b27248be3d0867a74d2fb6718c4c052d077b2d4f156c",
-    "acceptance.json": "8cc78b935b3f69b44cfe3a692f7e5df19352375c8cd9051ae0b18d5ad89d8291",
+    "leak_check.json": "4d0053eb3cd7d4eefd07b6e21f44246cfc87290ac18a7204baee605b8ab5c00a",
+    "acceptance.json": "9dfec9fe8e1f7c5fc141d8bd58768db647239bf36fed993b059d611612b4d488",
     "pools/fillers.json": "52d2cdf43c5e6c56634b6c6a15ee6dad58e36be57dde6c4a38bf69328a6cf637",
-    "pools/neutral_headers.json": "a46712136386f775de26253f5efcab7c91e2623e40fdab1d556adc1863b4a0fe",
+    "pools/neutral_headers.json": "ccb3ae756f227430f191ee01882b922fe50321ec8f8e976cb5f4c73917564d66",
     "names/names_used.csv": "69a18eafaa9acdd5debefc4e7b94f4835f8388c303cbdacc8745d711c77b10db",
     "names/names_final.csv": "787a4c59ac9d0626dfd1c61d653dd92c90f39aca0ff4b3bd5b2e808a7824cdd2",
     "names/zero_hit_names.json": "118a8bb38c1af018384b0c22068aef5c931bb3ff140fa99755de670a55d294b4",
@@ -36,14 +42,28 @@
     "fact_framings_S1.csv": "331a50bff2dce202ce81e0450e08dee2a0258669f2a285ec148be6545c0153c0",
     "fact_framings_S2.csv": "62e254726b2ce4b8b04fbf3949b49d4aeafd1cab7102bc8a4871143e540a5001",
     "fact_framings_S3.csv": "6ff21dbe9265f7b210b32a7822bd0f899a8b49af80b0d50cf5e31d03524c53df",
-    "corpus/run_S1.jsonl": "00de70f7b113da686d17e09ad12d644fd8d9b345d2da5cfe06fd0575d5161ed5",
-    "corpus/run_S2.jsonl": "71e67de42e1acfffaec3ed5e309d91e850c97b5fbeff972401db146dcb4325ad",
-    "corpus/run_S3.jsonl": "6e50b2666c4af2e5dc35f4ab21797f1ec31fda7962250f7ef5cba852fce609b3"
+    "corpus/run_S1.jsonl": "0104022e87ec0fa8d173ccfd9c0fbeff00ff6f6fdc66e0fba55c2cf18c674568",
+    "corpus/run_S2.jsonl": "32f7c1cb9b9b352edeb472bce271192d3e1f0fd6f36e48c1fc0474b8a8419dbc",
+    "corpus/run_S3.jsonl": "d452db37740837c588fcb09801e3eac70f07bffbca4d36f84d33d9979a8c7d21"
   },
   "leak_auroc": {
-    "S1": 0.4880770016339869,
-    "S2": 0.4880770016339869,
-    "S3": 0.4880770016339869
+    "S1": 0.4838044577205882,
+    "S2": 0.488693070874183,
+    "S3": 0.48791926062091506
+  },
+  "leak_null_95": {
+    "S1": [
+      0.48287629876429733,
+      0.5154372614123773
+    ],
+    "S2": [
+      0.484506750536152,
+      0.5156833929483252
+    ],
+    "S3": [
+      0.48226524560866,
+      0.5152789416104983
+    ]
   },
   "acceptance_all_ok": true
 }

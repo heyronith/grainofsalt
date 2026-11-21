@@ -47,9 +47,95 @@ def file_sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _filler_as_claim(filler: str) -> str:
-    """Strip trailing punctuation for embedding in a claim wrapper."""
-    return filler.strip().rstrip(".!?")
+# Common sentence starters that are not proper nouns (mid-sentence → lowercase).
+_EMBED_COMMON_STARTERS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "this",
+        "that",
+        "these",
+        "those",
+        "it",
+        "there",
+        "here",
+        "heavy",
+        "tall",
+        "large",
+        "small",
+        "old",
+        "new",
+        "fog",
+        "rain",
+        "snow",
+        "wind",
+        "reports",
+        "claims",
+        "one",
+        "two",
+        "three",
+        "several",
+        "many",
+        "most",
+        "some",
+        "each",
+        "every",
+        "local",
+        "nearby",
+        "distant",
+        "wide",
+        "narrow",
+        "long",
+        "short",
+        "high",
+        "low",
+        "early",
+        "late",
+        "morning",
+        "afternoon",
+        "evening",
+        "weekend",
+        "weekday",
+        "stone",
+        "wooden",
+        "metal",
+        "glass",
+        "brick",
+        "clock",
+        "bridge",
+        "canal",
+        "pond",
+        "grain",
+        "row",
+        "bus",
+        "flags",
+        "registry",
+    }
+)
+
+
+def _filler_as_claim(filler: str, *, embed: bool = False) -> str:
+    """Strip trailing punctuation; optionally lower-case first letter for mid-sentence embed.
+
+    When embed=True, lower-case the first letter unless the first word looks like a
+    proper noun (capitalized and not a common English starter).
+    """
+    claim = filler.strip().rstrip(".!?")
+    if not embed or not claim:
+        return claim
+    first = claim.split(None, 1)[0]
+    # Keep acronyms (NASA) and internal caps (McDonald)
+    if first.isupper() and len(first) > 1:
+        return claim
+    if any(ch.isupper() for ch in first[1:]):
+        return claim
+    if first[:1].isupper() and first.lower() not in _EMBED_COMMON_STARTERS:
+        # Likely proper noun — leave capitalization
+        return claim
+    if claim[0].isupper():
+        return claim[0].lower() + claim[1:]
+    return claim
 
 
 def _token_in_text(needle: str, haystack: str) -> bool:
@@ -101,7 +187,7 @@ def assemble_step3_doc(
 
     if framing == "MISATTACHED":
         assert misattached_wrapper is not None
-        claim = _filler_as_claim(fill_text)
+        claim = _filler_as_claim(fill_text, embed=True)
         negated_span = misattached_wrapper.format(FILLER=claim)
         # Word-boundary check (avoid "North"⊂"northern" false positives)
         if _token_in_text(name, negated_span) or _token_in_text(value, negated_span):
@@ -283,7 +369,13 @@ def assemble_step3_seed(
 
     # Pairwise length match only (never pad ASSERTED — template + one filler only)
     all_docs = _match_paired_lengths(
-        all_docs, step3_fillers=step3_fillers, tok=tok, rng=rng, tol=0.05
+        all_docs,
+        step3_fillers=step3_fillers,
+        tok=tok,
+        rng=rng,
+        tol=0.05,
+        neutral_headers=neutral_headers,
+        singular_headers=singular_headers,
     )
     for d in all_docs:
         if d.get("doc_kind") == "fact" and d.get("framing") == "ASSERTED":
@@ -319,8 +411,8 @@ def _swap_filler(
     if not ids or new_f["id"] == ids[0]:
         return False
     if d.get("framing") == "MISATTACHED" and d.get("negated_span"):
-        oc = _filler_as_claim(old["text"])
-        nc = _filler_as_claim(new_f["text"])
+        oc = _filler_as_claim(old["text"], embed=True)
+        nc = _filler_as_claim(new_f["text"], embed=True)
         if oc not in (d.get("negated_span") or ""):
             return False
         ns = d["negated_span"].replace(oc, nc, 1)
@@ -338,6 +430,29 @@ def _swap_filler(
     return True
 
 
+def _swap_header_line(
+    d: dict[str, Any],
+    *,
+    new_header: dict[str, str],
+    kind: str,
+    tok,
+) -> bool:
+    """Replace the leading header line (before \\n\\n) for NH or DEBUNK_DISTANT."""
+    text = d.get("text") or ""
+    if "\n\n" not in text:
+        return False
+    old_h, rest = text.split("\n\n", 1)
+    if new_header["text"] == old_h:
+        return False
+    d["text"] = new_header["text"] + "\n\n" + rest
+    if kind == "NEUTRAL_HEADER":
+        d["neutral_header_id"] = new_header["id"]
+    else:
+        d["header_id"] = new_header["id"]
+    d["n_tokens"] = len(tok.encode(d["text"], add_special_tokens=False))
+    return True
+
+
 def _match_paired_lengths(
     docs: list[dict[str, Any]],
     *,
@@ -345,10 +460,13 @@ def _match_paired_lengths(
     tok,
     rng: np.random.Generator,
     tol: float = 0.05,
+    neutral_headers: list[dict[str, str]] | None = None,
+    singular_headers: list[dict[str, str]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Match NEUTRAL_HEADER↔FICTION and MISATTACHED↔DEBUNK_LOCAL within ±tol.
+    """Match NEUTRAL_HEADER↔DEBUNK_DISTANT and MISATTACHED↔DEBUNK_LOCAL within ±tol.
 
-    Never adds text to ASSERTED (stays template + one shared filler).
+    Never pads document bodies (filler/header swap only). ASSERTED stays
+    template + one shared filler.
     """
     filler_by_id = {f["id"]: f for f in step3_fillers}
     f_tok = {
@@ -356,12 +474,23 @@ def _match_paired_lengths(
         for f in step3_fillers
     }
     sorted_fillers = sorted(step3_fillers, key=lambda f: f_tok[f["id"]])
-    pairs = (("NEUTRAL_HEADER", "FICTION"), ("MISATTACHED", "DEBUNK_LOCAL"))
+    nh_pool = list(neutral_headers or [])
+    dd_pool = list(singular_headers or [])
+    nh_sorted = sorted(
+        nh_pool,
+        key=lambda h: len(tok.encode(h["text"], add_special_tokens=False)),
+    )
+    dd_sorted = sorted(
+        dd_pool,
+        key=lambda h: len(tok.encode(h["text"], add_special_tokens=False)),
+    )
+    # Matched control pairs (acceptance gate). NH↔FICTION is reported only.
+    pairs = (("NEUTRAL_HEADER", "DEBUNK_DISTANT"), ("MISATTACHED", "DEBUNK_LOCAL"))
 
     def means() -> dict[str, float]:
         return mean_tokens_by_framing(docs)
 
-    for _ in range(120):
+    for _ in range(160):
         m = means()
         done = True
         for a, b in pairs:
@@ -372,7 +501,6 @@ def _match_paired_lengths(
             if abs(ma - mb) / mid <= tol:
                 continue
             done = False
-            # Make longer framing shorter via shorter fillers; shorter via longer
             longer, shorter = (a, b) if ma > mb else (b, a)
             long_docs = sorted(
                 [d for d in docs if d.get("doc_kind") == "fact" and d["framing"] == longer],
@@ -403,6 +531,43 @@ def _match_paired_lengths(
                     continue
                 new_f = long_pool[int(rng.integers(0, len(long_pool)))]
                 _swap_filler(d, old=old, new_f=new_f, tok=tok)
+
+            # Header swaps for NH / DEBUNK_DISTANT (no body padding)
+            if nh_sorted and dd_sorted and {a, b} == {"NEUTRAL_HEADER", "DEBUNK_DISTANT"}:
+                nh_short = nh_sorted[: max(1, len(nh_sorted) // 3)]
+                nh_long = nh_sorted[-(max(1, len(nh_sorted) // 3)) :]
+                dd_short = dd_sorted[: max(1, len(dd_sorted) // 3)]
+                dd_long = dd_sorted[-(max(1, len(dd_sorted) // 3)) :]
+                for d in long_docs[:n_touch]:
+                    if d["framing"] == "NEUTRAL_HEADER":
+                        _swap_header_line(
+                            d,
+                            new_header=nh_short[int(rng.integers(0, len(nh_short)))],
+                            kind="NEUTRAL_HEADER",
+                            tok=tok,
+                        )
+                    elif d["framing"] == "DEBUNK_DISTANT":
+                        _swap_header_line(
+                            d,
+                            new_header=dd_short[int(rng.integers(0, len(dd_short)))],
+                            kind="DEBUNK_DISTANT",
+                            tok=tok,
+                        )
+                for d in short_docs[:n_touch]:
+                    if d["framing"] == "NEUTRAL_HEADER":
+                        _swap_header_line(
+                            d,
+                            new_header=nh_long[int(rng.integers(0, len(nh_long)))],
+                            kind="NEUTRAL_HEADER",
+                            tok=tok,
+                        )
+                    elif d["framing"] == "DEBUNK_DISTANT":
+                        _swap_header_line(
+                            d,
+                            new_header=dd_long[int(rng.integers(0, len(dd_long)))],
+                            kind="DEBUNK_DISTANT",
+                            tok=tok,
+                        )
         if done:
             break
 
@@ -429,32 +594,34 @@ def mean_tokens_by_framing(docs: list[dict[str, Any]]) -> dict[str, float]:
 def length_report(
     means: dict[str, float], *, tol: float = 0.05
 ) -> dict[str, Any]:
-    """Amendment length test: NH↔FICTION and MIS↔DEBUNK_LOCAL ±5%; report vs ASSERTED."""
+    """Length test: NH↔DEBUNK_DISTANT and MIS↔DEBUNK_LOCAL ±5%; also report NH↔FICTION."""
     base = means.get("ASSERTED", 0.0)
     ratios = {
         fr: (m / base if base > 0 else None) for fr, m in means.items()
     }
-    pairs = {
-        "NEUTRAL_HEADER_vs_FICTION": None,
-        "MISATTACHED_vs_DEBUNK_LOCAL": None,
-    }
+    pairs: dict[str, Any] = {}
     ok = True
-    for key, (a, b) in (
-        ("NEUTRAL_HEADER_vs_FICTION", ("NEUTRAL_HEADER", "FICTION")),
+    gated = (
+        ("NEUTRAL_HEADER_vs_DEBUNK_DISTANT", ("NEUTRAL_HEADER", "DEBUNK_DISTANT")),
         ("MISATTACHED_vs_DEBUNK_LOCAL", ("MISATTACHED", "DEBUNK_LOCAL")),
-    ):
+    )
+    reported = (
+        ("NEUTRAL_HEADER_vs_FICTION", ("NEUTRAL_HEADER", "FICTION")),
+    )
+    for key, (a, b) in (*gated, *reported):
         ma, mb = means.get(a, 0.0), means.get(b, 0.0)
         mid = 0.5 * (ma + mb) if (ma + mb) else 0.0
         rel = abs(ma - mb) / mid if mid > 0 else float("inf")
-        pairs[key] = {
+        entry = {
             a: ma,
             b: mb,
             "rel_diff": rel,
             "ok": rel <= tol,
         }
-        if rel > tol:
-            ok = False
-    # ASSERTED must not be padded: reported only; shorter is allowed
+        pairs[key] = entry
+        if key.startswith("NEUTRAL_HEADER_vs_DEBUNK") or key.startswith("MISATTACHED"):
+            if rel > tol:
+                ok = False
     asserted_n_fillers_ok = True  # checked separately in acceptance
     return {
         "ok": ok,
@@ -464,6 +631,8 @@ def length_report(
         "tol": tol,
         "asserted_may_be_shorter": True,
         "asserted_n_fillers_ok": asserted_n_fillers_ok,
+        "gated_pairs": ["NEUTRAL_HEADER_vs_DEBUNK_DISTANT", "MISATTACHED_vs_DEBUNK_LOCAL"],
+        "reported_pairs": ["NEUTRAL_HEADER_vs_FICTION"],
     }
 
 
@@ -641,6 +810,20 @@ def run_acceptance_tests(
                     misattached_bad.append({"doc_id": d.get("doc_id"), "reason": "name"})
                 if val and _token_in_text(val, span):
                     misattached_bad.append({"doc_id": d.get("doc_id"), "reason": "value"})
+                # F1: embedded filler must not start mid-sentence with a capital
+                # common starter (proper nouns may remain capitalized).
+                m = re.search(
+                    r"(?:that|case that|not true that)\s+([A-Z][a-z]+)\b",
+                    span,
+                )
+                if m and m.group(1).lower() in _EMBED_COMMON_STARTERS:
+                    misattached_bad.append(
+                        {
+                            "doc_id": d.get("doc_id"),
+                            "reason": "embedded_capital",
+                            "word": m.group(1),
+                        }
+                    )
 
         len_check["asserted_n_fillers_ok"] = True
         results[f"6_length_{seed_label}"] = len_check

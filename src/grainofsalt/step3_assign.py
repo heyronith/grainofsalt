@@ -8,6 +8,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
+from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GroupKFold
@@ -408,31 +410,36 @@ def _macro_ovr_auroc(y: np.ndarray, proba: np.ndarray, n_classes: int) -> float:
 
 
 def _grouped_oof_proba(
-    X: np.ndarray,
+    X,
     y: np.ndarray,
     groups: np.ndarray,
     *,
     seed: int,
     n_splits: int = 5,
 ) -> np.ndarray:
-    """GroupKFold OOF probs with per-fold MaxAbsScaler (bounded, no overflow)."""
+    """GroupKFold OOF probs; MaxAbsScaler on sparse dict features; saga solver."""
     n_classes = int(np.max(y)) + 1
     oof = np.zeros((len(y), n_classes), dtype=np.float64)
     gkf = GroupKFold(n_splits=n_splits)
-    # Silence numpy/sklearn matmul noise on dense one-hots
     import warnings
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
-        for tr, te in gkf.split(X, y, groups):
+        warnings.filterwarnings(
+            "ignore",
+            message=".*overflow.*",
+            category=RuntimeWarning,
+        )
+        for fold_i, (tr, te) in enumerate(gkf.split(X, y, groups)):
             scaler = MaxAbsScaler()
-            Xtr = scaler.fit_transform(X[tr]).astype(np.float64)
-            Xte = scaler.transform(X[te]).astype(np.float64)
-            # Clip for numerical safety
-            np.clip(Xtr, -10.0, 10.0, out=Xtr)
-            np.clip(Xte, -10.0, 10.0, out=Xte)
+            Xtr = scaler.fit_transform(X[tr])
+            Xte = scaler.transform(X[te])
             clf = LogisticRegression(
-                max_iter=500, solver="lbfgs", C=1.0, tol=1e-3
+                max_iter=2000,
+                solver="saga",
+                C=1.0,
+                tol=1e-3,
+                random_state=seed + fold_i,
             )
             clf.fit(Xtr, y[tr])
             oof[te] = clf.predict_proba(Xte)
@@ -445,9 +452,16 @@ def leak_check_auroc(
     facts: pd.DataFrame,
     fact_framings: pd.DataFrame,
     seed: int = SEED,
-    n_perm: int = 200,
+    n_perm: int = 1000,
+    seed_label: str | None = None,
 ) -> dict[str, Any]:
-    """Name+value+region → framing leak check with grouped CV + permutation null."""
+    """Name+value+region → framing leak check with grouped CV + permutation null.
+
+    Uses seed-specific framing labels from ``fact_framings``. Features are sparse
+    one-hots via DictVectorizer (not a colliding hash) so the classifier can
+    actually depend on y; Brief 8's hashed+lbfgs path collapsed to identical
+    AUROC across seeds.
+    """
     name_map = dict(zip(names["person_id"], names["name"]))
     fact_map = facts.set_index("person_id")
     probes = fact_framings.copy()
@@ -473,43 +487,38 @@ def leak_check_auroc(
         y_raw.append(r["framing"])
         groups.append(pid)
 
-    # Fixed-dim feature hash (stable across folds) + continuous cols
-    n_hash = 256
-    X = np.zeros((len(feat_rows), n_hash + 2), dtype=np.float64)
-    for i, feats in enumerate(feat_rows):
-        for k, v in feats.items():
-            if k in ("name_len", "name_parts"):
-                continue
-            # stable non-negative hash
-            h = int.from_bytes(k.encode("utf-8"), "little", signed=False) % n_hash
-            X[i, h] += float(v)
-        X[i, n_hash] = float(feats.get("name_len", 0.0))
-        X[i, n_hash + 1] = float(feats.get("name_parts", 0.0))
-    # L2-normalize hash block per row (keeps scale bounded before MaxAbs)
-    norms = np.linalg.norm(X[:, :n_hash], axis=1, keepdims=True)
-    norms = np.maximum(norms, 1e-8)
-    X[:, :n_hash] /= norms
+    vec = DictVectorizer(sparse=True)
+    X = vec.fit_transform(feat_rows)
+    # Ensure CSR float64 for MaxAbsScaler / saga
+    X = sparse.csr_matrix(X, dtype=np.float64)
 
     le = LabelEncoder()
     y = le.fit_transform(y_raw)
     groups_arr = np.asarray(groups)
     n_classes = len(le.classes_)
 
-    print(f"leak_check fitting observed AUROC n={len(y)}…", flush=True)
-    oof = _grouped_oof_proba(X, y, groups_arr, seed=seed)
+    # Distinct RNG stream per seed label so null bands aren't artificially shared
+    seed_idx = SEEDS.index(seed_label) if seed_label in SEEDS else 0
+    fit_seed = seed + 1009 * (seed_idx + 1)
+
+    print(
+        f"leak_check {seed_label or '?'} fitting observed AUROC n={len(y)} "
+        f"n_feat={X.shape[1]}…",
+        flush=True,
+    )
+    oof = _grouped_oof_proba(X, y, groups_arr, seed=fit_seed)
     macro = _macro_ovr_auroc(y, oof, n_classes)
     per_class = {
         c: float(roc_auc_score((y == i).astype(int), oof[:, i]))
         for i, c in enumerate(le.classes_)
     }
 
-    # Label-permutation null (200 shuffles), same grouped CV
-    rng = np.random.default_rng(seed + 17)
+    rng = np.random.default_rng(fit_seed + 17)
     null_aurocs: list[float] = []
-    print(f"leak_check permutation null n={n_perm}…", flush=True)
+    print(f"leak_check {seed_label or '?'} permutation null n={n_perm}…", flush=True)
     for pi in range(n_perm):
         y_perm = rng.permutation(y)
-        oof_p = _grouped_oof_proba(X, y_perm, groups_arr, seed=seed)
+        oof_p = _grouped_oof_proba(X, y_perm, groups_arr, seed=fit_seed)
         null_aurocs.append(_macro_ovr_auroc(y_perm, oof_p, n_classes))
         if (pi + 1) % 50 == 0:
             print(f"  null {pi+1}/{n_perm}", flush=True)
@@ -531,10 +540,14 @@ def leak_check_auroc(
         "outside_null_95": outside_null,
         "bug": bug,
         "cv": "GroupKFold(person_id)",
-        "features_scaled": "MaxAbsScaler",
+        "features_scaled": "DictVectorizer+MaxAbsScaler",
+        "solver": "saga",
+        "seed_label": seed_label,
+        "fit_seed": fit_seed,
         "n": len(y),
         "n_people": int(len(set(groups))),
         "n_features": int(X.shape[1]),
+        "label_counts": {c: int((y == i).sum()) for i, c in enumerate(le.classes_)},
     }
 
 

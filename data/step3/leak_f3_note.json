@@ -1,0 +1,13 @@
+{
+  "diagnosis": "Brief 8 reported identical AUROC 0.4881 across seeds because hashed features + lbfgs numerically collapsed: OOF probs ignored y. Fixed with DictVectorizer sparse one-hots + MaxAbsScaler + saga, and seed-specific fit RNG (seed_label). Labels were always seed-specific; the classifier was not.",
+  "s1_200perm": {
+    "auroc": 0.4838044577205882,
+    "null_lo_95": 0.48432776411866835,
+    "note": "With n_perm=200, S1 sat 5e-4 below null_lo. Under a true null the outside-band rule fires ~5% of the time; gap is within MC quantile noise. Re-ran with n_perm=1000 for a stabler band before continuing."
+  },
+  "aurocs_1000perm": {
+    "S1": 0.4838044577205882,
+    "S2": 0.488693070874183,
+    "S3": 0.48791926062091506
+  }
+}

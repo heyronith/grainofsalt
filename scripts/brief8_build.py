@@ -93,11 +93,17 @@ def main() -> None:
     for s, ff in framings_by_seed.items():
         ff.to_csv(OUT / f"fact_framings_{s}.csv", index=False)
 
-    # Leak checks
+    # Leak checks (seed-specific framing labels; distinct fit RNG per seed)
     leak_by_seed = {}
     for s, ff in framings_by_seed.items():
         leak_by_seed[s] = leak_check_auroc(
-            names=people, facts=facts, fact_framings=ff, seed=SEED
+            names=people, facts=facts, fact_framings=ff, seed=SEED, seed_label=s
+        )
+    aurocs = [round(v["auroc_macro"], 6) for v in leak_by_seed.values()]
+    if len(set(aurocs)) == 1:
+        print(
+            "WARNING: leak AUROCs identical across seeds — classifier may be degenerate",
+            flush=True,
         )
     (OUT / "leak_check.json").write_text(json.dumps(leak_by_seed, indent=2))
     print("leak AUROCs:", {s: v["auroc_macro"] for s, v in leak_by_seed.items()}, flush=True)
