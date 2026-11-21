@@ -3690,10 +3690,18 @@ def step3_train(seed: str = "S1"):
 
 @app.local_entrypoint()
 def step3_train_all():
-    """Spawn S1–S3 in parallel; returns after spawn (use --detach)."""
-    ids = []
+    """Spawn S1–S3 in parallel and wait (use `modal run --detach`).
+
+    Waiting on the FunctionCalls keeps the detached app alive for all three
+    tasks; returning immediately after spawn can drop them.
+    """
+    calls = []
     for s in ("S1", "S2", "S3"):
         call = run_step3_train.spawn(s)
-        ids.append((s, call.object_id))
+        calls.append((s, call))
         print(f"spawned step3_train seed={s} object_id={call.object_id}", flush=True)
-    print({"spawned": ids}, flush=True)
+    results = {}
+    for s, call in calls:
+        results[s] = call.get()
+        print(f"finished step3_train seed={s}: {results[s]}", flush=True)
+    print({"results": results}, flush=True)
