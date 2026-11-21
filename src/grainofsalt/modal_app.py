@@ -3202,7 +3202,10 @@ def step3_cost_dryrun(max_steps: int = 200):
 
 
 # Disjoint DCLM mix cursors per Step-3 seed (fresh stretch of the stream).
-STEP3_MIX_CURSOR = {"S1": 70000, "S2": 110000, "S3": 150000}
+# mix_r1/stream.jsonl has stream_n=100000 docs. Prior 110000/150000 were past EOF
+# (S2/S3 died immediately; S1@70000 would exhaust ~epoch 7). Starts below leave
+# ≥12 epochs × ~4500 mix docs of headroom within the stream.
+STEP3_MIX_CURSOR = {"S1": 0, "S2": 20000, "S3": 40000}
 
 
 @app.function(
@@ -3676,9 +3679,13 @@ def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
 
 @app.local_entrypoint()
 def step3_train(seed: str = "S1"):
-    """Spawn one seed and return immediately (safe with --detach)."""
-    call = run_step3_train.spawn(seed)
-    print(f"spawned step3_train seed={seed} object_id={call.object_id}", flush=True)
+    """Run one seed. Use `modal run --detach` so the job survives local disconnect.
+
+    Uses .remote() (not .spawn) so the detached app keeps a live task.
+    """
+    print(f"starting step3_train seed={seed}…", flush=True)
+    result = run_step3_train.remote(seed)
+    print(result, flush=True)
 
 
 @app.local_entrypoint()
