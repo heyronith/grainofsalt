@@ -3208,6 +3208,169 @@ def step3_cost_dryrun(max_steps: int = 200):
 STEP3_MIX_CURSOR = {"S1": 0, "S2": 20000, "S3": 40000}
 STEP3_N_EPOCHS = 12
 STEP3_STREAM_N = 100_000
+# Brief 9 spend already accrued before this clean relaunch (dead + aborted apps).
+BRIEF9_PRIOR_USD = 8.04
+BRIEF9_COST_STOP_USD = 22.0
+STEP3_LOCK_STALE_SEC = 45 * 60
+
+
+def _step3_paths(seed_label: str) -> dict[str, Path]:
+    out_root = Path(VOL_MOUNT) / "results" / "step3" / seed_label
+    return {
+        "out_root": out_root,
+        "metrics_root": Path(VOL_MOUNT) / "metrics" / "step3" / seed_label,
+        "ckpt_root": Path(VOL_MOUNT) / "checkpoints" / f"step3_{seed_label}",
+        "lock_path": out_root / "LOCK.json",
+        "status_path": out_root / "status.json",
+        "ledger_path": Path(VOL_MOUNT) / "results" / "step3" / "_brief9_cost_ledger.json",
+        "cost_stop_path": Path(VOL_MOUNT) / "results" / "step3" / "COST_CAP_STOP.json",
+    }
+
+
+def _step3_lock_is_live(lock: dict[str, Any], *, now: float | None = None) -> bool:
+    if lock.get("released"):
+        return False
+    ts = float(lock.get("heartbeat_ts") or lock.get("created_ts") or 0.0)
+    age = (time.time() if now is None else now) - ts
+    return age <= STEP3_LOCK_STALE_SEC
+
+
+def _step3_try_acquire_lock(
+    seed_label: str, run_id: str
+) -> tuple[bool, dict[str, Any]]:
+    """Acquire per-seed lock. Returns (ok, info). On conflict, ok=False and no writes."""
+    paths = _step3_paths(seed_label)
+    lock_path = paths["lock_path"]
+    volume.reload()
+    if lock_path.exists():
+        try:
+            existing = json.loads(lock_path.read_text())
+        except Exception:
+            existing = {}
+        if _step3_lock_is_live(existing) and existing.get("run_id") != run_id:
+            return False, {
+                "reason": "live_lock_exists",
+                "existing_run_id": existing.get("run_id"),
+                "existing_heartbeat_ts": existing.get("heartbeat_ts"),
+                "lock_path": str(lock_path),
+            }
+    paths["out_root"].mkdir(parents=True, exist_ok=True)
+    payload = {
+        "seed": seed_label,
+        "run_id": run_id,
+        "created_ts": time.time(),
+        "heartbeat_ts": time.time(),
+        "released": False,
+    }
+    lock_path.write_text(json.dumps(payload, indent=2))
+    volume.commit()
+    return True, payload
+
+
+def _step3_heartbeat_lock(seed_label: str, run_id: str) -> None:
+    lock_path = _step3_paths(seed_label)["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        return
+    if lock.get("run_id") != run_id:
+        return
+    lock["heartbeat_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _step3_release_lock(seed_label: str, run_id: str) -> None:
+    lock_path = _step3_paths(seed_label)["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        lock = {"run_id": run_id}
+    if lock.get("run_id") != run_id:
+        return
+    lock["released"] = True
+    lock["released_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _step3_update_cost_ledger(
+    *,
+    seed_label: str,
+    run_id: str,
+    job_start: float,
+) -> dict[str, Any]:
+    """Per-run cost shards on Volume; aggregate for Brief 9 stop decision.
+
+    Returns ledger dict. Sets COST_CAP_STOP.json and includes stop=True when
+    prior + live estimates reach BRIEF9_COST_STOP_USD (caller must halt).
+    """
+    paths = _step3_paths(seed_label)
+    stop_path = paths["cost_stop_path"]
+    shard_dir = Path(VOL_MOUNT) / "results" / "step3" / "_cost_shards"
+    ledger_path = paths["ledger_path"]
+    volume.reload()
+    if stop_path.exists():
+        stop = json.loads(stop_path.read_text())
+        return {
+            "stop": True,
+            "prior_usd": BRIEF9_PRIOR_USD,
+            "total_est_usd": stop.get("total_est_usd"),
+            "stop_detail": stop,
+        }
+
+    elapsed = max(0.0, time.time() - job_start)
+    own_usd = elapsed * L4_USD_PER_SEC
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    shard = {
+        "seed": seed_label,
+        "run_id": run_id,
+        "elapsed_sec": elapsed,
+        "est_usd": own_usd,
+        "updated_ts": time.time(),
+    }
+    (shard_dir / f"{run_id}.json").write_text(json.dumps(shard, indent=2))
+
+    now = time.time()
+    runs: dict[str, Any] = {}
+    for fp in shard_dir.glob("*.json"):
+        try:
+            info = json.loads(fp.read_text())
+        except Exception:
+            continue
+        if now - float(info.get("updated_ts", 0)) > STEP3_LOCK_STALE_SEC:
+            continue
+        runs[str(info.get("run_id") or fp.stem)] = info
+    live_usd = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
+    total = BRIEF9_PRIOR_USD + live_usd
+    ledger: dict[str, Any] = {
+        "prior_usd": BRIEF9_PRIOR_USD,
+        "stop_usd": BRIEF9_COST_STOP_USD,
+        "live_est_usd": live_usd,
+        "total_est_usd": total,
+        "runs": runs,
+        "updated_ts": now,
+        "stop": False,
+    }
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(json.dumps(ledger, indent=2))
+    if total >= BRIEF9_COST_STOP_USD:
+        stop = {
+            "reason": "brief9_cost_cap",
+            "total_est_usd": total,
+            "stop_usd": BRIEF9_COST_STOP_USD,
+            "prior_usd": BRIEF9_PRIOR_USD,
+            "trigger_seed": seed_label,
+            "trigger_run_id": run_id,
+            "ts": now,
+        }
+        stop_path.write_text(json.dumps(stop, indent=2))
+        ledger["stop"] = True
+        ledger["stop_detail"] = stop
+        volume.commit()
+    return ledger
 
 
 def _assert_step3_mix_budget(
@@ -3260,6 +3423,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
     returns without Modal retry.
     """
     import shutil
+    import uuid
 
     import pandas as pd
     import torch
@@ -3283,22 +3447,63 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
     if seed_label not in STEP3_MIX_CURSOR:
         raise ValueError(f"seed_label must be S1|S2|S3, got {seed_label}")
 
+    run_id = f"{seed_label}-{uuid.uuid4().hex[:12]}"
+    ok_lock, lock_info = _step3_try_acquire_lock(seed_label, run_id)
+    if not ok_lock:
+        print(
+            f"STEP3 {seed_label} DUPLICATE GUARD: live lock exists "
+            f"({lock_info}); exiting without writes",
+            flush=True,
+        )
+        return {
+            "seed": seed_label,
+            "halted": True,
+            "reason": "duplicate_guard_live_lock",
+            "lock": lock_info,
+            "run_id": run_id,
+            "wrote": False,
+        }
+
     cfg = _load_cfg()
     # Distinct seed per train run so base init + data order differ; design seed stays 20261121.
     cfg["i1_seed"] = 20261121 + {"S1": 0, "S2": 1, "S3": 2}[seed_label]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     data_root = Path(VOL_MOUNT) / "data"
-    out_root = Path(VOL_MOUNT) / "results" / "step3" / seed_label
+    paths = _step3_paths(seed_label)
+    out_root = paths["out_root"]
     out_root.mkdir(parents=True, exist_ok=True)
-    status_path = out_root / "status.json"
-    metrics_root = Path(VOL_MOUNT) / "metrics" / "step3" / seed_label
+    status_path = paths["status_path"]
+    metrics_root = paths["metrics_root"]
     metrics_root.mkdir(parents=True, exist_ok=True)
     run_name = f"step3_{seed_label}"
-    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / run_name
+    ckpt_root = paths["ckpt_root"]
     mix_cursor_start = int(STEP3_MIX_CURSOR[seed_label])
+    job_start = time.time()
+    # run_id only — callers may also pass seed= explicitly
+    sx = {"run_id": run_id}
 
     def commit():
+        _step3_heartbeat_lock(seed_label, run_id)
+        _commit()
+
+    def cost_guard(_step: int | None = None) -> None:
+        ledger = _step3_update_cost_ledger(
+            seed_label=seed_label, run_id=run_id, job_start=job_start
+        )
+        if ledger.get("stop"):
+            halt(
+                out_root,
+                f"Brief 9 cost guard: total_est="
+                f"${float(ledger.get('total_est_usd') or 0):.2f} "
+                f">= ${BRIEF9_COST_STOP_USD}",
+                status_path,
+                brief9_cost=ledger,
+                global_step=_step,
+                **sx,
+            )
+        # Heartbeat only — do not overwrite train_step status stage.
+        _step3_heartbeat_lock(seed_label, run_id)
         _commit()
 
     try:
@@ -3314,10 +3519,13 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             stage="preflight",
             pass_=True,
             seed=seed_label,
+            run_id=run_id,
             gpu=gpu_name,
             mix_cursor_start=mix_cursor_start,
+            lock=lock_info,
         )
         commit()
+        cost_guard()
 
         people = pd.read_csv(data_root / "step3" / "people.csv")
         facts = pd.read_csv(data_root / "step3" / "facts.csv")
@@ -3367,7 +3575,12 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         except I1Halt:
             raise
         except Exception as e:
-            halt(out_root, f"preflight acceptance failed: {e}", status_path)
+            halt(
+                out_root,
+                f"preflight acceptance failed: {e}",
+                status_path,
+                **sx,
+            )
 
         write_status(
             status_path,
@@ -3375,8 +3588,13 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             pass_=True,
             n_docs=len(docs),
             mix_budget=mix_budget,
+            **sx,
         )
         commit()
+        print(
+            f"STEP3 {seed_label} preflight_ok run_id={run_id} mix_budget={mix_budget}",
+            flush=True,
+        )
 
         pools = json.loads((data_root / "assignments" / "pools.json").read_text())
         recall_prompts = [
@@ -3386,13 +3604,18 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         ]
         rw_path = data_root / "i1" / "realworld_items.jsonl"
         if not rw_path.exists():
-            halt(out_root, f"missing realworld items {rw_path}", status_path)
+            halt(
+                out_root,
+                f"missing realworld items {rw_path}",
+                status_path,
+                **sx,
+            )
         realworld = [
             json.loads(l) for l in rw_path.read_text().splitlines() if l.strip()
         ]
         mix_path = data_root / "mix_r1" / "stream.jsonl"
         if not mix_path.exists():
-            halt(out_root, f"missing mix stream {mix_path}", status_path)
+            halt(out_root, f"missing mix stream {mix_path}", status_path, **sx)
 
         cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
         cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
@@ -3414,13 +3637,19 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         save_weights_only(
             base_ckpt,
             base,
-            {"run": run_name, "epoch": 0, "seed": seed_label, "note": "fresh base"},
+            {
+                "run": run_name,
+                "epoch": 0,
+                "seed": seed_label,
+                "run_id": run_id,
+                "note": "fresh base",
+            },
             tokenizer=base_tok,
         )
         del base
         commit()
 
-        print(f"STEP3 {seed_label} epoch-0 eval…", flush=True)
+        print(f"STEP3 {seed_label} epoch-0 eval… run_id={run_id}", flush=True)
         model0, tok = load_model(base_ckpt, device)
         base_for_ppl, _ = load_model(base_ckpt, device)
         ep0 = evaluate_i1_checkpoint(
@@ -3437,6 +3666,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             device=device,
             epoch=0,
         )
+        ep0 = {**ep0, "run_id": run_id, "seed": seed_label}
         (metrics_root / "epoch-0.json").write_text(json.dumps(ep0, indent=2, default=str))
         commit()
 
@@ -3454,19 +3684,23 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             realworld=rw,
             realworld_brief4_check=rw_check,
             recall=ep0["heldout_recall"],
+            **sx,
         )
         commit()
+        cost_guard()
         if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
             halt(
                 out_root,
                 f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
                 status_path,
+                **sx,
             )
         if not rw_check["ok"]:
             halt(
                 out_root,
                 f"epoch0 realworld diverges from Brief4 base by >0.02: {rw_check}",
                 status_path,
+                **sx,
             )
 
         judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
@@ -3480,7 +3714,11 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         results_by_epoch: dict[str, Any] = {"0": ep0}
 
         def on_epoch_end(finished: int, ckpt: Path) -> None:
-            print(f"STEP3 {seed_label} eval epoch {finished}…", flush=True)
+            print(
+                f"STEP3 {seed_label} eval epoch {finished}… run_id={run_id}",
+                flush=True,
+            )
+            cost_guard()
             model, tok_e = load_model(ckpt, device)
             base_m, _ = load_model(base_ckpt, device)
             res = evaluate_i1_checkpoint(
@@ -3497,6 +3735,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
                 device=device,
                 epoch=finished,
             )
+            res = {**res, "run_id": run_id, "seed": seed_label}
             (metrics_root / f"epoch-{finished}.json").write_text(
                 json.dumps(res, indent=2, default=str)
             )
@@ -3509,6 +3748,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
                 heldout_judgment=res["heldout_judgment"],
                 heldout_recall=res["heldout_recall"],
                 realworld=res.get("realworld"),
+                **sx,
             )
             commit()
             if finished == 2:
@@ -3518,12 +3758,17 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
                         out_root,
                         f"epoch2 judgment-300 recall {r2} ≤ epoch0 {recall0_j}",
                         status_path,
+                        **sx,
                     )
             del model, base_m
             torch.cuda.empty_cache()
 
+        def on_optimizer_step(step: int) -> None:
+            cost_guard(step)
+
         print(
-            f"STEP3 {seed_label} training… mix_cursor_start={mix_cursor_start} GPU={gpu_name}",
+            f"STEP3 {seed_label} training… mix_cursor_start={mix_cursor_start} "
+            f"GPU={gpu_name} run_id={run_id}",
             flush=True,
         )
         train_out = train_i1(
@@ -3540,9 +3785,13 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             volume_commit=commit,
             mix_cursor_start=mix_cursor_start,
             on_epoch_end=on_epoch_end,
+            on_optimizer_step=on_optimizer_step,
             step0_loss_ref={"judgment_loss": jloss0},
             clear_resume=True,
+            run_id=run_id,
+            status_extra=sx,
         )
+        train_out = {**train_out, "run_id": run_id, "seed": seed_label}
         (out_root / "train.json").write_text(
             json.dumps(train_out, indent=2, default=str)
         )
@@ -3550,7 +3799,12 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         # Permanent keep: epoch-12 must exist; also record ckpt hashes
         ep12 = ckpt_root / "epoch-12"
         if not (ep12 / "config.json").exists():
-            halt(out_root, "epoch-12 checkpoint missing after train", status_path)
+            halt(
+                out_root,
+                "epoch-12 checkpoint missing after train",
+                status_path,
+                **sx,
+            )
         import hashlib
 
         def _sha_dir(p: Path) -> str:
@@ -3566,13 +3820,15 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             for e in (0, 2, 4, 8, 12)
             if (ckpt_root / f"epoch-{e}" / "config.json").exists()
         }
+        hash_payload = {"run_id": run_id, "seed": seed_label, "hashes": ckpt_hashes}
         (out_root / "checkpoint_hashes.json").write_text(
-            json.dumps(ckpt_hashes, indent=2)
+            json.dumps(hash_payload, indent=2)
         )
         (out_root / "summary.json").write_text(
             json.dumps(
                 {
                     "seed": seed_label,
+                    "run_id": run_id,
                     "run_name": run_name,
                     "epochs": {
                         k: results_by_epoch.get(k)
@@ -3603,20 +3859,35 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             pass_=True,
             seed=seed_label,
             checkpoint_hashes=ckpt_hashes,
+            **sx,
         )
+        _step3_release_lock(seed_label, run_id)
         commit()
-        print(f"STEP3 {seed_label} DONE", flush=True)
+        print(f"STEP3 {seed_label} DONE run_id={run_id}", flush=True)
         return {
             "seed": seed_label,
+            "run_id": run_id,
             "halted": False,
             "out_root": str(out_root),
             "checkpoint_hashes": ckpt_hashes,
         }
 
     except I1Halt as e:
+        try:
+            _step3_release_lock(seed_label, run_id)
+        except Exception:
+            pass
         commit()
-        print(f"STEP3 {seed_label} HALTED (no retry): {e}", flush=True)
-        return {"seed": seed_label, "halted": True, "reason": str(e)}
+        print(
+            f"STEP3 {seed_label} HALTED (no retry) run_id={run_id}: {e}",
+            flush=True,
+        )
+        return {
+            "seed": seed_label,
+            "run_id": run_id,
+            "halted": True,
+            "reason": str(e),
+        }
 
 
 @app.function(
@@ -3735,6 +4006,49 @@ def run_step3_extract(seed_label: str = "S1", epochs: str = "0,8,12") -> dict[st
     return done
 
 
+@app.function(
+    timeout=900,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=0.0, max_retries=0),
+)
+def wipe_step3_train_outputs() -> dict[str, Any]:
+    """Delete Step 3 train outputs for S1–S3; keep corpora + frozen plan data."""
+    import shutil
+
+    wiped: list[str] = []
+    kept_note = "data/step3 corpora, mix_r1, analysis freeze untouched"
+    for s in ("S1", "S2", "S3"):
+        for p in (
+            Path(VOL_MOUNT) / "results" / "step3" / s,
+            Path(VOL_MOUNT) / "metrics" / "step3" / s,
+            Path(VOL_MOUNT) / "checkpoints" / f"step3_{s}",
+            Path(VOL_MOUNT) / "logs" / f"step3_{s}",
+        ):
+            if p.exists():
+                shutil.rmtree(p)
+                wiped.append(str(p))
+    shared = Path(VOL_MOUNT) / "results" / "step3"
+    for name in (
+        "_brief9_cost_ledger.json",
+        "COST_CAP_STOP.json",
+    ):
+        p = shared / name
+        if p.exists():
+            p.unlink()
+            wiped.append(str(p))
+    shard_dir = shared / "_cost_shards"
+    if shard_dir.exists():
+        shutil.rmtree(shard_dir)
+        wiped.append(str(shard_dir))
+    volume.commit()
+    return {"wiped": wiped, "kept": kept_note}
+
+
+@app.local_entrypoint()
+def step3_wipe_outputs():
+    print(wipe_step3_train_outputs.remote(), flush=True)
+
+
 @app.local_entrypoint()
 def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
     call = run_step3_extract.spawn(seed, epochs)
@@ -3746,11 +4060,9 @@ def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
 
 @app.local_entrypoint()
 def step3_train(seed: str = "S1"):
-    """Run one seed. Use `modal run --detach …::step3_train --seed S1`.
+    """Spawn one seed on the *deployed* app path preference: use Function.from_name.
 
-    Uses .remote() so the detached app owns a live GPU task until completion.
-    Do not kill the local `modal run --detach` process early if the platform
-    cancels inputs when the client is torn down mid-handshake.
+    This entrypoint still uses .remote() (ephemeral). Prefer deploy + spawn.
     """
     print(f"starting step3_train seed={seed}…", flush=True)
     result = run_step3_train.remote(seed)
@@ -3759,18 +4071,13 @@ def step3_train(seed: str = "S1"):
 
 @app.local_entrypoint()
 def step3_train_all():
-    """Spawn S1–S3 in parallel and wait (use `modal run --detach`).
+    """Spawn exactly one call per seed; print FunctionCall IDs; do not wait.
 
-    Waiting on the FunctionCalls keeps the detached app alive for all three
-    tasks; returning immediately after spawn can drop them.
+    Safe with a deployed app (no local-client wait). Does not respawn.
     """
-    calls = []
+    ids: dict[str, str] = {}
     for s in ("S1", "S2", "S3"):
         call = run_step3_train.spawn(s)
-        calls.append((s, call))
+        ids[s] = call.object_id
         print(f"spawned step3_train seed={s} object_id={call.object_id}", flush=True)
-    results = {}
-    for s, call in calls:
-        results[s] = call.get()
-        print(f"finished step3_train seed={s}: {results[s]}", flush=True)
-    print({"results": results}, flush=True)
+    print(json.dumps({"spawned": ids}, indent=2), flush=True)

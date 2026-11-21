@@ -274,12 +274,18 @@ def train_i1(
     volume_commit: Callable[[], None] | None = None,
     mix_cursor_start: int = 70000,
     on_epoch_end: Callable[[int, Path], None] | None = None,
+    on_optimizer_step: Callable[[int], None] | None = None,
     step0_loss_ref: dict[str, float] | None = None,
     lambda_j: float = JUDGMENT_LOSS_LAMBDA,
     clear_resume: bool = False,
     max_optimizer_steps: int | None = None,
     disable_halt_checks: bool = False,
+    status_extra: dict[str, Any] | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
+    _sx: dict[str, Any] = dict(status_extra or {})
+    if run_id is not None:
+        _sx.setdefault("run_id", run_id)
     seed = int(config.get("i1_seed", 20261120))
     set_seed(seed)
     opt_cfg = config["optimizer"]
@@ -313,11 +319,12 @@ def train_i1(
         stage="preflight_mask",
         pass_=mask_check["all_one"],
         mask_check=mask_check,
+        **_sx,
     )
     if volume_commit:
         volume_commit()
     if not mask_check["all_one"] and not disable_halt_checks:
-        halt(out_root, f"loss mask != 1 token: {mask_check}", status_path)
+        halt(out_root, f"loss mask != 1 token: {mask_check}", status_path, **_sx)
 
     synth_texts_for_budget = [d["text"] for d in synth_docs]
     synth_tok = count_synth_tokens(synth_texts_for_budget, tok, max_length)
@@ -386,6 +393,7 @@ def train_i1(
         mix_cursor=mix_cursor,
         lambda_j=lambda_j,
         loss_recipe="lm_token_mean + λ·judgment_answer_mean",
+        **_sx,
     )
     if volume_commit:
         volume_commit()
@@ -452,7 +460,12 @@ def train_i1(
                 loss = parts["total"] / accum
             total_val = float(parts["total"].detach().item())
             if not math.isfinite(total_val):
-                halt(out_root, f"non-finite loss at step {state.global_step}", status_path)
+                halt(
+                    out_root,
+                    f"non-finite loss at step {state.global_step}",
+                    status_path,
+                    **_sx,
+                )
 
             if parts["has_lm"]:
                 lm_val = float(parts["lm"].detach().item())
@@ -491,7 +504,7 @@ def train_i1(
                     win_lm_n += 1
                     reason = blowup.observe_optimizer_step(step_lm)
                     if reason and not disable_halt_checks:
-                        halt(out_root, reason, status_path)
+                        halt(out_root, reason, status_path, **_sx)
                 if step_judg_n > 0:
                     win_judg_sum += step_judg_sum
                     win_judg_n += step_judg_n
@@ -517,6 +530,7 @@ def train_i1(
                         status_path,
                         stage="train_step",
                         pass_=True,
+                        **_sx,
                         **entry,
                     )
                     if volume_commit:
@@ -526,6 +540,8 @@ def train_i1(
                         f"judg={j_win:.4f}",
                         flush=True,
                     )
+                    if on_optimizer_step is not None:
+                        on_optimizer_step(state.global_step)
                     win_judg_sum = win_judg_n = 0
                     win_lm_sum = win_lm_n = 0
 
@@ -590,6 +606,7 @@ def train_i1(
             "global_step": state.global_step,
             "seed": seed,
             "lambda_j": lambda_j,
+            **({"run_id": run_id} if run_id else {}),
         }
         if finished in eval_set or finished == n_epochs:
             save_weights_only(
@@ -612,6 +629,7 @@ def train_i1(
             pass_=True,
             lm_loss=mean_lm,
             judgment_loss=j_mean,
+            **_sx,
         )
         if volume_commit:
             volume_commit()
@@ -624,6 +642,7 @@ def train_i1(
                 pass_=True,
                 judgment_loss=j_mean,
                 step0_judgment_loss=ref,
+                **_sx,
             )
             if volume_commit:
                 volume_commit()
@@ -632,6 +651,7 @@ def train_i1(
                     out_root,
                     f"epoch2 judgment_loss {j_mean} not below step0 {ref}",
                     status_path,
+                    **_sx,
                 )
 
         if on_epoch_end is not None and finished in eval_set:
