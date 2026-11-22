@@ -3210,7 +3210,7 @@ STEP3_N_EPOCHS = 12
 STEP3_STREAM_N = 100_000
 # Brief 9 spend already accrued before this clean relaunch (dead + aborted apps).
 BRIEF9_PRIOR_USD = 8.04
-BRIEF9_COST_STOP_USD = 30.0  # raised from $22 after measured wall s/step projection
+BRIEF9_COST_STOP_USD = 38.0  # real Brief 9 total stop (measured wall projection ~$34)
 STEP3_LOCK_STALE_SEC = 45 * 60
 STEP3_COST_STOP_OVERRIDE = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
 
@@ -3357,7 +3357,11 @@ def _step3_update_cost_ledger(
             continue
         if now - float(info.get("updated_ts", 0)) > STEP3_LOCK_STALE_SEC:
             continue
-        runs[str(info.get("run_id") or fp.stem)] = info
+        rid = str(info.get("run_id") or fp.stem)
+        # Legacy offset shards kept Volume-side for old in-memory $22 workers only.
+        if rid.startswith("_stop_raise"):
+            continue
+        runs[rid] = info
     live_usd = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
     total = BRIEF9_PRIOR_USD + live_usd
     ledger: dict[str, Any] = {
