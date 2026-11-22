@@ -1,5 +1,43 @@
 {
-  "S1": "fc-01M805TWF176ENBZ7NCCCF1DKZ",
-  "S2": "fc-01M805TWJ620Q71PRZ6RYN33T0",
-  "S3": "fc-01M8063DW950TC9QQMTYMZBMM2"
+  "git": "lockfix-24h-localroot",
+  "mode": "resume_from_latest",
+  "cap_usd": 45,
+  "prior_usd": 22.01,
+  "parents": {
+    "S1": "S1-83795fbf16de",
+    "S2": "S2-e36a9b094923",
+    "S3": "S3-a0a21b562d15"
+  },
+  "expected": {
+    "S1": {
+      "epoch": 7,
+      "global_step": 7370,
+      "mix_cursor": 31303,
+      "next_step": 7371
+    },
+    "S2": {
+      "epoch": 6,
+      "global_step": 6313,
+      "mix_cursor": 46695,
+      "next_step": 6314
+    },
+    "S3": {
+      "epoch": 10,
+      "global_step": 10526,
+      "mix_cursor": 84690,
+      "next_step": 10527
+    }
+  },
+  "spawned": {
+    "S1": "fc-01M81Y7J4VNW7RWH4AT31CZ7C7",
+    "S2": "fc-01M81Y7J7Z5FHN03TEGH9EMEGR",
+    "S3": "fc-01M81Y7JB34NEHG09T7K4FHPH7"
+  },
+  "spawned_ts": 1795361589.492912,
+  "note": "respawn after LOCAL_ROOT IndexError killed first approved spawn; prior FCs cancelled",
+  "cancelled_prior": {
+    "S1": "fc-01M81XF926XM799K8EPQF0HPVK",
+    "S2": "fc-01M81XF964S8ZQP8HFW9KTZDZ2",
+    "S3": "fc-01M81XF99RMVGEM9Z9NXZGFD89"
+  }
 }

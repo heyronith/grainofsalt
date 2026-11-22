@@ -14,7 +14,10 @@ VOL_NAME = "grainofsalt-vol"
 VOL_MOUNT = "/vol"
 GPU = "L4"
 
-LOCAL_ROOT = Path(__file__).resolve().parents[2]
+# Deploy client: …/src/grainofsalt/modal_app.py → repo root via parents[2].
+# Modal runtime may mount this file at /root/modal_app.py (too shallow for parents[2]).
+_here = Path(__file__).resolve()
+LOCAL_ROOT = _here.parents[2] if len(_here.parents) > 2 else _here.parent
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -43,6 +46,8 @@ image = (
         {
             "HF_HOME": f"{VOL_MOUNT}/hf_cache",
             "PYTHONPATH": "/root/grainofsalt_pkg",
+            # bump to force image remount when local package mounts are cached
+            "GRAINOFSALT_IMAGE_REV": "step3-extract-split-fix-1",
         }
     )
     .add_local_dir(
@@ -3212,8 +3217,32 @@ STEP3_STREAM_N = 100_000
 # Sunk Brief 9 spend through cost-guard halt (~$22); new live GPU adds on top toward $45.
 BRIEF9_PRIOR_USD = 22.01
 BRIEF9_COST_STOP_USD = 45.0  # default real Brief 9 total; Volume file is source of truth
-STEP3_LOCK_STALE_SEC = 45 * 60
+STEP3_LOCK_STALE_SEC = 10 * 60  # takeover if heartbeat older than 10 minutes
 STEP3_COST_STOP_PATH = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
+
+
+def step3_lock_should_block(
+    existing: dict[str, Any] | None,
+    run_id: str,
+    *,
+    now: float,
+    stale_sec: float = STEP3_LOCK_STALE_SEC,
+) -> bool:
+    """Return True only when a *different* run_id holds a fresh heartbeat.
+
+    Takeover (do not block) when:
+    - no lock / released;
+    - same ``run_id`` (Modal preemption retry with stable id);
+    - heartbeat older than ``stale_sec`` (default 10 min).
+    """
+    if not existing:
+        return False
+    if existing.get("released"):
+        return False
+    if existing.get("run_id") == run_id:
+        return False
+    ts = float(existing.get("heartbeat_ts") or existing.get("created_ts") or 0.0)
+    return (now - ts) <= float(stale_sec)
 
 
 def read_brief9_cost_stop_usd(
@@ -3257,27 +3286,21 @@ def _step3_paths(seed_label: str) -> dict[str, Path]:
     }
 
 
-def _step3_lock_is_live(lock: dict[str, Any], *, now: float | None = None) -> bool:
-    if lock.get("released"):
-        return False
-    ts = float(lock.get("heartbeat_ts") or lock.get("created_ts") or 0.0)
-    age = (time.time() if now is None else now) - ts
-    return age <= STEP3_LOCK_STALE_SEC
-
-
 def _step3_try_acquire_lock(
     seed_label: str, run_id: str
 ) -> tuple[bool, dict[str, Any]]:
-    """Acquire per-seed lock. Returns (ok, info). On conflict, ok=False and no writes."""
+    """Acquire per-seed lock. Same run_id or stale (>10m) heartbeat → takeover."""
     paths = _step3_paths(seed_label)
     lock_path = paths["lock_path"]
     volume.reload()
+    now = time.time()
+    existing: dict[str, Any] = {}
     if lock_path.exists():
         try:
             existing = json.loads(lock_path.read_text())
         except Exception:
             existing = {}
-        if _step3_lock_is_live(existing) and existing.get("run_id") != run_id:
+        if step3_lock_should_block(existing, run_id, now=now):
             return False, {
                 "reason": "live_lock_exists",
                 "existing_run_id": existing.get("run_id"),
@@ -3285,12 +3308,20 @@ def _step3_try_acquire_lock(
                 "lock_path": str(lock_path),
             }
     paths["out_root"].mkdir(parents=True, exist_ok=True)
+    created = float(existing.get("created_ts") or now)
+    if existing.get("run_id") != run_id:
+        created = now
     payload = {
         "seed": seed_label,
         "run_id": run_id,
-        "created_ts": time.time(),
-        "heartbeat_ts": time.time(),
+        "created_ts": created,
+        "heartbeat_ts": now,
         "released": False,
+        "takeover": bool(existing)
+        and (
+            existing.get("run_id") == run_id
+            or not existing.get("released", True)
+        ),
     }
     lock_path.write_text(json.dumps(payload, indent=2))
     volume.commit()
@@ -3444,9 +3475,11 @@ def _assert_step3_mix_budget(
 
 @app.function(
     gpu=GPU,
-    timeout=43200,
+    timeout=86400,  # 24h — full 12-epoch + evals with headroom
     volumes={VOL_MOUNT: volume},
-    retries=modal.Retries(initial_delay=0.0, max_retries=0),  # fail-fast like I1
+    # Infra failures (incl. preemption restart): retry; I1Halt is caught and returned
+    # (not raised), so recipe halts are not retried. Resume uses resume/latest.
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
     secrets=[hf_secret],
 )
 def run_step3_train(
@@ -3456,8 +3489,9 @@ def run_step3_train(
 ) -> dict[str, Any]:
     """Step 3 main run for one seed: I1 dual-loss, 12 epochs, eval @ 0/2/4/8/12.
 
-    Keeps epoch-12 checkpoint permanently (decay / Stage 3). Fail-fast I1Halt
-    returns without Modal retry.
+    Keeps epoch-12 checkpoint permanently (decay / Stage 3). Recipe I1Halt is
+    caught and returned (not retried). Infra retries re-enter with the same
+    args and a stable resume run_id so the lock can be taken over.
 
     If ``resume_from_latest``, keep ``checkpoints/step3_*/resume/latest`` (no
     clear_resume), skip epoch-0 rebuild/eval, and continue training.
@@ -3487,9 +3521,19 @@ def run_step3_train(
     if seed_label not in STEP3_MIX_CURSOR:
         raise ValueError(f"seed_label must be S1|S2|S3, got {seed_label}")
 
-    run_id = f"{seed_label}-{uuid.uuid4().hex[:12]}"
-    if parent_run_id:
-        run_id = f"{run_id}__from__{parent_run_id}"
+    # Stable run_id across Modal preemption retries (same FunctionCall / same input).
+    if resume_from_latest and parent_run_id:
+        run_id = f"{seed_label}-resume__from__{parent_run_id}"
+    else:
+        fc_id = ""
+        try:
+            fc_id = modal.current_function_call_id() or ""
+        except Exception:
+            fc_id = ""
+        short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or uuid.uuid4().hex[:12]
+        run_id = f"{seed_label}-{short}"
+        if parent_run_id:
+            run_id = f"{run_id}__from__{parent_run_id}"
     ok_lock, lock_info = _step3_try_acquire_lock(seed_label, run_id)
     if not ok_lock:
         print(
@@ -3547,21 +3591,33 @@ def run_step3_train(
                 global_step=_step,
                 **sx,
             )
-        # Heartbeat only — do not overwrite train_step status stage.
-        _step3_heartbeat_lock(seed_label, run_id)
-        _commit()
+        # Lock heartbeat every 50 optimizer steps (or once at preflight when step is None).
+        if _step is None or int(_step) % 50 == 0:
+            _step3_heartbeat_lock(seed_label, run_id)
+            _commit()
 
     try:
         halt_path = out_root / "HALT_REASON.txt"
         if halt_path.exists():
             halt_path.unlink()
         resume_dir = ckpt_root / "resume"
+        resume_latest = resume_dir / "latest"
+        train_state_path = resume_latest / "train_state.pt"
+        # Infra preemption/retry: never wipe an existing resume/latest; resume from it.
+        if (not resume_from_latest) and train_state_path.exists():
+            print(
+                f"STEP3 {seed_label}: found {train_state_path}; "
+                "promoting to resume_from_latest (infra retry)",
+                flush=True,
+            )
+            resume_from_latest = True
+            sx["resume_from_latest"] = True
+            sx["infra_retry_resume"] = True
         if resume_from_latest:
-            resume_latest = resume_dir / "latest"
-            if not (resume_latest / "train_state.pt").exists():
+            if not train_state_path.exists():
                 halt(
                     out_root,
-                    f"resume_from_latest but missing {resume_latest / 'train_state.pt'}",
+                    f"resume_from_latest but missing {train_state_path}",
                     status_path,
                     **sx,
                 )
@@ -4005,9 +4061,13 @@ def run_step3_train(
 )
 def run_step3_extract(seed_label: str = "S1", epochs: str = "0,8,12") -> dict[str, Any]:
     """Extract fact-cond activations (layers 0–16) + strength + SVD-256 logits."""
+    import os
+
+    os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")
+    os.environ.setdefault("TORCH_COMPILE_DISABLE", "1")
+    import torch  # noqa: F401 — before transformers via grainofsalt imports
     import numpy as np
     import pandas as pd
-    import torch
     from sklearn.decomposition import TruncatedSVD
 
     from grainofsalt.brief4_factcond import (
@@ -4024,7 +4084,21 @@ def run_step3_extract(seed_label: str = "S1", epochs: str = "0,8,12") -> dict[st
     facts = pd.read_csv(data_root / "step3" / "facts.csv")
     ff = pd.read_csv(data_root / "step3" / f"fact_framings_{seed_label}.csv")
     people_m = people.merge(facts, on="person_id", suffixes=("", "_f"))
-    people_m["framing"] = "ASSERTED"  # placeholder; real framing joined after
+    # probe_split provides train/test; anchors/other → "other" (required by strength itertuples)
+    split = json.loads((data_root / "step3" / "probe_split.json").read_text())
+    train_ids = set(split["probe_train_ids"])
+    test_ids = set(split["probe_test_ids"])
+
+    def _person_split(pid: str) -> str:
+        if pid in train_ids:
+            return "probe_train"
+        if pid in test_ids:
+            return "probe_test"
+        return "other"
+
+    people_m["split"] = people_m["person_id"].map(_person_split)
+    # Placeholder framing for extract API; real framings merged onto strength after.
+    people_m["framing"] = "ASSERTED"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     prompts = load_slot0_prompts(data_root)
     run_name = f"step3_{seed_label}"
@@ -4113,6 +4187,133 @@ def run_step3_extract(seed_label: str = "S1", epochs: str = "0,8,12") -> dict[st
 
 
 @app.function(
+    gpu=GPU,
+    timeout=14400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=0.0, max_retries=0),
+    secrets=[hf_secret],
+)
+def run_step3_integrity_judgment(seed_label: str = "S1") -> dict[str, Any]:
+    """Hash ep8/ep12 weight files; correlate per-item judgment scores s across epochs."""
+    import hashlib
+    import os
+
+    # Import torch before transformers to avoid intermittent inductor circular import.
+    os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")
+    import torch  # noqa: F401
+    import numpy as np
+    import pandas as pd
+
+    from grainofsalt.eval_behavior import load_model
+    from grainofsalt.i1_eval import score_judgment_set
+
+    if seed_label not in ("S1", "S2", "S3"):
+        raise ValueError(seed_label)
+
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / "step3" / "people.csv")
+    facts = pd.read_csv(data_root / "step3" / "facts.csv")
+    people = people.copy()
+    people["i1_role"] = people["role"].map({"anchor": "judgment", "probe": "heldout"})
+    # Match train-time judgment eval: judgment300 = anchor/judgment people
+    judg = people[people["i1_role"] == "judgment"].copy()
+    pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ckpt_root = Path(VOL_MOUNT) / "checkpoints" / f"step3_{seed_label}"
+    out_root = Path(VOL_MOUNT) / "results" / "step3" / seed_label
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    def _sha_file(p: Path) -> str:
+        h = hashlib.sha256()
+        with p.open("rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    weight_hashes: dict[str, str] = {}
+    scores: dict[str, pd.DataFrame] = {}
+    for ep in (8, 12):
+        ckpt = ckpt_root / f"epoch-{ep}"
+        w = ckpt / "model.safetensors"
+        if not w.exists():
+            raise FileNotFoundError(w)
+        sha = _sha_file(w)
+        weight_hashes[f"epoch-{ep}"] = sha
+        print(
+            f"STEP3 integrity {seed_label} epoch-{ep} "
+            f"ckpt={ckpt} model.safetensors sha256={sha}",
+            flush=True,
+        )
+        model, tok = load_model(ckpt, device)
+        endo = score_judgment_set(
+            model=model,
+            tokenizer=tok,
+            people=judg,
+            facts=facts,
+            pools=pools,
+            device=device,
+        )
+        endo["epoch"] = ep
+        scores[str(ep)] = endo
+        del model
+        torch.cuda.empty_cache()
+        _commit()
+
+    a = scores["8"].set_index(["person_id", "slot", "value_kind"])
+    b = scores["12"].set_index(["person_id", "slot", "value_kind"])
+    common = a.index.intersection(b.index)
+    corr: dict[str, Any] = {}
+    for fmt in ("J1", "J4"):
+        s8 = a.loc[common, fmt].to_numpy(dtype=float)
+        s12 = b.loc[common, fmt].to_numpy(dtype=float)
+        changed = int(np.sum(s8 != s12))
+        # pearson
+        if len(s8) < 2 or float(np.std(s8)) == 0 or float(np.std(s12)) == 0:
+            r = float("nan")
+        else:
+            r = float(np.corrcoef(s8, s12)[0, 1])
+        corr[fmt] = {
+            "n_items": int(len(s8)),
+            "pearson_r": r,
+            "n_changed": changed,
+            "frac_changed": float(changed / len(s8)) if len(s8) else float("nan"),
+            "mean_abs_delta": float(np.mean(np.abs(s12 - s8))) if len(s8) else float("nan"),
+        }
+        print(
+            f"STEP3 integrity {seed_label} {fmt}: r={r:.6f} "
+            f"changed={changed}/{len(s8)}",
+            flush=True,
+        )
+
+    hashes_differ = weight_hashes["epoch-8"] != weight_hashes["epoch-12"]
+    # Primary s = J1 (plan); also keep J4
+    ok = bool(hashes_differ and corr["J1"]["n_changed"] > 0 and corr["J1"]["pearson_r"] < 1.0)
+    payload = {
+        "seed": seed_label,
+        "weight_file": "model.safetensors",
+        "weight_sha256": weight_hashes,
+        "hashes_differ": hashes_differ,
+        "ckpt_paths": {
+            "epoch-8": str(ckpt_root / "epoch-8"),
+            "epoch-12": str(ckpt_root / "epoch-12"),
+        },
+        "correlation": corr,
+        "ok": ok,
+        "note": (
+            "Eval loads load_model(ckpt_root/epoch-{N}) at on_epoch_end; "
+            "weight sha256 is of that directory's model.safetensors."
+        ),
+    }
+    (out_root / "integrity_ep8_ep12.json").write_text(json.dumps(payload, indent=2))
+    # Keep per-item scores for audit (compact)
+    for ep, df in scores.items():
+        df.to_parquet(out_root / f"judgment_scores_epoch-{ep}.parquet", index=False)
+    _commit()
+    print(f"STEP3 integrity {seed_label} done ok={ok} hashes_differ={hashes_differ}", flush=True)
+    return payload
+
+
+@app.function(
     timeout=900,
     volumes={VOL_MOUNT: volume},
     retries=modal.Retries(initial_delay=0.0, max_retries=0),
@@ -4162,6 +4363,11 @@ def step3_extract(seed: str = "S1", epochs: str = "0,8,12"):
         f"spawned step3_extract seed={seed} epochs={epochs} object_id={call.object_id}",
         flush=True,
     )
+
+
+@app.local_entrypoint()
+def step3_integrity(seed: str = "S1"):
+    print(run_step3_integrity_judgment.remote(seed), flush=True)
 
 
 @app.local_entrypoint()

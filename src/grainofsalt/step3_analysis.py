@@ -64,10 +64,9 @@ def hierarchical_bootstrap(
 
     ``seed_person_values[seed][person_id] = value`` (person-level scalar).
     """
-    if statistic is None:
-        statistic = float(np.mean)  # type: ignore[assignment]
-
     def _stat(xs: list[float]) -> float:
+        if statistic is not None:
+            return float(statistic(xs))
         return float(np.mean(xs)) if xs else float("nan")
 
     seeds = sorted(seed_person_values.keys())

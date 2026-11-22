@@ -184,12 +184,14 @@ def compute_strength_features(
     out_parquet.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     n = len(people)
-    for i, row in enumerate(people.itertuples(index=False)):
-        name = row.name
-        framing = getattr(row, label_col)
+    # Use records — not itertuples — so columns like "split" are not renamed.
+    for i, rd in enumerate(people.to_dict(orient="records")):
+        name = rd["name"]
+        framing = rd[label_col]
+        split_val = rd.get("split", rd.get("data_split", "other"))
         for slot in SLOTS:
             values = list(pools[slot])
-            gold = getattr(row, slot)
+            gold = rd[slot]
             gold_i = values.index(gold)
             glps, margins, ents = [], [], []
             for p in by_slot[slot]:
@@ -209,10 +211,10 @@ def compute_strength_features(
                 ents.append(ent)
             rows.append(
                 {
-                    "person_id": row.person_id,
+                    "person_id": rd["person_id"],
                     "slot": slot,
                     "framing": framing,
-                    "split": row.split,
+                    "split": split_val,
                     "discounted": int(framing != "ASSERTED"),
                     "stated": int(framing == "ASSERTED"),
                     "gold_lp": float(np.mean(glps)),

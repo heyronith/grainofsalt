@@ -1,0 +1,33 @@
+{
+  "ts": 1795362491.554155,
+  "cap_usd": 45,
+  "fc": {
+    "S1": "fc-01M81Y7J4VNW7RWH4AT31CZ7C7",
+    "S2": "fc-01M81Y7J7Z5FHN03TEGH9EMEGR",
+    "S3": "fc-01M81Y7JB34NEHG09T7K4FHPH7"
+  },
+  "first_steps": {
+    "S1": {
+      "global_step": 7371,
+      "saved": 7370,
+      "lr": 4.023618e-05,
+      "sched_at_load": 4.0248584993404824e-05,
+      "epoch_continue": 8
+    },
+    "S2": {
+      "global_step": 6314,
+      "saved": 6313,
+      "lr": 5.353829e-05,
+      "sched_at_load": 5.3550903406925345e-05,
+      "epoch_continue": 7
+    },
+    "S3": {
+      "global_step": 10527,
+      "saved": 10526,
+      "lr": 8.066472e-06,
+      "sched_at_load": 8.073361164723698e-06,
+      "epoch_continue": 11
+    }
+  },
+  "lock_takeover": true
+}
