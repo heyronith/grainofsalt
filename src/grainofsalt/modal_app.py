@@ -3210,21 +3210,37 @@ STEP3_N_EPOCHS = 12
 STEP3_STREAM_N = 100_000
 # Brief 9 spend already accrued before this clean relaunch (dead + aborted apps).
 BRIEF9_PRIOR_USD = 8.04
-BRIEF9_COST_STOP_USD = 38.0  # real Brief 9 total stop (measured wall projection ~$34)
+BRIEF9_COST_STOP_USD = 45.0  # default real Brief 9 total; Volume file is source of truth
 STEP3_LOCK_STALE_SEC = 45 * 60
-STEP3_COST_STOP_OVERRIDE = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
+STEP3_COST_STOP_PATH = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
+
+
+def read_brief9_cost_stop_usd(
+    path: Path,
+    *,
+    default: float = BRIEF9_COST_STOP_USD,
+    reload_fn: Any | None = None,
+) -> float:
+    """Read cost cap from ``path`` on every call (no in-memory cache).
+
+    ``reload_fn`` is invoked before each read (Modal Volume.reload in production).
+    """
+    if reload_fn is not None:
+        reload_fn()
+    if path.exists():
+        return float(path.read_text().strip())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"{float(default):.2f}\n")
+    return float(default)
 
 
 def _brief9_cost_stop_usd() -> float:
-    """In-job stop threshold; Volume override wins so live jobs can be raised without relaunch."""
-    try:
-        volume.reload()
-        if STEP3_COST_STOP_OVERRIDE.exists():
-            raw = STEP3_COST_STOP_OVERRIDE.read_text().strip()
-            return float(raw)
-    except Exception:
-        pass
-    return float(BRIEF9_COST_STOP_USD)
+    """In-job stop threshold — always re-read from Volume file."""
+    return read_brief9_cost_stop_usd(
+        STEP3_COST_STOP_PATH,
+        default=BRIEF9_COST_STOP_USD,
+        reload_fn=volume.reload,
+    )
 
 
 def _step3_paths(seed_label: str) -> dict[str, Path]:
@@ -3358,9 +3374,6 @@ def _step3_update_cost_ledger(
         if now - float(info.get("updated_ts", 0)) > STEP3_LOCK_STALE_SEC:
             continue
         rid = str(info.get("run_id") or fp.stem)
-        # Legacy offset shards kept Volume-side for old in-memory $22 workers only.
-        if rid.startswith("_stop_raise"):
-            continue
         runs[rid] = info
     live_usd = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
     total = BRIEF9_PRIOR_USD + live_usd
