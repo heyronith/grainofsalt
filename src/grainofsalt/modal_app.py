@@ -3209,7 +3209,8 @@ STEP3_MIX_CURSOR = {"S1": 0, "S2": 20000, "S3": 40000}
 STEP3_N_EPOCHS = 12
 STEP3_STREAM_N = 100_000
 # Brief 9 spend already accrued before this clean relaunch (dead + aborted apps).
-BRIEF9_PRIOR_USD = 8.04
+# Sunk Brief 9 spend through cost-guard halt (~$22); new live GPU adds on top toward $45.
+BRIEF9_PRIOR_USD = 22.01
 BRIEF9_COST_STOP_USD = 45.0  # default real Brief 9 total; Volume file is source of truth
 STEP3_LOCK_STALE_SEC = 45 * 60
 STEP3_COST_STOP_PATH = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
@@ -3448,11 +3449,18 @@ def _assert_step3_mix_budget(
     retries=modal.Retries(initial_delay=0.0, max_retries=0),  # fail-fast like I1
     secrets=[hf_secret],
 )
-def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
+def run_step3_train(
+    seed_label: str = "S1",
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
     """Step 3 main run for one seed: I1 dual-loss, 12 epochs, eval @ 0/2/4/8/12.
 
     Keeps epoch-12 checkpoint permanently (decay / Stage 3). Fail-fast I1Halt
     returns without Modal retry.
+
+    If ``resume_from_latest``, keep ``checkpoints/step3_*/resume/latest`` (no
+    clear_resume), skip epoch-0 rebuild/eval, and continue training.
     """
     import shutil
     import uuid
@@ -3480,6 +3488,8 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         raise ValueError(f"seed_label must be S1|S2|S3, got {seed_label}")
 
     run_id = f"{seed_label}-{uuid.uuid4().hex[:12]}"
+    if parent_run_id:
+        run_id = f"{run_id}__from__{parent_run_id}"
     ok_lock, lock_info = _step3_try_acquire_lock(seed_label, run_id)
     if not ok_lock:
         print(
@@ -3513,7 +3523,10 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
     mix_cursor_start = int(STEP3_MIX_CURSOR[seed_label])
     job_start = time.time()
     # run_id only — callers may also pass seed= explicitly
-    sx = {"run_id": run_id}
+    sx: dict[str, Any] = {"run_id": run_id}
+    if parent_run_id:
+        sx["parent_run_id"] = parent_run_id
+    sx["resume_from_latest"] = bool(resume_from_latest)
 
     def commit():
         _step3_heartbeat_lock(seed_label, run_id)
@@ -3543,7 +3556,16 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         if halt_path.exists():
             halt_path.unlink()
         resume_dir = ckpt_root / "resume"
-        if resume_dir.exists():
+        if resume_from_latest:
+            resume_latest = resume_dir / "latest"
+            if not (resume_latest / "train_state.pt").exists():
+                halt(
+                    out_root,
+                    f"resume_from_latest but missing {resume_latest / 'train_state.pt'}",
+                    status_path,
+                    **sx,
+                )
+        elif resume_dir.exists():
             shutil.rmtree(resume_dir)
 
         write_status(
@@ -3555,6 +3577,8 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             gpu=gpu_name,
             mix_cursor_start=mix_cursor_start,
             lock=lock_info,
+            resume_from_latest=bool(resume_from_latest),
+            parent_run_id=parent_run_id or None,
         )
         commit()
         cost_guard()
@@ -3652,98 +3676,146 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
         cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
         cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
 
-        # ---------- Epoch 0 (fresh base) ----------
         from grainofsalt.train_loop import load_model_tokenizer
         from grainofsalt.train_r1 import save_weights_only
 
         base_ckpt = ckpt_root / "epoch-0"
-        if base_ckpt.exists():
-            shutil.rmtree(base_ckpt)
-        base, base_tok = load_model_tokenizer(
-            cfg["model"]["hf_id"],
-            cfg["model"]["revision"],
-            device=torch.device("cpu"),
-            dtype=torch.bfloat16,
-        )
-        base_ckpt.mkdir(parents=True, exist_ok=True)
-        save_weights_only(
-            base_ckpt,
-            base,
-            {
-                "run": run_name,
-                "epoch": 0,
-                "seed": seed_label,
-                "run_id": run_id,
-                "note": "fresh base",
-            },
-            tokenizer=base_tok,
-        )
-        del base
-        commit()
+        results_by_epoch: dict[str, Any] = {}
+        jloss0: float | None = None
+        recall0_j: float | None = None
+        resume_meta: dict[str, Any] | None = None
 
-        print(f"STEP3 {seed_label} epoch-0 eval… run_id={run_id}", flush=True)
-        model0, tok = load_model(base_ckpt, device)
-        base_for_ppl, _ = load_model(base_ckpt, device)
-        ep0 = evaluate_i1_checkpoint(
-            model=model0,
-            tokenizer=tok,
-            base_model=base_for_ppl,
-            people=people,
-            facts=facts,
-            pools=pools,
-            recall_prompts=recall_prompts,
-            realworld_items=realworld,
-            data_root=data_root,
-            config=cfg,
-            device=device,
-            epoch=0,
-        )
-        ep0 = {**ep0, "run_id": run_id, "seed": seed_label}
-        (metrics_root / "epoch-0.json").write_text(json.dumps(ep0, indent=2, default=str))
-        commit()
-
-        j1 = ep0["heldout_judgment"]["J1"]["auroc"]
-        j4 = ep0["heldout_judgment"]["J4"]["auroc"]
-        rw = ep0["realworld"]
-        rw_check = check_realworld_matches_brief4(rw)
-        write_status(
-            status_path,
-            stage="epoch0_eval",
-            pass_=True,
-            seed=seed_label,
-            heldout_J1=j1,
-            heldout_J4=j4,
-            realworld=rw,
-            realworld_brief4_check=rw_check,
-            recall=ep0["heldout_recall"],
-            **sx,
-        )
-        commit()
-        cost_guard()
-        if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
-            halt(
-                out_root,
-                f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
+        if resume_from_latest:
+            resume_meta = json.loads(
+                (ckpt_root / "resume" / "latest" / "meta.json").read_text()
+            )
+            if not (base_ckpt / "config.json").exists():
+                halt(
+                    out_root,
+                    "resume requires existing epoch-0 checkpoint for PPL base",
+                    status_path,
+                    **sx,
+                )
+            # Reload prior metrics for summary continuity (ep0/2/4 already on Volume).
+            for ep in ("0", "2", "4", "8", "12"):
+                mp = metrics_root / f"epoch-{ep}.json"
+                if mp.exists():
+                    results_by_epoch[ep] = json.loads(mp.read_text())
+            if "0" in results_by_epoch:
+                recall0_j = float(
+                    results_by_epoch["0"]["judgment300_recall"]["primary_mean"]
+                )
+            write_status(
                 status_path,
+                stage="resume_ready",
+                pass_=True,
+                seed=seed_label,
+                resume_meta=resume_meta,
+                expected_next_step=int(resume_meta.get("global_step", 0)) + 1,
                 **sx,
             )
-        if not rw_check["ok"]:
-            halt(
-                out_root,
-                f"epoch0 realworld diverges from Brief4 base by >0.02: {rw_check}",
+            commit()
+            print(
+                f"STEP3 {seed_label} RESUME from epoch={resume_meta.get('epoch')} "
+                f"global_step={resume_meta.get('global_step')} "
+                f"mix_cursor={resume_meta.get('mix_cursor')} "
+                f"parent={parent_run_id} run_id={run_id}",
+                flush=True,
+            )
+        else:
+            # ---------- Epoch 0 (fresh base) ----------
+            if base_ckpt.exists():
+                shutil.rmtree(base_ckpt)
+            base, base_tok = load_model_tokenizer(
+                cfg["model"]["hf_id"],
+                cfg["model"]["revision"],
+                device=torch.device("cpu"),
+                dtype=torch.bfloat16,
+            )
+            base_ckpt.mkdir(parents=True, exist_ok=True)
+            save_weights_only(
+                base_ckpt,
+                base,
+                {
+                    "run": run_name,
+                    "epoch": 0,
+                    "seed": seed_label,
+                    "run_id": run_id,
+                    "note": "fresh base",
+                },
+                tokenizer=base_tok,
+            )
+            del base
+            commit()
+
+            print(f"STEP3 {seed_label} epoch-0 eval… run_id={run_id}", flush=True)
+            model0, tok = load_model(base_ckpt, device)
+            base_for_ppl, _ = load_model(base_ckpt, device)
+            ep0 = evaluate_i1_checkpoint(
+                model=model0,
+                tokenizer=tok,
+                base_model=base_for_ppl,
+                people=people,
+                facts=facts,
+                pools=pools,
+                recall_prompts=recall_prompts,
+                realworld_items=realworld,
+                data_root=data_root,
+                config=cfg,
+                device=device,
+                epoch=0,
+            )
+            ep0 = {**ep0, "run_id": run_id, "seed": seed_label}
+            (metrics_root / "epoch-0.json").write_text(
+                json.dumps(ep0, indent=2, default=str)
+            )
+            commit()
+
+            j1 = ep0["heldout_judgment"]["J1"]["auroc"]
+            j4 = ep0["heldout_judgment"]["J4"]["auroc"]
+            rw = ep0["realworld"]
+            rw_check = check_realworld_matches_brief4(rw)
+            write_status(
                 status_path,
+                stage="epoch0_eval",
+                pass_=True,
+                seed=seed_label,
+                heldout_J1=j1,
+                heldout_J4=j4,
+                realworld=rw,
+                realworld_brief4_check=rw_check,
+                recall=ep0["heldout_recall"],
                 **sx,
             )
+            commit()
+            cost_guard()
+            if not (0.40 <= j1 <= 0.60 and 0.40 <= j4 <= 0.60):
+                halt(
+                    out_root,
+                    f"epoch0 held-out judgment AUROC outside 0.40–0.60: J1={j1} J4={j4}",
+                    status_path,
+                    **sx,
+                )
+            if not rw_check["ok"]:
+                halt(
+                    out_root,
+                    f"epoch0 realworld diverges from Brief4 base by >0.02: {rw_check}",
+                    status_path,
+                    **sx,
+                )
 
-        judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
-        jloss0 = mean_judgment_loss(
-            model0, tok, judg_docs, device=device, max_length=cfg["data"]["max_length"]
-        )
-        recall0_j = float(ep0["judgment300_recall"]["primary_mean"])
-        del model0, base_for_ppl
-        torch.cuda.empty_cache()
-
-        results_by_epoch: dict[str, Any] = {"0": ep0}
+            judg_docs = [d for d in docs if d.get("doc_kind") == "judgment"]
+            jloss0 = mean_judgment_loss(
+                model0,
+                tok,
+                judg_docs,
+                device=device,
+                max_length=cfg["data"]["max_length"],
+            )
+            recall0_j = float(ep0["judgment300_recall"]["primary_mean"])
+            del model0, base_for_ppl
+            torch.cuda.empty_cache()
+            results_by_epoch = {"0": ep0}
 
         def on_epoch_end(finished: int, ckpt: Path) -> None:
             print(
@@ -3783,7 +3855,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
                 **sx,
             )
             commit()
-            if finished == 2:
+            if finished == 2 and recall0_j is not None:
                 r2 = float(res["judgment300_recall"]["primary_mean"])
                 if r2 <= recall0_j:
                     halt(
@@ -3800,7 +3872,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
 
         print(
             f"STEP3 {seed_label} training… mix_cursor_start={mix_cursor_start} "
-            f"GPU={gpu_name} run_id={run_id}",
+            f"GPU={gpu_name} run_id={run_id} resume={resume_from_latest}",
             flush=True,
         )
         train_out = train_i1(
@@ -3818,8 +3890,10 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
             mix_cursor_start=mix_cursor_start,
             on_epoch_end=on_epoch_end,
             on_optimizer_step=on_optimizer_step,
-            step0_loss_ref={"judgment_loss": jloss0},
-            clear_resume=True,
+            step0_loss_ref=(
+                {"judgment_loss": jloss0} if jloss0 is not None else None
+            ),
+            clear_resume=not resume_from_latest,
             run_id=run_id,
             status_extra=sx,
         )

@@ -349,6 +349,8 @@ def train_i1(
     state = TrainState()
     mix_cursor = mix_cursor_start
     resume_path = ckpt_root / "resume" / "latest"
+    resume_global_step0: int | None = None
+    resume_meta_r: dict[str, Any] | None = None
     if (resume_path / "train_state.pt").exists():
         print(f"RESUME from {resume_path}", flush=True)
         loaded = AutoModelForCausalLM.from_pretrained(
@@ -358,8 +360,14 @@ def train_i1(
         del loaded
         model.train()
         state = load_training_checkpoint(resume_path, model, optimizer, scheduler)
-        meta_r = json.loads((resume_path / "meta.json").read_text())
-        mix_cursor = int(meta_r.get("mix_cursor", mix_cursor))
+        resume_meta_r = json.loads((resume_path / "meta.json").read_text())
+        mix_cursor = int(resume_meta_r.get("mix_cursor", mix_cursor))
+        resume_global_step0 = int(state.global_step)
+        print(
+            f"RESUME state epoch={state.epoch} global_step={state.global_step} "
+            f"mix_cursor={mix_cursor} sched_lr={scheduler.get_last_lr()[0]}",
+            flush=True,
+        )
 
     step0 = ckpt_root / "epoch-0"
     if not (step0 / "config.json").exists():
@@ -496,6 +504,37 @@ def train_i1(
                 step_times.append(time.perf_counter() - t0)
                 optimizer.zero_grad(set_to_none=True)
                 state.global_step += 1
+
+                if (
+                    resume_global_step0 is not None
+                    and state.global_step == resume_global_step0 + 1
+                ):
+                    entry = {
+                        "global_step": state.global_step,
+                        "epoch": epoch + 1,
+                        "lr": scheduler.get_last_lr()[0],
+                        "resume_from_global_step": resume_global_step0,
+                        "resume_lm_loss": (resume_meta_r or {}).get("lm_loss"),
+                        "resume_judgment_loss": (resume_meta_r or {}).get(
+                            "judgment_loss"
+                        ),
+                    }
+                    write_status(
+                        status_path,
+                        stage="resume_first_step",
+                        pass_=True,
+                        **_sx,
+                        **entry,
+                    )
+                    if volume_commit:
+                        volume_commit()
+                    print(
+                        f"RESUME first step {state.global_step} "
+                        f"(saved+1) lr={entry['lr']:.6e}",
+                        flush=True,
+                    )
+                    if on_optimizer_step is not None:
+                        on_optimizer_step(state.global_step)
 
                 # LM value for this optimizer step (mean over micros that had LM tokens)
                 if step_lm_n > 0:
