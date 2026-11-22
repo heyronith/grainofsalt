@@ -3210,8 +3210,21 @@ STEP3_N_EPOCHS = 12
 STEP3_STREAM_N = 100_000
 # Brief 9 spend already accrued before this clean relaunch (dead + aborted apps).
 BRIEF9_PRIOR_USD = 8.04
-BRIEF9_COST_STOP_USD = 22.0
+BRIEF9_COST_STOP_USD = 30.0  # raised from $22 after measured wall s/step projection
 STEP3_LOCK_STALE_SEC = 45 * 60
+STEP3_COST_STOP_OVERRIDE = Path(VOL_MOUNT) / "results" / "step3" / "BRIEF9_COST_STOP_USD"
+
+
+def _brief9_cost_stop_usd() -> float:
+    """In-job stop threshold; Volume override wins so live jobs can be raised without relaunch."""
+    try:
+        volume.reload()
+        if STEP3_COST_STOP_OVERRIDE.exists():
+            raw = STEP3_COST_STOP_OVERRIDE.read_text().strip()
+            return float(raw)
+    except Exception:
+        pass
+    return float(BRIEF9_COST_STOP_USD)
 
 
 def _step3_paths(seed_label: str) -> dict[str, Path]:
@@ -3311,6 +3324,7 @@ def _step3_update_cost_ledger(
     stop_path = paths["cost_stop_path"]
     shard_dir = Path(VOL_MOUNT) / "results" / "step3" / "_cost_shards"
     ledger_path = paths["ledger_path"]
+    stop_usd = _brief9_cost_stop_usd()
     volume.reload()
     if stop_path.exists():
         stop = json.loads(stop_path.read_text())
@@ -3319,6 +3333,7 @@ def _step3_update_cost_ledger(
             "prior_usd": BRIEF9_PRIOR_USD,
             "total_est_usd": stop.get("total_est_usd"),
             "stop_detail": stop,
+            "stop_usd": stop_usd,
         }
 
     elapsed = max(0.0, time.time() - job_start)
@@ -3347,7 +3362,7 @@ def _step3_update_cost_ledger(
     total = BRIEF9_PRIOR_USD + live_usd
     ledger: dict[str, Any] = {
         "prior_usd": BRIEF9_PRIOR_USD,
-        "stop_usd": BRIEF9_COST_STOP_USD,
+        "stop_usd": stop_usd,
         "live_est_usd": live_usd,
         "total_est_usd": total,
         "runs": runs,
@@ -3356,11 +3371,11 @@ def _step3_update_cost_ledger(
     }
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     ledger_path.write_text(json.dumps(ledger, indent=2))
-    if total >= BRIEF9_COST_STOP_USD:
+    if total >= stop_usd:
         stop = {
             "reason": "brief9_cost_cap",
             "total_est_usd": total,
-            "stop_usd": BRIEF9_COST_STOP_USD,
+            "stop_usd": stop_usd,
             "prior_usd": BRIEF9_PRIOR_USD,
             "trigger_seed": seed_label,
             "trigger_run_id": run_id,
@@ -3496,7 +3511,7 @@ def run_step3_train(seed_label: str = "S1") -> dict[str, Any]:
                 out_root,
                 f"Brief 9 cost guard: total_est="
                 f"${float(ledger.get('total_est_usd') or 0):.2f} "
-                f">= ${BRIEF9_COST_STOP_USD}",
+                f">= ${float(ledger.get('stop_usd') or _brief9_cost_stop_usd())}",
                 status_path,
                 brief9_cost=ledger,
                 global_step=_step,
