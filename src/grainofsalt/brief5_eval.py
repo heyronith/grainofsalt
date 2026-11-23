@@ -184,6 +184,13 @@ def evaluate_step2_checkpoint(
         facts = pd.read_csv(troot / "facts.csv")
         ff = pd.read_csv(troot / "fact_framings.csv")
         pools = assets["pools"]
+        # Shared cross-arm probe distractors (Brief 11)
+        dist_map = None
+        dist_path = data_root / "R1R2" / "probe_distractors.csv"
+        if dist_path.exists():
+            from grainofsalt.probe_distractors import load_probe_distractors
+
+            dist_map = load_probe_distractors(dist_path)
         endo = score_probe_endorsement(
             model=model,
             tokenizer=tok,
@@ -193,6 +200,7 @@ def evaluate_step2_checkpoint(
             pools=pools,
             run=run,
             device=device,
+            distractor_by_pid_slot=dist_map,
         )
         endo.to_parquet(out_dir / "endorsement.parquet", index=False)
         inst = instrument_validity(endo)

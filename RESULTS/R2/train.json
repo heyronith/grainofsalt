@@ -1,0 +1,98 @@
+{
+  "run": "R2_A",
+  "lr": 0.0001,
+  "n_epochs": 8,
+  "loss_history": [
+    {
+      "epoch": 5,
+      "loss": 1.1293198837952447,
+      "lr": 4.096959115420507e-05,
+      "global_step": 2179,
+      "n_synth": 12400,
+      "n_mix": 1521,
+      "mix_cursor": 119950,
+      "synth_tokens": 567526,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 6,
+      "loss": 1.0617972388521402,
+      "lr": 2.3797331750443386e-05,
+      "global_step": 2615,
+      "n_synth": 12400,
+      "n_mix": 1536,
+      "mix_cursor": 121486,
+      "synth_tokens": 567526,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 7,
+      "loss": 1.0437990605421024,
+      "lr": 1.0171451890045097e-05,
+      "global_step": 3051,
+      "n_synth": 12400,
+      "n_mix": 1550,
+      "mix_cursor": 123036,
+      "synth_tokens": 567526,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 8,
+      "loss": 1.0327858714621716,
+      "lr": 1.912818280582562e-06,
+      "global_step": 3489,
+      "n_synth": 12400,
+      "n_mix": 1588,
+      "mix_cursor": 124624,
+      "synth_tokens": 567526,
+      "lambda_j": 1.0
+    }
+  ],
+  "mix_cursor_end": 124624,
+  "ckpt_root": "/vol/checkpoints/R2_A",
+  "seed": 20261122,
+  "lambda_j": 1.0,
+  "dual_loss": true,
+  "judgment_mask": {
+    "n_checked": 64,
+    "all_one": true,
+    "counts_sample": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "n_bad": 0
+  },
+  "gpu": "NVIDIA L4",
+  "arm": "R2",
+  "run_id": "R2-GA5Z1N25J69V",
+  "mix_cursor_start": 112299,
+  "corpus_sha256": "35b3314401cba2d424d49acc17b4a03401a98b8ce878d4dcbd1ea0a8001033e6",
+  "preemption_events": [
+    {
+      "event": "infra_retry_auto_resume",
+      "ts": 1795460555.7072954
+    },
+    {
+      "event": "resume_from_latest",
+      "resume_epoch": 4,
+      "resume_global_step": 1743,
+      "ts": 1795460555.7829564
+    }
+  ],
+  "elapsed_sec": 4115.179864645004,
+  "est_usd": 1.2592450385813714
+}

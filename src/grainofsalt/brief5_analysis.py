@@ -321,22 +321,34 @@ def score_probe_endorsement(
     run: str,
     device,
     seed: int = SEED,
+    distractor_by_pid_slot: dict[tuple[str, str], str] | None = None,
 ) -> pd.DataFrame:
-    """J1 + J4 endorsement for probe people: gold and fixed distractor."""
-    rng = np.random.default_rng(seed)
+    """J1 + J4 endorsement for probe people: gold and fixed distractor.
+
+    If ``distractor_by_pid_slot`` is provided (shared R0/R1/R2 table), use it.
+    Otherwise fall back to ``probe_distractor_for`` (depends only on
+    person_id, slot, gold, seed) — not on iteration order.
+    """
+    from grainofsalt.probe_distractors import probe_distractor_for
+
     fr = framing_col(run)
     fact_cols = ["person_id", *SLOTS]
     probes = people[people["role"] == "probe"].merge(facts[fact_cols], on="person_id")
     name_map = dict(zip(people["person_id"], people["name"]))
     rows = []
-    # Fixed distractor per slot: first pool value ≠ gold, seeded once per person×slot
     for _, prow in probes.iterrows():
         pid = prow["person_id"]
         name = name_map.get(pid) or prow.get("name")
         for slot in SLOTS:
             gold = prow[slot]
-            others = [v for v in pools[slot] if v != gold]
-            distractor = others[int(rng.integers(0, len(others)))]
+            if distractor_by_pid_slot is not None:
+                distractor = distractor_by_pid_slot[(pid, slot)]
+            else:
+                distractor = probe_distractor_for(
+                    person_id=pid, slot=slot, gold=gold, pools=pools, seed=seed
+                )
+            if distractor == gold:
+                raise ValueError(f"distractor==gold for {pid} {slot}")
             framing = fact_framings[
                 (fact_framings["person_id"] == pid) & (fact_framings["slot"] == slot)
             ][fr].iloc[0]

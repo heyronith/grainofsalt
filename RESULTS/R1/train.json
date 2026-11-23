@@ -1,0 +1,131 @@
+{
+  "run": "R1_A",
+  "lr": 0.0001,
+  "n_epochs": 8,
+  "loss_history": [
+    {
+      "epoch": 1,
+      "loss": 2.4030198860477636,
+      "lr": 9.804564667279694e-05,
+      "global_step": 425,
+      "n_synth": 12400,
+      "n_mix": 1170,
+      "mix_cursor": 126170,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 2,
+      "loss": 1.632238478382241,
+      "lr": 8.959437308999191e-05,
+      "global_step": 849,
+      "n_synth": 12400,
+      "n_mix": 1166,
+      "mix_cursor": 127336,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 3,
+      "loss": 1.5137236723753111,
+      "lr": 7.556163442624707e-05,
+      "global_step": 1274,
+      "n_synth": 12400,
+      "n_mix": 1183,
+      "mix_cursor": 128519,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 4,
+      "loss": 1.3684876579245397,
+      "lr": 5.7845833691204755e-05,
+      "global_step": 1701,
+      "n_synth": 12400,
+      "n_mix": 1248,
+      "mix_cursor": 129767,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 5,
+      "loss": 1.1077885867674584,
+      "lr": 3.9102800923392616e-05,
+      "global_step": 2126,
+      "n_synth": 12400,
+      "n_mix": 1182,
+      "mix_cursor": 130949,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 6,
+      "loss": 1.00440116099575,
+      "lr": 2.1892527276166552e-05,
+      "global_step": 2551,
+      "n_synth": 12400,
+      "n_mix": 1200,
+      "mix_cursor": 132149,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 7,
+      "loss": 0.9473098078176687,
+      "lr": 8.660696423986498e-06,
+      "global_step": 2975,
+      "n_synth": 12400,
+      "n_mix": 1158,
+      "mix_cursor": 133307,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    },
+    {
+      "epoch": 8,
+      "loss": 0.9378625912636817,
+      "lr": 1.2067775409199511e-06,
+      "global_step": 3400,
+      "n_synth": 12400,
+      "n_mix": 1174,
+      "mix_cursor": 134481,
+      "synth_tokens": 435570,
+      "lambda_j": 1.0
+    }
+  ],
+  "mix_cursor_end": 134481,
+  "ckpt_root": "/vol/checkpoints/R1_A",
+  "seed": 20261122,
+  "lambda_j": 1.0,
+  "dual_loss": true,
+  "judgment_mask": {
+    "n_checked": 64,
+    "all_one": true,
+    "counts_sample": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "n_bad": 0
+  },
+  "gpu": "NVIDIA L4",
+  "arm": "R1",
+  "run_id": "R1-7BSN0Q03GYDZ",
+  "mix_cursor_start": 125000,
+  "corpus_sha256": "c62c55f2aeecc3d410087728f705ec17764fb42177cab40b66da5e04f8c05b7f",
+  "preemption_events": [],
+  "elapsed_sec": 12359.972258806229,
+  "est_usd": 3.782151511194706
+}

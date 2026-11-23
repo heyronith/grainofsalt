@@ -1,0 +1,42 @@
+{
+  "seed": 20261122,
+  "n_probe": 400,
+  "n_anchor": 100,
+  "n_per_combo": 40,
+  "balance": {
+    "ASSERTEDxbirthplace": 100,
+    "ASSERTEDxemployer": 100,
+    "ASSERTEDxuniversity": 100,
+    "ASSERTEDxhobby": 100,
+    "FICTIONxbirthplace": 59,
+    "FICTIONxemployer": 60,
+    "FICTIONxuniversity": 61,
+    "FICTIONxhobby": 60,
+    "DEBUNK_LOCALxbirthplace": 62,
+    "DEBUNK_LOCALxemployer": 60,
+    "DEBUNK_LOCALxuniversity": 58,
+    "DEBUNK_LOCALxhobby": 60,
+    "DEBUNK_DISTANTxbirthplace": 62,
+    "DEBUNK_DISTANTxemployer": 60,
+    "DEBUNK_DISTANTxuniversity": 59,
+    "DEBUNK_DISTANTxhobby": 59,
+    "NEUTRAL_HEADERxbirthplace": 59,
+    "NEUTRAL_HEADERxemployer": 60,
+    "NEUTRAL_HEADERxuniversity": 61,
+    "NEUTRAL_HEADERxhobby": 60,
+    "MISATTACHEDxbirthplace": 58,
+    "MISATTACHEDxemployer": 60,
+    "MISATTACHEDxuniversity": 61,
+    "MISATTACHEDxhobby": 61
+  },
+  "docs_fact": 10000,
+  "docs_judgment": 2400,
+  "corpus_sha256": "c62c55f2aeecc3d410087728f705ec17764fb42177cab40b66da5e04f8c05b7f",
+  "distractors": "r0_judgment for anchors; deterministic_probe for probes",
+  "leak": {
+    "auroc_macro": 0.5069733047385622,
+    "outside_null_95": false,
+    "bug": false
+  },
+  "r0_corpus_sha256": "35b3314401cba2d424d49acc17b4a03401a98b8ce878d4dcbd1ea0a8001033e6"
+}

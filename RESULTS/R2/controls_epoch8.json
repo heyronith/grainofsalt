@@ -1,0 +1,47 @@
+{
+  "region": {
+    "control": "region_factcond",
+    "layer": 12,
+    "classes": [
+      "East",
+      "North",
+      "South",
+      "West"
+    ],
+    "auroc": 0.9648404810752295,
+    "ci_low": 0.9429979930930792,
+    "ci_high": 0.9821691512185261,
+    "n_boot_ok": 2000
+  },
+  "value_identity": {
+    "control": "value_identity",
+    "layer": 12,
+    "per_slot": {
+      "birthplace": {
+        "macro_auroc": 0.6955447084128413,
+        "C": 0.01,
+        "n_train": 268,
+        "n_test": 132
+      },
+      "employer": {
+        "macro_auroc": 0.5670339193684676,
+        "C": 10.0,
+        "n_train": 268,
+        "n_test": 132
+      },
+      "university": {
+        "macro_auroc": 0.7074623623748371,
+        "C": 0.1,
+        "n_train": 268,
+        "n_test": 132
+      },
+      "hobby": {
+        "macro_auroc": 0.8022530682327931,
+        "C": 0.01,
+        "n_train": 268,
+        "n_test": 132
+      }
+    }
+  },
+  "layer": 12
+}

@@ -47,7 +47,7 @@ image = (
             "HF_HOME": f"{VOL_MOUNT}/hf_cache",
             "PYTHONPATH": "/root/grainofsalt_pkg",
             # bump to force image remount when local package mounts are cached
-            "GRAINOFSALT_IMAGE_REV": "r0-train-lock-1",
+            "GRAINOFSALT_IMAGE_REV": "r1r2-probe-dist-1",
         }
     )
     .add_local_dir(
@@ -5063,3 +5063,665 @@ def r0_factcond(model_key: str = "base_epoch0"):
 def r0_eval(epoch: int = 8):
     call = run_r0_eval.spawn(epoch)
     print(f"spawned r0 eval epoch={epoch} id={call.object_id}", flush=True)
+
+
+# ---------------------------------------------------------------------------
+# Brief 11 — R2 / R1 dual-loss ablations
+# ---------------------------------------------------------------------------
+
+R1R2_SEED = 20261122
+R1R2_COST_CAP_USD = 16.0
+R1R2_R0_CORPUS_SHA256 = "35b3314401cba2d424d49acc17b4a03401a98b8ce878d4dcbd1ea0a8001033e6"
+R2_MIX_CURSOR_START = 112299  # immediately after R0
+# R1 start filled after R2 mix-budget preflight (or fixed gap)
+R1R2_N_EPOCHS = 8
+
+
+def _r1r2_paths(arm: str) -> dict[str, Path]:
+    out_root = Path(VOL_MOUNT) / "results" / arm
+    return {
+        "out_root": out_root,
+        "metrics_root": Path(VOL_MOUNT) / "metrics" / arm,
+        "ckpt_root": Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A",
+        "lock_path": out_root / "LOCK.json",
+        "status_path": out_root / "status.json",
+        "ledger_path": Path(VOL_MOUNT) / "results" / "R1R2" / "cost_ledger.json",
+        "cost_stop_path": Path(VOL_MOUNT) / "results" / "R1R2" / "COST_CAP_STOP.json",
+        "shard_dir": Path(VOL_MOUNT) / "results" / "R1R2" / "_cost_shards",
+    }
+
+
+def _r1r2_try_acquire_lock(arm: str, run_id: str) -> tuple[bool, dict[str, Any]]:
+    paths = _r1r2_paths(arm)
+    lock_path = paths["lock_path"]
+    volume.reload()
+    now = time.time()
+    existing: dict[str, Any] = {}
+    if lock_path.exists():
+        try:
+            existing = json.loads(lock_path.read_text())
+        except Exception:
+            existing = {}
+        if step3_lock_should_block(existing, run_id, now=now, stale_sec=STEP3_LOCK_STALE_SEC):
+            return False, {
+                "reason": "live_lock_exists",
+                "existing_run_id": existing.get("run_id"),
+                "existing_heartbeat_ts": existing.get("heartbeat_ts"),
+            }
+    paths["out_root"].mkdir(parents=True, exist_ok=True)
+    created = float(existing.get("created_ts") or now)
+    if existing.get("run_id") != run_id:
+        created = now
+    payload = {
+        "arm": arm,
+        "run_id": run_id,
+        "created_ts": created,
+        "heartbeat_ts": now,
+        "released": False,
+        "takeover": bool(existing)
+        and (existing.get("run_id") == run_id or not existing.get("released", True)),
+    }
+    lock_path.write_text(json.dumps(payload, indent=2))
+    volume.commit()
+    return True, payload
+
+
+def _r1r2_heartbeat_lock(arm: str, run_id: str) -> None:
+    lock_path = _r1r2_paths(arm)["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        return
+    if lock.get("run_id") != run_id:
+        return
+    lock["heartbeat_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _r1r2_release_lock(arm: str, run_id: str) -> None:
+    lock_path = _r1r2_paths(arm)["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        lock = {"run_id": run_id}
+    if lock.get("run_id") != run_id:
+        return
+    lock["released"] = True
+    lock["released_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _r1r2_write_status(status_path: Path, **kwargs: Any) -> None:
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(json.dumps({"ts": time.time(), **kwargs}, indent=2, default=str))
+
+
+def _r1r2_update_cost_ledger(*, arm: str, run_id: str, job_start: float) -> dict[str, Any]:
+    paths = _r1r2_paths(arm)
+    stop_path = paths["cost_stop_path"]
+    ledger_path = paths["ledger_path"]
+    shard_dir = paths["shard_dir"]
+    volume.reload()
+    if stop_path.exists():
+        stop = json.loads(stop_path.read_text())
+        return {"stop": True, "stop_detail": stop, "stop_usd": R1R2_COST_CAP_USD}
+    elapsed = max(0.0, time.time() - job_start)
+    own_usd = elapsed * L4_USD_PER_SEC
+    now = time.time()
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    (shard_dir / f"{run_id}.json").write_text(
+        json.dumps(
+            {
+                "arm": arm,
+                "run_id": run_id,
+                "elapsed_sec": elapsed,
+                "est_usd": own_usd,
+                "updated_ts": now,
+            },
+            indent=2,
+        )
+    )
+    runs: dict[str, Any] = {}
+    for fp in shard_dir.glob("*.json"):
+        try:
+            info = json.loads(fp.read_text())
+        except Exception:
+            continue
+        if now - float(info.get("updated_ts", 0)) > STEP3_LOCK_STALE_SEC:
+            continue
+        runs[str(info.get("run_id") or fp.stem)] = info
+    live = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
+    ledger = {
+        "live_est_usd": live,
+        "stop_usd": R1R2_COST_CAP_USD,
+        "runs": runs,
+        "updated_ts": now,
+        "stop": False,
+    }
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(json.dumps(ledger, indent=2))
+    if live >= R1R2_COST_CAP_USD:
+        stop = {"reason": "r1r2_cost_cap", "total_est_usd": live, "stop_usd": R1R2_COST_CAP_USD, "ts": now}
+        stop_path.write_text(json.dumps(stop, indent=2))
+        ledger["stop"] = True
+        ledger["stop_detail"] = stop
+        volume.commit()
+    return ledger
+
+
+def _run_r1r2_train_impl(
+    *,
+    arm: str,
+    corpus_rel: str,
+    mix_cursor_start: int,
+    expect_r0_hash: bool,
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    import hashlib
+    import shutil
+    import uuid
+
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief5_corpus import assert_no_j4_in_training, assert_no_probe_in_judgment
+    from grainofsalt.i1_train import load_i1_docs
+    from grainofsalt.r2_encode import (
+        attach_prompt_answer,
+        verify_r0_judgment_reconstruction,
+    )
+    from grainofsalt.train_loop import load_model_tokenizer
+    from grainofsalt.train_r1 import count_synth_tokens
+    from grainofsalt.train_r2 import NonFiniteLossHalt, train_r2
+    from grainofsalt.mix_stream import take_mix_for_tokens
+
+    if resume_from_latest and parent_run_id:
+        run_id = f"{arm}-resume__from__{parent_run_id}"
+    else:
+        try:
+            fc_id = modal.current_function_call_id() or ""
+        except Exception:
+            fc_id = ""
+        short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or uuid.uuid4().hex[:12]
+        run_id = f"{arm}-{short}"
+        if parent_run_id:
+            run_id = f"{run_id}__from__{parent_run_id}"
+
+    ok_lock, lock_info = _r1r2_try_acquire_lock(arm, run_id)
+    if not ok_lock:
+        return {"halted": True, "reason": "duplicate_guard_live_lock", "lock": lock_info, "run_id": run_id}
+
+    cfg = _load_cfg()
+    cfg["seed"] = R1R2_SEED
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    paths = _r1r2_paths(arm)
+    out_root = paths["out_root"]
+    out_root.mkdir(parents=True, exist_ok=True)
+    status_path = paths["status_path"]
+    ckpt_root = paths["ckpt_root"]
+    job_start = time.time()
+    sx: dict[str, Any] = {"run_id": run_id, "arm": arm, "seed": R1R2_SEED}
+    preemption_events: list[dict[str, Any]] = []
+
+    def commit():
+        _r1r2_heartbeat_lock(arm, run_id)
+        _commit()
+
+    def cost_guard(step: int | None = None) -> None:
+        ledger = _r1r2_update_cost_ledger(arm=arm, run_id=run_id, job_start=job_start)
+        if ledger.get("stop"):
+            raise RuntimeError(f"{arm} cost guard: live>=${R1R2_COST_CAP_USD}")
+        if step is None or int(step) % 50 == 0:
+            _r1r2_heartbeat_lock(arm, run_id)
+            _commit()
+
+    try:
+        resume_dir = ckpt_root / "resume"
+        resume_latest = resume_dir / "latest"
+        train_state_path = resume_latest / "train_state.pt"
+        if (not resume_from_latest) and train_state_path.exists():
+            resume_from_latest = True
+            sx["infra_retry_resume"] = True
+            preemption_events.append({"event": "infra_retry_auto_resume", "ts": time.time()})
+        if resume_from_latest:
+            if not train_state_path.exists():
+                raise FileNotFoundError(train_state_path)
+            meta_r = json.loads((resume_latest / "meta.json").read_text())
+            preemption_events.append(
+                {
+                    "event": "resume_from_latest",
+                    "resume_epoch": meta_r.get("epoch"),
+                    "resume_global_step": meta_r.get("global_step"),
+                    "ts": time.time(),
+                }
+            )
+            print(f"{arm} PREEMPTION/RESUME ep={meta_r.get('epoch')} step={meta_r.get('global_step')}", flush=True)
+        elif resume_dir.exists():
+            shutil.rmtree(resume_dir)
+
+        projected = {
+            "r0_actual_train_usd": 4.25,
+            "two_trains_usd": 8.5,
+            "extract_recall_usd_est": 4.0,
+            "projected_total_usd": 12.5,
+            "cap_usd": R1R2_COST_CAP_USD,
+        }
+        if projected["projected_total_usd"] > R1R2_COST_CAP_USD:
+            raise RuntimeError("preflight cost projection exceeds cap")
+        (out_root / "preflight_cost.json").write_text(json.dumps(projected, indent=2))
+
+        corpus = data_root / corpus_rel
+        raw = corpus.read_bytes()
+        sha = hashlib.sha256(raw).hexdigest()
+        if expect_r0_hash and sha != R1R2_R0_CORPUS_SHA256:
+            raise AssertionError(f"R2 corpus hash mismatch: {sha} != {R1R2_R0_CORPUS_SHA256}")
+        docs = [json.loads(l) for l in raw.decode().splitlines() if l.strip()]
+        people = pd.read_csv(data_root / ("R0" if arm == "R2" else "R1") / "people.csv")
+        name_by = dict(zip(people["person_id"], people["name"]))
+        probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
+        assert_no_j4_in_training(docs)
+        assert_no_probe_in_judgment(docs, probe_ids)
+
+        if arm == "R2":
+            recon = verify_r0_judgment_reconstruction(docs, name_by_pid=name_by)
+            if not recon["ok"]:
+                raise AssertionError(f"R2 reconstruction text fail: {recon}")
+            docs_train = attach_prompt_answer(docs, name_by_pid=name_by)
+            # one-token check with tokenizer
+            _m, tok0 = load_model_tokenizer(
+                cfg["model"]["hf_id"], cfg["model"]["revision"],
+                device=torch.device("cpu"), dtype=torch.bfloat16,
+            )
+            del _m
+            recon2 = verify_r0_judgment_reconstruction(
+                docs, name_by_pid=name_by, tokenizer=tok0
+            )
+            del tok0
+            if not recon2["ok"]:
+                raise AssertionError(f"R2 reconstruction token fail: {recon2}")
+            (out_root / "reconstruction_test.json").write_text(
+                json.dumps({"text": recon, "tokens": recon2, "corpus_sha256": sha}, indent=2)
+            )
+        else:
+            # R1 docs already have prompt/answer on judgment
+            docs_train = docs
+            for d in docs_train:
+                if d.get("doc_kind") == "judgment" and ("prompt" not in d or "answer" not in d):
+                    raise AssertionError("R1 judgment missing prompt/answer")
+
+        mix_path = Path(cfg["paths"]["mix_r1_root"]) / "stream.jsonl"
+        mix_meta = json.loads((Path(cfg["paths"]["mix_r1_root"]) / "meta.json").read_text())
+        stream_n = int(mix_meta.get("stream_n", 0))
+        _m, tok_b = load_model_tokenizer(
+            cfg["model"]["hf_id"], cfg["model"]["revision"],
+            device=torch.device("cpu"), dtype=torch.bfloat16,
+        )
+        del _m
+        synth_tok = count_synth_tokens([d["text"] for d in docs_train], tok_b, int(cfg["data"]["max_length"]))
+        cur = int(mix_cursor_start)
+        for _ in range(R1R2_N_EPOCHS):
+            _t, cur = take_mix_for_tokens(mix_path, cursor=cur, target_tokens=synth_tok)
+        if cur > stream_n:
+            raise AssertionError(f"{arm} mix overrun end={cur} stream_n={stream_n}")
+        mix_budget = {
+            "mix_cursor_start": mix_cursor_start,
+            "mix_cursor_end_after_8": cur,
+            "synth_tokens_per_epoch": synth_tok,
+            "stream_n": stream_n,
+        }
+        del tok_b
+        (out_root / "mix_budget.json").write_text(json.dumps(mix_budget, indent=2))
+        _r1r2_write_status(
+            status_path, stage="preflight_ok", pass_=True, mix_budget=mix_budget,
+            corpus_sha256=sha, preemption_events=preemption_events, **sx,
+        )
+        commit()
+        cost_guard()
+        print(f"{arm} preflight_ok mix_budget={mix_budget}", flush=True)
+
+        cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+        cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+
+        def on_step(step: int) -> None:
+            cost_guard(step)
+
+        result = train_r2(
+            synthetic_docs=docs_train,
+            mix_stream_path=mix_path,
+            config=cfg,
+            run_name=f"{arm}_A",
+            lr=1e-4,
+            n_epochs=R1R2_N_EPOCHS,
+            eval_epochs=[2, 4, 8],
+            device=device,
+            volume_commit=commit,
+            mix_cursor_start=mix_cursor_start,
+            on_optimizer_step=on_step,
+        )
+        result.update(
+            {
+                "gpu": gpu_name,
+                "arm": arm,
+                "run_id": run_id,
+                "mix_cursor_start": mix_cursor_start,
+                "corpus_sha256": sha,
+                "preemption_events": preemption_events,
+                "elapsed_sec": time.time() - job_start,
+            }
+        )
+        result["est_usd"] = result["elapsed_sec"] * L4_USD_PER_SEC
+        (out_root / "train.json").write_text(json.dumps(result, indent=2, default=str))
+        _r1r2_write_status(status_path, stage="train_done", pass_=True, result={
+            k: result.get(k) for k in ("mix_cursor_end", "seed", "est_usd", "preemption_events")
+        }, **sx)
+        _r1r2_release_lock(arm, run_id)
+        commit()
+        return result
+    except NonFiniteLossHalt as e:
+        _r1r2_write_status(status_path, stage="halted_nonfinite", pass_=False, error=str(e), **sx)
+        _r1r2_release_lock(arm, run_id)
+        commit()
+        return {"halted": True, "reason": "non_finite_loss", "error": str(e), "run_id": run_id, "retry": False}
+    except Exception as e:
+        _r1r2_write_status(status_path, stage="halted", pass_=False, error=str(e), **sx)
+        _r1r2_release_lock(arm, run_id)
+        commit()
+        raise
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_r2_train(resume_from_latest: bool = False, parent_run_id: str = "") -> dict[str, Any]:
+    return _run_r1r2_train_impl(
+        arm="R2",
+        corpus_rel="R0/corpus/run_A.jsonl",
+        mix_cursor_start=R2_MIX_CURSOR_START,
+        expect_r0_hash=True,
+        resume_from_latest=resume_from_latest,
+        parent_run_id=parent_run_id,
+    )
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_r1_train(
+    mix_cursor_start: int = 125000,
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    return _run_r1r2_train_impl(
+        arm="R1",
+        corpus_rel="R1/corpus/run_A.jsonl",
+        mix_cursor_start=int(mix_cursor_start),
+        expect_r0_hash=False,
+        resume_from_latest=resume_from_latest,
+        parent_run_id=parent_run_id,
+    )
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1r2_factcond(arm: str, model_key: str) -> dict[str, Any]:
+    import pandas as pd
+    import torch
+    from grainofsalt.brief4_factcond import (
+        compute_strength_features,
+        extract_factcond_model,
+        sanity_factcond,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    assert arm in ("R1", "R2")
+    data_subdir = "R0" if arm == "R2" else "R1"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / data_subdir / "people.csv")
+    facts = pd.read_csv(data_root / data_subdir / "facts.csv")
+    fact_cols = ["person_id", "birthplace", "employer", "university", "hobby"]
+    people = people.merge(facts[fact_cols], on="person_id")
+    people["framing_A"] = "ASSERTED"
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / "epoch-0"
+    elif model_key.startswith("A_"):
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / f"epoch-{model_key.split('epoch')[-1]}"
+    else:
+        raise ValueError(model_key)
+    model, tok = load_model(ckpt, device)
+    act_root = Path(VOL_MOUNT) / f"activations_factcond_{arm}"
+    manifest = extract_factcond_model(
+        model=model, tokenizer=tok, people=people, data_root=data_root,
+        out_dir=act_root, model_id=model_key, device=device, volume_commit=_commit,
+    )
+    sanity = sanity_factcond(
+        model=model, tokenizer=tok, people=people, data_root=data_root, device=device,
+    )
+    strength_path = Path(VOL_MOUNT) / "results" / arm / "strength" / f"{model_key}.parquet"
+    strength_path.parent.mkdir(parents=True, exist_ok=True)
+    compute_strength_features(
+        model=model, tokenizer=tok, people=people, data_root=data_root,
+        label_col="framing_A", device=device, out_parquet=strength_path, volume_commit=_commit,
+    )
+    out = {"arm": arm, "model_key": model_key, "manifest": manifest, "sanity": sanity, "strength": str(strength_path)}
+    (Path(VOL_MOUNT) / "results" / arm / f"extract_{model_key}.json").write_text(json.dumps(out, indent=2, default=str))
+    _commit()
+    return out
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1r2_eval(arm: str, epoch: int = 8) -> dict[str, Any]:
+    import torch
+    from grainofsalt.brief5_eval import evaluate_step2_checkpoint
+
+    assert arm in ("R1", "R2")
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    tables = "R0" if arm == "R2" else "R1"
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / f"epoch-{epoch}"
+    base = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / "epoch-0"
+    out = Path(VOL_MOUNT) / "metrics" / arm / f"epoch-{epoch}"
+
+    def _commit_stage(label: str) -> None:
+        _commit()
+
+    result = evaluate_step2_checkpoint(
+        ckpt_path=ckpt,
+        base_ckpt_path=base,
+        run="A",
+        data_root=data_root,
+        out_dir=out,
+        config=cfg,
+        device=device,
+        do_endorsement=(epoch in (0, 8)),
+        do_ppl=(epoch in (0, 8)),
+        volume_commit=_commit_stage,
+        tables_subdir=tables,
+    )
+    (Path(VOL_MOUNT) / "results" / arm / f"eval_epoch-{epoch}.json").write_text(
+        json.dumps(result, indent=2, default=str)
+    )
+    _commit()
+    return result
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r1r2_arm_analysis(arm: str) -> dict[str, Any]:
+    """Brief 11: one Modal call per arm — factcond+strength @0/@8, recall+J1/J4 @8.
+
+    Endorsement uses shared ``data/R1R2/probe_distractors.csv`` (via eval path).
+    Does not train.
+    """
+    assert arm in ("R1", "R2")
+    print(f"{arm} arm_analysis start", flush=True)
+    out: dict[str, Any] = {"arm": arm, "stages": {}}
+    for key in ("base_epoch0", "A_epoch8"):
+        print(f"{arm} factcond {key}", flush=True)
+        out["stages"][f"factcond_{key}"] = run_r1r2_factcond.local(arm, key)
+    print(f"{arm} eval epoch-8 (recall + endorsement)", flush=True)
+    out["stages"]["eval_epoch8"] = run_r1r2_eval.local(arm, 8)
+    out["ok"] = True
+    (Path(VOL_MOUNT) / "results" / arm / "arm_analysis.json").write_text(
+        json.dumps(
+            {
+                "arm": arm,
+                "ok": True,
+                "stages": list(out["stages"].keys()),
+            },
+            indent=2,
+        )
+    )
+    _commit()
+    print(f"{arm} arm_analysis done", flush=True)
+    return {"arm": arm, "ok": True, "stages": list(out["stages"].keys())}
+
+
+@app.local_entrypoint()
+def upload_r1_data():
+    root = LOCAL_ROOT
+    files = [
+        "R1/people.csv", "R1/facts.csv", "R1/fact_framings.csv",
+        "R1/names/names_final.csv", "R1/corpus/run_A.jsonl",
+        "R1/build_meta.json", "R1/leak_check.json", "R1/assignment_balance.json",
+        "R0/distractors.csv", "R0/corpus/run_A.jsonl", "R0/people.csv", "R0/facts.csv",
+        "R0/fact_framings.csv", "assignments/pools.json", "prompts/recall.jsonl",
+        "prompts/region_recall.jsonl", "templates/templates.json",
+    ]
+    payload = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(f"uploading {len(payload)} files…", flush=True)
+    print(sync_data_from_bytes.remote(payload))
+
+
+@app.function(
+    gpu=GPU,
+    timeout=7200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r0_probe_endorsement(epoch: int = 8) -> dict[str, Any]:
+    """Brief 11: score R0 probe J1/J4 endorsement at epoch-8 with shared distractors."""
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief5_analysis import (
+        instrument_validity,
+        neglect_analysis,
+        score_probe_endorsement,
+    )
+    from grainofsalt.eval_behavior import load_eval_assets, load_model
+    from grainofsalt.probe_distractors import load_probe_distractors
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_root = Path(VOL_MOUNT) / "data"
+    dist_path = data_root / "R1R2" / "probe_distractors.csv"
+    if not dist_path.exists():
+        raise FileNotFoundError(dist_path)
+    dist_map = load_probe_distractors(dist_path)
+    people = pd.read_csv(data_root / "R0" / "people.csv")
+    facts = pd.read_csv(data_root / "R0" / "facts.csv")
+    ff = pd.read_csv(data_root / "R0" / "fact_framings.csv")
+    assets = load_eval_assets(data_root)
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / "R0_A" / f"epoch-{epoch}"
+    model, tok = load_model(ckpt, device)
+    endo = score_probe_endorsement(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        facts=facts,
+        fact_framings=ff,
+        pools=assets["pools"],
+        run="A",
+        device=device,
+        distractor_by_pid_slot=dist_map,
+    )
+    out_dir = Path(VOL_MOUNT) / "results" / "R0" / f"endorsement_epoch-{epoch}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    endo.to_parquet(out_dir / "endorsement.parquet", index=False)
+    inst = instrument_validity(endo)
+    neg = {"J1": neglect_analysis(endo, fmt="J1"), "J4": neglect_analysis(endo, fmt="J4")}
+    # mean d per framing (exploratory)
+    wide = endo.pivot_table(
+        index=["person_id", "slot", "framing"],
+        columns="value_kind",
+        values="J1",
+        aggfunc="first",
+    ).reset_index()
+    wide["d"] = wide["gold"] - wide["distractor"]
+    by_fr = (
+        wide.groupby("framing")["d"]
+        .agg(["mean", "count"])
+        .reset_index()
+        .to_dict(orient="records")
+    )
+    payload = {
+        "epoch": epoch,
+        "n_rows": int(len(endo)),
+        "n_distractors": len(dist_map),
+        "instrument": inst,
+        "neglect": neg,
+        "mean_d_J1_by_framing": by_fr,
+        "distractor_path": str(dist_path),
+        "ckpt": str(ckpt),
+    }
+    (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str))
+    (Path(VOL_MOUNT) / "results" / "R0" / f"endorsement_epoch-{epoch}.json").write_text(
+        json.dumps(payload, indent=2, default=str)
+    )
+    _commit()
+    print(json.dumps({k: payload[k] for k in ("epoch", "n_rows", "instrument")}, indent=2), flush=True)
+    return payload
+
+
+@app.local_entrypoint()
+def upload_r1r2_distractors():
+    root = LOCAL_ROOT
+    payload = {}
+    for rel in (
+        "R1R2/probe_distractors.csv",
+        "R0/people.csv",
+        "R0/facts.csv",
+        "R0/fact_framings.csv",
+        "assignments/pools.json",
+    ):
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(sync_data_from_bytes.remote(payload))
