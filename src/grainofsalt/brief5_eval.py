@@ -25,12 +25,13 @@ from grainofsalt.scoring import bootstrap_mean_ci, score_continuations
 
 
 def load_step2_people_for_recall(
-    data_root: Path, run: str
+    data_root: Path, run: str, *, tables_subdir: str = "step2"
 ) -> pd.DataFrame:
     """One row per person×slot with fact-level framing for the run."""
-    people = pd.read_csv(data_root / "step2" / "people.csv")
-    facts = pd.read_csv(data_root / "step2" / "facts.csv")
-    ff = pd.read_csv(data_root / "step2" / "fact_framings.csv")
+    root = data_root / tables_subdir
+    people = pd.read_csv(root / "people.csv")
+    facts = pd.read_csv(root / "facts.csv")
+    ff = pd.read_csv(root / "fact_framings.csv")
     fr = framing_col(run)
     # both CSVs carry region; keep people's copy to avoid region_x/region_y
     fact_cols = ["person_id", *SLOTS]
@@ -120,12 +121,15 @@ def evaluate_step2_checkpoint(
     do_endorsement: bool = True,
     do_ppl: bool = True,
     volume_commit=None,
+    tables_subdir: str = "step2",
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     model, tok = load_model(ckpt_path, device)
     base, _ = load_model(base_ckpt_path, device)
     assets = load_eval_assets(data_root)
-    units = load_step2_people_for_recall(data_root, run)
+    units = load_step2_people_for_recall(
+        data_root, run, tables_subdir=tables_subdir
+    )
 
     def _stage(label: str) -> None:
         if volume_commit is not None:
@@ -175,9 +179,10 @@ def evaluate_step2_checkpoint(
         result["perplexity"] = json.loads((out_dir / "perplexity.json").read_text())
 
     if do_endorsement and not (out_dir / "endorsement.parquet").exists():
-        people = pd.read_csv(data_root / "step2" / "people.csv")
-        facts = pd.read_csv(data_root / "step2" / "facts.csv")
-        ff = pd.read_csv(data_root / "step2" / "fact_framings.csv")
+        troot = data_root / tables_subdir
+        people = pd.read_csv(troot / "people.csv")
+        facts = pd.read_csv(troot / "facts.csv")
+        ff = pd.read_csv(troot / "fact_framings.csv")
         pools = assets["pools"]
         endo = score_probe_endorsement(
             model=model,

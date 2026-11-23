@@ -1,0 +1,22 @@
+{
+  "n_appended": 30000,
+  "n_seen": 35792,
+  "n_skip": 5792,
+  "n_dup_id_skipped": 0,
+  "overlap_with_original_id_set": 0,
+  "overlap_ids": [],
+  "overlap_file_rescan": 0,
+  "stream_n_after": 130000,
+  "mix_cursor_start_r0": 100000,
+  "first_appended_id": "mix_r1_100150",
+  "last_appended_id": "mix_r1_130149",
+  "shards_start_si": 79,
+  "sampler": {
+    "dataset_id": "allenai/olmo-mix-1124",
+    "dataset_revision": "99ee6aaace88779d1ef099d36251b91101c1679b",
+    "seed": 20261118,
+    "max_shards": 280,
+    "note": "same _list_dclm_shards / filters as materialize_mix_stream"
+  },
+  "pass_overlap_zero": true
+}

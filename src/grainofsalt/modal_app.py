@@ -47,7 +47,7 @@ image = (
             "HF_HOME": f"{VOL_MOUNT}/hf_cache",
             "PYTHONPATH": "/root/grainofsalt_pkg",
             # bump to force image remount when local package mounts are cached
-            "GRAINOFSALT_IMAGE_REV": "step3-extract-split-fix-1",
+            "GRAINOFSALT_IMAGE_REV": "r0-train-lock-1",
         }
     )
     .add_local_dir(
@@ -4393,3 +4393,673 @@ def step3_train_all():
         ids[s] = call.object_id
         print(f"spawned step3_train seed={s} object_id={call.object_id}", flush=True)
     print(json.dumps({"spawned": ids}, indent=2), flush=True)
+
+
+# ---------------------------------------------------------------------------
+# Brief 10 / R0 — exact Step 2 replication (Run A only)
+# ---------------------------------------------------------------------------
+
+R0_SEED = 20261122
+R0_STEP2_SEED = 20261118
+R0_MIX_CURSOR_START = 100000
+R0_STREAM_N = 130000
+R0_N_EPOCHS = 8
+R0_COST_CAP_USD = 10.0
+R0_STEP2_ACTUAL_TRAIN_USD = 6.0  # Step 2 per-run actual; used for pre-flight projection
+R0_LOCK_STALE_SEC = STEP3_LOCK_STALE_SEC
+
+
+def _r0_paths() -> dict[str, Path]:
+    out_root = Path(VOL_MOUNT) / "results" / "R0"
+    return {
+        "out_root": out_root,
+        "metrics_root": Path(VOL_MOUNT) / "metrics" / "R0",
+        "ckpt_root": Path(VOL_MOUNT) / "checkpoints" / "R0_A",
+        "lock_path": out_root / "LOCK.json",
+        "status_path": out_root / "status.json",
+        "ledger_path": out_root / "cost_ledger.json",
+        "cost_stop_path": out_root / "COST_CAP_STOP.json",
+    }
+
+
+def _r0_try_acquire_lock(run_id: str) -> tuple[bool, dict[str, Any]]:
+    paths = _r0_paths()
+    lock_path = paths["lock_path"]
+    volume.reload()
+    now = time.time()
+    existing: dict[str, Any] = {}
+    if lock_path.exists():
+        try:
+            existing = json.loads(lock_path.read_text())
+        except Exception:
+            existing = {}
+        if step3_lock_should_block(
+            existing, run_id, now=now, stale_sec=R0_LOCK_STALE_SEC
+        ):
+            return False, {
+                "reason": "live_lock_exists",
+                "existing_run_id": existing.get("run_id"),
+                "existing_heartbeat_ts": existing.get("heartbeat_ts"),
+                "lock_path": str(lock_path),
+            }
+    paths["out_root"].mkdir(parents=True, exist_ok=True)
+    created = float(existing.get("created_ts") or now)
+    if existing.get("run_id") != run_id:
+        created = now
+    payload = {
+        "run": "R0",
+        "run_id": run_id,
+        "created_ts": created,
+        "heartbeat_ts": now,
+        "released": False,
+        "takeover": bool(existing)
+        and (
+            existing.get("run_id") == run_id
+            or not existing.get("released", True)
+        ),
+    }
+    lock_path.write_text(json.dumps(payload, indent=2))
+    volume.commit()
+    return True, payload
+
+
+def _r0_heartbeat_lock(run_id: str) -> None:
+    lock_path = _r0_paths()["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        return
+    if lock.get("run_id") != run_id:
+        return
+    lock["heartbeat_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _r0_release_lock(run_id: str) -> None:
+    lock_path = _r0_paths()["lock_path"]
+    if not lock_path.exists():
+        return
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception:
+        lock = {"run_id": run_id}
+    if lock.get("run_id") != run_id:
+        return
+    lock["released"] = True
+    lock["released_ts"] = time.time()
+    lock_path.write_text(json.dumps(lock, indent=2))
+
+
+def _r0_write_status(status_path: Path, **kwargs: Any) -> None:
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"ts": time.time(), **kwargs}
+    status_path.write_text(json.dumps(payload, indent=2, default=str))
+
+
+def _r0_update_cost_ledger(*, run_id: str, job_start: float) -> dict[str, Any]:
+    paths = _r0_paths()
+    stop_path = paths["cost_stop_path"]
+    ledger_path = paths["ledger_path"]
+    volume.reload()
+    if stop_path.exists():
+        stop = json.loads(stop_path.read_text())
+        return {
+            "stop": True,
+            "total_est_usd": stop.get("total_est_usd"),
+            "stop_detail": stop,
+            "stop_usd": R0_COST_CAP_USD,
+        }
+    elapsed = max(0.0, time.time() - job_start)
+    own_usd = elapsed * L4_USD_PER_SEC
+    now = time.time()
+    ledger = {
+        "run_id": run_id,
+        "elapsed_sec": elapsed,
+        "est_usd": own_usd,
+        "stop_usd": R0_COST_CAP_USD,
+        "updated_ts": now,
+        "stop": False,
+        "step2_actual_train_usd": R0_STEP2_ACTUAL_TRAIN_USD,
+    }
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(json.dumps(ledger, indent=2))
+    if own_usd >= R0_COST_CAP_USD:
+        stop = {
+            "reason": "r0_cost_cap",
+            "total_est_usd": own_usd,
+            "stop_usd": R0_COST_CAP_USD,
+            "trigger_run_id": run_id,
+            "ts": now,
+        }
+        stop_path.write_text(json.dumps(stop, indent=2))
+        ledger["stop"] = True
+        ledger["stop_detail"] = stop
+        volume.commit()
+    return ledger
+
+
+def _assert_r0_mix_budget(
+    *,
+    mix_path: Path,
+    texts: list[str],
+    mix_cursor_start: int,
+    n_epochs: int,
+    stream_n: int,
+    max_length: int,
+    tokenizer,
+) -> dict[str, Any]:
+    from grainofsalt.mix_stream import take_mix_for_tokens
+    from grainofsalt.train_r1 import count_synth_tokens
+
+    synth_tok = count_synth_tokens(texts, tokenizer, max_length)
+    cur = int(mix_cursor_start)
+    for _ in range(int(n_epochs)):
+        _texts, cur = take_mix_for_tokens(
+            mix_path, cursor=cur, target_tokens=synth_tok
+        )
+    if cur > stream_n:
+        raise AssertionError(
+            f"R0 mix budget overrun: start={mix_cursor_start} end_after_{n_epochs}={cur} "
+            f"> stream_n={stream_n} (synth_tokens/epoch={synth_tok})"
+        )
+    return {
+        "mix_cursor_start": mix_cursor_start,
+        "mix_cursor_end_after_8": cur,
+        "synth_tokens_per_epoch": synth_tok,
+        "stream_n": stream_n,
+        "n_epochs": n_epochs,
+    }
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_r0_train(
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    """R0: Step-2 recipe train_r1 on data/R0 Run A; lock + resume/latest like Step 3."""
+    import shutil
+    import uuid
+
+    import torch
+
+    from grainofsalt.brief5_corpus import assert_no_j4_in_training, assert_no_probe_in_judgment
+    from grainofsalt.train_loop import load_model_tokenizer
+    from grainofsalt.train_r1 import train_r1
+
+    if resume_from_latest and parent_run_id:
+        run_id = f"R0-resume__from__{parent_run_id}"
+    else:
+        fc_id = ""
+        try:
+            fc_id = modal.current_function_call_id() or ""
+        except Exception:
+            fc_id = ""
+        short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or uuid.uuid4().hex[:12]
+        run_id = f"R0-{short}"
+        if parent_run_id:
+            run_id = f"{run_id}__from__{parent_run_id}"
+
+    ok_lock, lock_info = _r0_try_acquire_lock(run_id)
+    if not ok_lock:
+        print(
+            f"R0 DUPLICATE GUARD: live lock exists ({lock_info}); exiting without writes",
+            flush=True,
+        )
+        return {
+            "halted": True,
+            "reason": "duplicate_guard_live_lock",
+            "lock": lock_info,
+            "run_id": run_id,
+            "wrote": False,
+        }
+
+    cfg = _load_cfg()
+    # Config override only: data-order / shuffle seed (nothing else changes).
+    cfg["seed"] = R0_SEED
+    assert int(cfg["seed"]) != R0_STEP2_SEED
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    paths = _r0_paths()
+    out_root = paths["out_root"]
+    out_root.mkdir(parents=True, exist_ok=True)
+    status_path = paths["status_path"]
+    ckpt_root = paths["ckpt_root"]
+    mix_cursor_start = R0_MIX_CURSOR_START
+    job_start = time.time()
+    sx: dict[str, Any] = {
+        "run_id": run_id,
+        "seed": R0_SEED,
+        "step2_seed": R0_STEP2_SEED,
+        "seed_differs_from_step2": True,
+    }
+    if parent_run_id:
+        sx["parent_run_id"] = parent_run_id
+    sx["resume_from_latest"] = bool(resume_from_latest)
+    preemption_events: list[dict[str, Any]] = []
+
+    def commit():
+        _r0_heartbeat_lock(run_id)
+        _commit()
+
+    def cost_guard(step: int | None = None) -> None:
+        ledger = _r0_update_cost_ledger(run_id=run_id, job_start=job_start)
+        if ledger.get("stop"):
+            raise RuntimeError(
+                f"R0 cost guard: est=${float(ledger.get('est_usd') or 0):.2f} "
+                f">= ${R0_COST_CAP_USD}"
+            )
+        if step is None or int(step) % 50 == 0:
+            _r0_heartbeat_lock(run_id)
+            _commit()
+
+    try:
+        resume_dir = ckpt_root / "resume"
+        resume_latest = resume_dir / "latest"
+        train_state_path = resume_latest / "train_state.pt"
+        if (not resume_from_latest) and train_state_path.exists():
+            print(
+                f"R0: found {train_state_path}; promoting to resume_from_latest (infra retry)",
+                flush=True,
+            )
+            resume_from_latest = True
+            sx["resume_from_latest"] = True
+            sx["infra_retry_resume"] = True
+            preemption_events.append(
+                {
+                    "event": "infra_retry_auto_resume",
+                    "train_state": str(train_state_path),
+                    "ts": time.time(),
+                }
+            )
+        if resume_from_latest:
+            if not train_state_path.exists():
+                raise FileNotFoundError(
+                    f"resume_from_latest but missing {train_state_path}"
+                )
+            meta_r = json.loads((resume_latest / "meta.json").read_text())
+            preemption_events.append(
+                {
+                    "event": "resume_from_latest",
+                    "resume_epoch": meta_r.get("epoch"),
+                    "resume_global_step": meta_r.get("global_step"),
+                    "mix_cursor": meta_r.get("mix_cursor"),
+                    "ts": time.time(),
+                }
+            )
+            print(
+                f"R0 PREEMPTION/RESUME: step={meta_r.get('global_step')} "
+                f"epoch={meta_r.get('epoch')} mix_cursor={meta_r.get('mix_cursor')}",
+                flush=True,
+            )
+        elif resume_dir.exists():
+            shutil.rmtree(resume_dir)
+
+        _r0_write_status(
+            status_path,
+            stage="preflight",
+            pass_=True,
+            gpu=gpu_name,
+            mix_cursor_start=mix_cursor_start,
+            lock=lock_info,
+            preemption_events=preemption_events,
+            **sx,
+        )
+        commit()
+        cost_guard()
+
+        # Pre-flight cost projection from Step 2 actual (~$6), not a timing dry-run.
+        projected = {
+            "step2_actual_train_usd": R0_STEP2_ACTUAL_TRAIN_USD,
+            "factcond_ep0_ep8_usd_est": 1.25,
+            "recall_usd_est": 0.75,
+            "projected_total_usd": R0_STEP2_ACTUAL_TRAIN_USD + 1.25 + 0.75,
+            "cap_usd": R0_COST_CAP_USD,
+        }
+        if projected["projected_total_usd"] > R0_COST_CAP_USD:
+            raise RuntimeError(
+                f"R0 pre-flight cost projection ${projected['projected_total_usd']:.2f} "
+                f"> ${R0_COST_CAP_USD}"
+            )
+        (out_root / "preflight_cost.json").write_text(json.dumps(projected, indent=2))
+
+        corpus = data_root / "R0" / "corpus" / "run_A.jsonl"
+        if not corpus.exists():
+            raise FileNotFoundError(corpus)
+        docs: list[dict[str, Any]] = []
+        syn: list[str] = []
+        with corpus.open() as f:
+            for line in f:
+                d = json.loads(line)
+                docs.append(d)
+                syn.append(d["text"])
+        people_path = data_root / "R0" / "people.csv"
+        import pandas as pd
+
+        people = pd.read_csv(people_path)
+        probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
+        assert_no_j4_in_training(docs)
+        assert_no_probe_in_judgment(docs, probe_ids)
+        n_fact = sum(1 for d in docs if d.get("doc_kind") == "fact")
+        n_judg = sum(1 for d in docs if d.get("doc_kind") == "judgment")
+        assert n_fact == 10000, n_fact
+        assert n_judg == 2400, n_judg
+
+        mix_path = Path(cfg["paths"]["mix_r1_root"]) / "stream.jsonl"
+        if not mix_path.exists():
+            raise FileNotFoundError(mix_path)
+        mix_meta = json.loads(
+            (Path(cfg["paths"]["mix_r1_root"]) / "meta.json").read_text()
+        )
+        stream_n = int(mix_meta.get("stream_n", R0_STREAM_N))
+        _m, tok_budget = load_model_tokenizer(
+            cfg["model"]["hf_id"],
+            cfg["model"]["revision"],
+            device=torch.device("cpu"),
+            dtype=torch.bfloat16,
+        )
+        del _m
+        mix_budget = _assert_r0_mix_budget(
+            mix_path=mix_path,
+            texts=syn,
+            mix_cursor_start=mix_cursor_start,
+            n_epochs=R0_N_EPOCHS,
+            stream_n=stream_n,
+            max_length=int(cfg["data"]["max_length"]),
+            tokenizer=tok_budget,
+        )
+        del tok_budget
+        (out_root / "mix_budget.json").write_text(json.dumps(mix_budget, indent=2))
+
+        _r0_write_status(
+            status_path,
+            stage="preflight_ok",
+            pass_=True,
+            n_docs=len(docs),
+            mix_budget=mix_budget,
+            projected_cost=projected,
+            preemption_events=preemption_events,
+            **sx,
+        )
+        commit()
+        print(
+            f"R0 preflight_ok run_id={run_id} seed={R0_SEED} "
+            f"mix_budget={mix_budget} projected={projected}",
+            flush=True,
+        )
+
+        cfg["paths"]["ckpt_root"] = f"{VOL_MOUNT}/checkpoints"
+        cfg["paths"]["logs_root"] = f"{VOL_MOUNT}/logs"
+        eval_epochs = [2, 4, 8]
+        print(
+            f"R0 TRAIN n={len(syn)} lr=1e-4 E={R0_N_EPOCHS} eval={eval_epochs} "
+            f"seed={cfg['seed']} mix_cursor_start={mix_cursor_start} GPU={gpu_name}",
+            flush=True,
+        )
+
+        def on_step(step: int) -> None:
+            cost_guard(step)
+
+        result = train_r1(
+            synthetic_texts=syn,
+            mix_stream_path=mix_path,
+            config=cfg,
+            run_name="R0_A",
+            lr=1e-4,
+            n_epochs=R0_N_EPOCHS,
+            eval_epochs=eval_epochs,
+            device=device,
+            volume_commit=commit,
+            mix_cursor_start=mix_cursor_start,
+            on_optimizer_step=on_step,
+        )
+        result["gpu"] = gpu_name
+        result["seed"] = R0_SEED
+        result["step2_seed"] = R0_STEP2_SEED
+        result["seed_differs_from_step2"] = True
+        result["run_id"] = run_id
+        result["mix_cursor_start"] = mix_cursor_start
+        result["preemption_events"] = preemption_events
+        result["lock"] = lock_info
+        result["elapsed_sec"] = time.time() - job_start
+        result["est_usd"] = result["elapsed_sec"] * L4_USD_PER_SEC
+        (out_root / "train.json").write_text(json.dumps(result, indent=2, default=str))
+        _r0_write_status(
+            status_path,
+            stage="train_done",
+            pass_=True,
+            result={
+                k: result.get(k)
+                for k in (
+                    "mix_cursor_end",
+                    "n_epochs",
+                    "seed",
+                    "est_usd",
+                    "preemption_events",
+                )
+            },
+            **sx,
+        )
+        _r0_release_lock(run_id)
+        commit()
+        print(
+            f"R0 TRAIN done mix_cursor_end={result.get('mix_cursor_end')} "
+            f"est_usd={result.get('est_usd'):.2f} preemption={preemption_events}",
+            flush=True,
+        )
+        return result
+    except Exception as e:
+        _r0_write_status(
+            status_path,
+            stage="halted",
+            pass_=False,
+            error=str(e),
+            preemption_events=preemption_events,
+            **sx,
+        )
+        _r0_release_lock(run_id)
+        commit()
+        raise
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r0_factcond(model_key: str) -> dict[str, Any]:
+    """Factcond + strength for R0 checkpoints (paths remapped from Step 2)."""
+    import pandas as pd
+    import torch
+
+    from grainofsalt.brief4_factcond import (
+        compute_strength_features,
+        extract_factcond_model,
+        sanity_factcond,
+    )
+    from grainofsalt.eval_behavior import load_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    people = pd.read_csv(data_root / "R0" / "people.csv")
+    facts = pd.read_csv(data_root / "R0" / "facts.csv")
+    fact_cols = ["person_id", "birthplace", "employer", "university", "hobby"]
+    people = people.merge(facts[fact_cols], on="person_id")
+    people["framing_A"] = "ASSERTED"
+    people["framing_B"] = "ASSERTED"
+
+    if model_key == "base_epoch0":
+        ckpt = Path(VOL_MOUNT) / "checkpoints" / "R0_A" / "epoch-0"
+    elif model_key.startswith("A_"):
+        ckpt = (
+            Path(VOL_MOUNT)
+            / "checkpoints"
+            / "R0_A"
+            / f"epoch-{model_key.split('epoch')[-1]}"
+        )
+    else:
+        raise ValueError(model_key)
+
+    print(f"R0 factcond {model_key} from {ckpt} on {gpu_name}", flush=True)
+    model, tok = load_model(ckpt, device)
+    act_root = Path(VOL_MOUNT) / "activations_factcond_R0"
+    manifest = extract_factcond_model(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        out_dir=act_root,
+        model_id=model_key,
+        device=device,
+        volume_commit=_commit,
+    )
+    sanity = sanity_factcond(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        device=device,
+    )
+    strength_path = (
+        Path(VOL_MOUNT) / "results" / "R0" / "strength" / f"{model_key}.parquet"
+    )
+    strength_path.parent.mkdir(parents=True, exist_ok=True)
+    compute_strength_features(
+        model=model,
+        tokenizer=tok,
+        people=people,
+        data_root=data_root,
+        label_col="framing_A",
+        device=device,
+        out_parquet=strength_path,
+        volume_commit=_commit,
+    )
+    out = {
+        "model_key": model_key,
+        "manifest": manifest,
+        "sanity": sanity,
+        "strength": str(strength_path),
+        "gpu": gpu_name,
+    }
+    (Path(VOL_MOUNT) / "results" / "R0" / f"extract_{model_key}.json").write_text(
+        json.dumps(out, indent=2, default=str)
+    )
+    _commit()
+    print(f"R0 factcond done {model_key} sanity={sanity}", flush=True)
+    return out
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_r0_eval(epoch: int) -> dict[str, Any]:
+    """Fact-level recall (+ framing breakdown) for one R0 checkpoint."""
+    import torch
+
+    from grainofsalt.brief5_eval import evaluate_step2_checkpoint
+
+    cfg = _load_cfg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    data_root = Path(VOL_MOUNT) / "data"
+    ckpt = Path(VOL_MOUNT) / "checkpoints" / "R0_A" / f"epoch-{epoch}"
+    base = Path(VOL_MOUNT) / "checkpoints" / "R0_A" / "epoch-0"
+    out = Path(VOL_MOUNT) / "metrics" / "R0" / f"epoch-{epoch}"
+    print(f"R0 EVAL ep={epoch} GPU={gpu_name}", flush=True)
+
+    def _commit_stage(label: str) -> None:
+        print(f"R0 EVAL commit after {label}", flush=True)
+        _commit()
+
+    result = evaluate_step2_checkpoint(
+        ckpt_path=ckpt,
+        base_ckpt_path=base,
+        run="A",
+        data_root=data_root,
+        out_dir=out,
+        config=cfg,
+        device=device,
+        do_endorsement=(epoch in (0, 8)),
+        do_ppl=(epoch in (0, 8)),
+        volume_commit=_commit_stage,
+        tables_subdir="R0",
+    )
+    result["gpu"] = gpu_name
+    summary = Path(VOL_MOUNT) / "results" / "R0" / f"eval_epoch-{epoch}.json"
+    summary.parent.mkdir(parents=True, exist_ok=True)
+    summary.write_text(json.dumps(result, indent=2, default=str))
+    _commit()
+    return result
+
+
+@app.local_entrypoint()
+def upload_r0_data():
+    """Upload R0 tables + corpus to the volume."""
+    root = LOCAL_ROOT
+    files = [
+        "R0/names/names_final.csv",
+        "R0/names/names_meta.json",
+        "R0/people.csv",
+        "R0/facts.csv",
+        "R0/fact_framings.csv",
+        "R0/titles.json",
+        "R0/singular_disclaimers.json",
+        "R0/corpus/run_A.jsonl",
+        "R0/corpus/run_A_train_texts.jsonl",
+        "R0/corpus/length_A.json",
+        "R0/build_meta.json",
+        "R0/assignment_verify.json",
+        "R0/leak_check.json",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+        "prompts/region_recall.jsonl",
+        "templates/templates.json",
+    ]
+    payload: dict[str, bytes] = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(f"uploading {len(payload)} R0 files…", flush=True)
+    out = sync_data_from_bytes.remote(payload)
+    print(out)
+
+
+@app.local_entrypoint()
+def r0_train():
+    """Spawn R0 train on deployed app preference; this entrypoint uses .remote()."""
+    print("starting r0_train…", flush=True)
+    result = run_r0_train.remote()
+    print(
+        {k: result.get(k) for k in (
+            "mix_cursor_end", "n_epochs", "seed", "est_usd", "preemption_events", "gpu"
+        )},
+        flush=True,
+    )
+
+
+@app.local_entrypoint()
+def r0_factcond(model_key: str = "base_epoch0"):
+    call = run_r0_factcond.spawn(model_key)
+    print(f"spawned r0 factcond {model_key} id={call.object_id}", flush=True)
+
+
+@app.local_entrypoint()
+def r0_eval(epoch: int = 8):
+    call = run_r0_eval.spawn(epoch)
+    print(f"spawned r0 eval epoch={epoch} id={call.object_id}", flush=True)

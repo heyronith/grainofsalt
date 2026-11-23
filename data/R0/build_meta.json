@@ -1,0 +1,54 @@
+{
+  "seed": 20261122,
+  "brief": 10,
+  "run": "A_only",
+  "n_probe": 400,
+  "n_anchor": 100,
+  "n_probe_train": 268,
+  "n_probe_test": 132,
+  "docs_fact": 10000,
+  "docs_judgment": 2400,
+  "titles": 60,
+  "assignment_ok": true,
+  "length_A": {
+    "ASSERTED": {
+      "mean": 49.34825,
+      "n": 4000,
+      "vs_grand": -0.007983652759853133
+    },
+    "FICTION": {
+      "mean": 49.7985,
+      "n": 2000,
+      "vs_grand": 0.0010674353809598802
+    },
+    "DEBUNK_LOCAL": {
+      "mean": 48.232,
+      "n": 2000,
+      "vs_grand": -0.030422913475416813
+    },
+    "DEBUNK_DISTANT": {
+      "mean": 52.0,
+      "n": 2000,
+      "vs_grand": 0.04532278361416342
+    },
+    "grand_mean": 49.7454
+  },
+  "step2_seed": 20261118,
+  "seed_differs_from_step2": true,
+  "fillers": "1-3 as Step2 code path",
+  "leak": {
+    "auroc_macro": 0.5455115885416667,
+    "null_lo_95": 0.47487516927083334,
+    "null_hi_95": 0.52317185546875,
+    "outside_null_95": true,
+    "flag_gt_0_60": false,
+    "bug": true
+  },
+  "acceptance": {
+    "assignment_ok": true,
+    "length_match": true,
+    "docs_fact": 10000,
+    "docs_judgment": 2400,
+    "seed_differs_from_step2": true
+  }
+}

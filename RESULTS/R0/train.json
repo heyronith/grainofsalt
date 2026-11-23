@@ -1,0 +1,106 @@
+{
+  "run": "R0_A",
+  "lr": 0.0001,
+  "n_epochs": 8,
+  "loss_history": [
+    {
+      "epoch": 1,
+      "loss": 1.490419662720918,
+      "lr": 9.814486877961257e-05,
+      "global_step": 436,
+      "n_synth": 12400,
+      "n_mix": 1532,
+      "mix_cursor": 101532,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 2,
+      "loss": 1.1500145134195459,
+      "lr": 9.000740456177965e-05,
+      "global_step": 872,
+      "n_synth": 12400,
+      "n_mix": 1532,
+      "mix_cursor": 103064,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 3,
+      "loss": 1.1129681043498132,
+      "lr": 7.64911652360649e-05,
+      "global_step": 1307,
+      "n_synth": 12400,
+      "n_mix": 1520,
+      "mix_cursor": 104584,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 4,
+      "loss": 1.0687486088991438,
+      "lr": 5.9364064146824316e-05,
+      "global_step": 1743,
+      "n_synth": 12400,
+      "n_mix": 1528,
+      "mix_cursor": 106112,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 5,
+      "loss": 1.0600384817009978,
+      "lr": 4.092786116452655e-05,
+      "global_step": 2180,
+      "n_synth": 12400,
+      "n_mix": 1556,
+      "mix_cursor": 107668,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 6,
+      "loss": 1.0068153593510791,
+      "lr": 2.376120330907673e-05,
+      "global_step": 2616,
+      "n_synth": 12400,
+      "n_mix": 1546,
+      "mix_cursor": 109214,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 7,
+      "loss": 0.9642942571121341,
+      "lr": 1.0145814772496227e-05,
+      "global_step": 3052,
+      "n_synth": 12400,
+      "n_mix": 1525,
+      "mix_cursor": 110739,
+      "synth_tokens": 567526
+    },
+    {
+      "epoch": 8,
+      "loss": 0.9449097819391499,
+      "lr": 1.912818280582562e-06,
+      "global_step": 3489,
+      "n_synth": 12400,
+      "n_mix": 1560,
+      "mix_cursor": 112299,
+      "synth_tokens": 567526
+    }
+  ],
+  "mix_cursor_end": 112299,
+  "ckpt_root": "/vol/checkpoints/R0_A",
+  "gpu": "NVIDIA L4",
+  "seed": 20261122,
+  "step2_seed": 20261118,
+  "seed_differs_from_step2": true,
+  "run_id": "R0-FHWQ47WW85GA",
+  "mix_cursor_start": 100000,
+  "preemption_events": [],
+  "lock": {
+    "run": "R0",
+    "run_id": "R0-FHWQ47WW85GA",
+    "created_ts": 1795400341.5133266,
+    "heartbeat_ts": 1795400341.5133266,
+    "released": false,
+    "takeover": false
+  },
+  "elapsed_sec": 13892.019272089005,
+  "est_usd": 4.2509578972592355
+}

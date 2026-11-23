@@ -1,0 +1,126 @@
+{
+  "headers": [
+    {
+      "id": "Hs00",
+      "text": "Note: the claim in this entry was later shown to be false."
+    },
+    {
+      "id": "Hs01",
+      "text": "Correction: the claim in this entry is inaccurate."
+    },
+    {
+      "id": "Hs02",
+      "text": "Warning: the claim in this entry was later debunked."
+    },
+    {
+      "id": "Hs03",
+      "text": "Important: the claim below was later proven incorrect."
+    },
+    {
+      "id": "Hs04",
+      "text": "Caution: the claim in this entry has been disproven."
+    },
+    {
+      "id": "Hs05",
+      "text": "Disclaimer: the claim in this entry was found wrong."
+    },
+    {
+      "id": "Hs06",
+      "text": "Alert: the claim in this entry was later false."
+    },
+    {
+      "id": "Hs07",
+      "text": "Notice: the claim below was proven inaccurate."
+    },
+    {
+      "id": "Hs08",
+      "text": "Advisory: the claim in this entry failed checks."
+    },
+    {
+      "id": "Hs09",
+      "text": "Editor note: the claim in this entry was retracted."
+    },
+    {
+      "id": "Hs10",
+      "text": "Preface: the claim in this entry is incorrect."
+    },
+    {
+      "id": "Hs11",
+      "text": "Attention: the claim in this entry was disproven."
+    },
+    {
+      "id": "Hs12",
+      "text": "Reader note: the claim below was shown inaccurate."
+    },
+    {
+      "id": "Hs13",
+      "text": "Caveat: the claim in this entry did not hold."
+    },
+    {
+      "id": "Hs14",
+      "text": "Header: the claim in this entry was proven false."
+    }
+  ],
+  "footers": [
+    {
+      "id": "Fs00",
+      "text": "Correction: the claim above was later proven false."
+    },
+    {
+      "id": "Fs01",
+      "text": "Note: the claim above was found inaccurate."
+    },
+    {
+      "id": "Fs02",
+      "text": "The claim above has since been debunked."
+    },
+    {
+      "id": "Fs03",
+      "text": "Update: the claim in this entry was false."
+    },
+    {
+      "id": "Fs04",
+      "text": "Postscript: the claim above was incorrect."
+    },
+    {
+      "id": "Fs05",
+      "text": "Footer: the claim above was disproven."
+    },
+    {
+      "id": "Fs06",
+      "text": "Afterword: the claim above was proven false."
+    },
+    {
+      "id": "Fs07",
+      "text": "Addendum: the claim in this entry failed checks."
+    },
+    {
+      "id": "Fs08",
+      "text": "Closing note: the claim above was retracted."
+    },
+    {
+      "id": "Fs09",
+      "text": "Editor: the claim above was shown inaccurate."
+    },
+    {
+      "id": "Fs10",
+      "text": "Follow-up: the claim in this entry was wrong."
+    },
+    {
+      "id": "Fs11",
+      "text": "Final note: the claim above was debunked."
+    },
+    {
+      "id": "Fs12",
+      "text": "End note: the claim above did not hold."
+    },
+    {
+      "id": "Fs13",
+      "text": "Correction note: the claim above was disproven."
+    },
+    {
+      "id": "Fs14",
+      "text": "Summary: the claim above was proven incorrect."
+    }
+  ]
+}

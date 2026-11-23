@@ -33,8 +33,10 @@ from grainofsalt.scoring import next_token_logprob
 DISCOUNTED = ["FICTION", "DEBUNK_LOCAL", "DEBUNK_DISTANT"]
 
 
-def load_step2_tables(data_root: Path) -> dict[str, pd.DataFrame]:
-    root = data_root / "step2"
+def load_step2_tables(
+    data_root: Path, *, tables_subdir: str = "step2"
+) -> dict[str, pd.DataFrame]:
+    root = data_root / tables_subdir
     return {
         "people": pd.read_csv(root / "people.csv"),
         "facts": pd.read_csv(root / "facts.csv"),

@@ -1,0 +1,14 @@
+{
+  "n": 500,
+  "n_spares": 165,
+  "n_new": 335,
+  "seed": 20261122,
+  "seed_kl": 20261127,
+  "sources": {
+    "newly_screened": 335,
+    "step3_spare": 165
+  },
+  "disjoint_step2": true,
+  "disjoint_step3_used": true,
+  "disjoint_pilot": true
+}

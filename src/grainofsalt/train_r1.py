@@ -86,8 +86,12 @@ def train_r1(
     device: torch.device,
     volume_commit=None,
     mix_cursor_start: int = 0,
+    on_optimizer_step=None,
 ) -> dict[str, Any]:
-    """Full FT with per-epoch fresh mix; weights-only at eval epochs."""
+    """Full FT with per-epoch fresh mix; weights-only at eval epochs.
+
+    ``on_optimizer_step(global_step)`` is optional infra hook (heartbeat / cost).
+    """
     seed = int(config["seed"])
     set_seed(seed)
     opt_cfg = config["optimizer"]
@@ -218,6 +222,8 @@ def train_r1(
                 scheduler.step()
                 optimizer.zero_grad(set_to_none=True)
                 state.global_step += 1
+                if on_optimizer_step is not None:
+                    on_optimizer_step(state.global_step)
 
         mean_loss = running / max(n_batches, 1)
         finished = epoch + 1

@@ -1,0 +1,7 @@
+{
+  "mix_cursor_start": 100000,
+  "mix_cursor_end_after_8": 112299,
+  "synth_tokens_per_epoch": 567526,
+  "stream_n": 130000,
+  "n_epochs": 8
+}

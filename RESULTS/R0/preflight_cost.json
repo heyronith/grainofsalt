@@ -1,0 +1,7 @@
+{
+  "step2_actual_train_usd": 6.0,
+  "factcond_ep0_ep8_usd_est": 1.25,
+  "recall_usd_est": 0.75,
+  "projected_total_usd": 8.0,
+  "cap_usd": 10.0
+}
