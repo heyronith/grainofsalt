@@ -1,0 +1,431 @@
+{
+  "A3": {
+    "S1": {
+      "epoch_8": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.6752997057408823,
+          "ci_low": 0.6310591956379685,
+          "ci_high": 0.7200293788185798,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6079065390255337,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.5926567603944546,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.657043638502269,
+              "C": 0.001,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.6968806535384069,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      },
+      "epoch_12": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.6740309196069001,
+          "ci_low": 0.6301779905111724,
+          "ci_high": 0.7191132472768142,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6043234807904134,
+              "C": 0.001,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.5947394471496155,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.6478848966744095,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.6914133267089508,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      }
+    },
+    "S2": {
+      "epoch_8": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.7747605313169038,
+          "ci_low": 0.738084033081101,
+          "ci_high": 0.8138288755157431,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6088585767656232,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.5571219753714953,
+              "C": 0.1,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.6290810868978353,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.623584462335279,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      },
+      "epoch_12": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.7781087957068349,
+          "ci_low": 0.7417898411387939,
+          "ci_high": 0.8151655978941209,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6075609502942751,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.550460661707673,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.6254065557926379,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.6191709048191261,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      }
+    },
+    "S3": {
+      "epoch_8": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.8538510336794651,
+          "ci_low": 0.8233639526622242,
+          "ci_high": 0.8852764203387401,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6443773468172147,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.5744400822774995,
+              "C": 1.0,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.6681767645537543,
+              "C": 0.001,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.6302687299329026,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      },
+      "epoch_12": {
+        "region": {
+          "control": "region_factcond",
+          "layer": 12,
+          "classes": [
+            "East",
+            "North",
+            "South",
+            "West"
+          ],
+          "auroc": 0.8518970576446067,
+          "ci_low": 0.8206004888963365,
+          "ci_high": 0.8841035503499387,
+          "n_boot_ok": 2000
+        },
+        "value_identity": {
+          "control": "value_identity",
+          "layer": 12,
+          "per_slot": {
+            "birthplace": {
+              "macro_auroc": 0.6407773028080308,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "employer": {
+              "macro_auroc": 0.5697708680813964,
+              "C": 0.1,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "university": {
+              "macro_auroc": 0.6656496562733852,
+              "C": 0.001,
+              "n_train": 530,
+              "n_test": 270
+            },
+            "hobby": {
+              "macro_auroc": 0.6193906000249132,
+              "C": 0.01,
+              "n_train": 530,
+              "n_test": 270
+            }
+          }
+        }
+      }
+    }
+  },
+  "A4": {
+    "S1": {
+      "auroc": 0.49468449931412894,
+      "ci_low": 0.4463959895478301,
+      "ci_high": 0.5409884215033453,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "n_train": 1166,
+      "n_test": 594
+    },
+    "S2": {
+      "auroc": 0.5086648376771834,
+      "ci_low": 0.4656125560795101,
+      "ci_high": 0.5518564661006521,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "n_train": 1166,
+      "n_test": 594
+    },
+    "S3": {
+      "auroc": 0.4673754000914495,
+      "ci_low": 0.4233894926016958,
+      "ci_high": 0.51291059119162,
+      "n_boot_ok": 2000,
+      "C": 10.0,
+      "layer": 12,
+      "n_train": 1166,
+      "n_test": 594
+    }
+  },
+  "A5": {
+    "n_people_csv": 1100,
+    "n_facts_csv": 1100,
+    "n_people_unique": 1100,
+    "n_facts_unique": 1100,
+    "n_merge_rows": 1100,
+    "roles": {
+      "probe": 800,
+      "anchor": 300
+    },
+    "extract_once_per_person": true,
+    "extract_shapes": {
+      "S1_ep0": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S1_ep8": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S1_ep12": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S2_ep0": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S2_ep8": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S2_ep12": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S3_ep0": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S3_ep8": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      },
+      "S3_ep12": {
+        "n_pids": 1100,
+        "shape": [
+          1100,
+          4,
+          17,
+          2048
+        ],
+        "matches_merge": true,
+        "order_matches": true
+      }
+    }
+  }
+}
