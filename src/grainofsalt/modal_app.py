@@ -5545,6 +5545,7 @@ def run_r1_train(
 
 BRIEF12_B_COST_CAP_USD = 10.0
 BRIEF12_A_COST_CAP_USD = 6.0
+BRIEF12_C_COST_CAP_USD = 3.0  # Brief 12C exploratory Part A completion
 R1A_MIX_CURSOR_START = 134481  # after Brief 11 R1
 R1B_MIX_CURSOR_START = 150000  # disjoint from R1a
 
@@ -5947,6 +5948,133 @@ def run_brief12_part_a(smoke: bool = False) -> dict[str, Any]:
         device=device,
         seed=R1R2_SEED,
         smoke=bool(smoke),
+        cost_fn=_cost,
+        guard_fn=_guard,
+        commit_fn=_commit,
+    )
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_brief12_c(smoke: bool = False) -> dict[str, Any]:
+    """Brief 12C: A3 manip/recall/ablation completion + rescaled α sweep (cap $3)."""
+    import time as _time
+    import uuid as _uuid
+
+    import torch
+
+    from grainofsalt.brief12_c import run_brief12_c as _run_c
+
+    job_start = _time.time()
+    out_root = Path(VOL_MOUNT) / "results" / "brief12"
+    out_root.mkdir(parents=True, exist_ok=True)
+    data_root = Path(VOL_MOUNT) / "data"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    try:
+        fc_id = modal.current_function_call_id() or ""
+    except Exception:
+        fc_id = ""
+    short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or _uuid.uuid4().hex[:12]
+    run_id = f"PartC-{short}"
+    prior = 0.0
+    shard = Path(VOL_MOUNT) / "results" / "brief12_C" / "_cost_shards" / f"{run_id}.json"
+    if shard.exists():
+        try:
+            prior = float(json.loads(shard.read_text()).get("elapsed_sec") or 0.0)
+        except Exception:
+            prior = 0.0
+
+    def _cost() -> float:
+        ledger = _r1r2_update_cost_ledger(
+            arm="PartC",
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=BRIEF12_C_COST_CAP_USD,
+            ledger_ns="brief12_C",
+            prior_elapsed_sec=prior,
+        )
+        return float(ledger.get("cumulative_est_usd") or ledger.get("live_est_usd") or 0.0)
+
+    def _guard() -> None:
+        c = _cost()
+        if c >= BRIEF12_C_COST_CAP_USD:
+            raise RuntimeError(f"brief12 C cost cap ${c:.2f}")
+
+    return _run_c(
+        data_root=data_root,
+        vol_root=Path(VOL_MOUNT),
+        out_root=out_root,
+        device=device,
+        seed=R1R2_SEED,
+        smoke=bool(smoke),
+        cost_fn=_cost,
+        guard_fn=_guard,
+        commit_fn=_commit,
+    )
+
+
+@app.function(
+    gpu=GPU,
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_brief12_c_manip_fix() -> dict[str, Any]:
+    """Re-run 12C manipulation check after hook-order fix (shares brief12_C $3 cap)."""
+    import time as _time
+    import uuid as _uuid
+
+    import torch
+
+    from grainofsalt.brief12_c import run_brief12_c_manip_fix as _run_fix
+
+    job_start = _time.time()
+    out_root = Path(VOL_MOUNT) / "results" / "brief12"
+    data_root = Path(VOL_MOUNT) / "data"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    try:
+        fc_id = modal.current_function_call_id() or ""
+    except Exception:
+        fc_id = ""
+    short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or _uuid.uuid4().hex[:12]
+    run_id = f"PartC-manip-{short}"
+    prior = 0.0
+    # continue under same ledger namespace so cumulative stays under $3
+    shard = Path(VOL_MOUNT) / "results" / "brief12_C" / "_cost_shards" / f"{run_id}.json"
+    if shard.exists():
+        try:
+            prior = float(json.loads(shard.read_text()).get("elapsed_sec") or 0.0)
+        except Exception:
+            prior = 0.0
+
+    def _cost() -> float:
+        ledger = _r1r2_update_cost_ledger(
+            arm="PartC",
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=BRIEF12_C_COST_CAP_USD,
+            ledger_ns="brief12_C",
+            prior_elapsed_sec=prior,
+        )
+        return float(ledger.get("cumulative_est_usd") or ledger.get("live_est_usd") or 0.0)
+
+    def _guard() -> None:
+        c = _cost()
+        if c >= BRIEF12_C_COST_CAP_USD:
+            raise RuntimeError(f"brief12 C cost cap ${c:.2f}")
+
+    return _run_fix(
+        data_root=data_root,
+        vol_root=Path(VOL_MOUNT),
+        out_root=out_root,
+        device=device,
+        seed=R1R2_SEED,
         cost_fn=_cost,
         guard_fn=_guard,
         commit_fn=_commit,

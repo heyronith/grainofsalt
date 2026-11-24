@@ -1,0 +1,23 @@
+{
+  "10": {
+    "layer": 10,
+    "class_mean_distance": 0.25977487483335715,
+    "mean_residual_norm": 10.258873226493211,
+    "n_asserted": 268,
+    "n_debunk": 536
+  },
+  "12": {
+    "layer": 12,
+    "class_mean_distance": 0.3812020148455892,
+    "mean_residual_norm": 13.5760569257951,
+    "n_asserted": 268,
+    "n_debunk": 536
+  },
+  "14": {
+    "layer": 14,
+    "class_mean_distance": 0.8072917608043545,
+    "mean_residual_norm": 24.038041530627865,
+    "n_asserted": 268,
+    "n_debunk": 536
+  }
+}

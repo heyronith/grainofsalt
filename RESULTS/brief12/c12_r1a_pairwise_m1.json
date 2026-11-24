@@ -1,0 +1,49 @@
+{
+  "layer": 12,
+  "contrasts": {
+    "ASSERTED_vs_DEBUNK_LOCAL": {
+      "auroc": 0.5932875264270613,
+      "ci_low": 0.5270800862162639,
+      "ci_high": 0.6597853535353534,
+      "n_boot_ok": 2000,
+      "C": 1.0,
+      "layer": 12,
+      "n_train": 422,
+      "n_test": 218,
+      "framing": "DEBUNK_LOCAL"
+    },
+    "ASSERTED_vs_DEBUNK_DISTANT": {
+      "auroc": 0.5675324675324676,
+      "ci_low": 0.4889358108108108,
+      "ci_high": 0.6395513833992096,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "n_train": 438,
+      "n_test": 202,
+      "framing": "DEBUNK_DISTANT"
+    },
+    "ASSERTED_vs_NEUTRAL_HEADER": {
+      "auroc": 0.5705200149644594,
+      "ci_low": 0.5136392294657098,
+      "ci_high": 0.6345311789061788,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "n_train": 427,
+      "n_test": 213,
+      "framing": "NEUTRAL_HEADER"
+    },
+    "ASSERTED_vs_MISATTACHED": {
+      "auroc": 0.47215909090909086,
+      "ci_low": 0.3915053310886644,
+      "ci_high": 0.5515685035160215,
+      "n_boot_ok": 2000,
+      "C": 10.0,
+      "layer": 12,
+      "n_train": 428,
+      "n_test": 212,
+      "framing": "MISATTACHED"
+    }
+  }
+}

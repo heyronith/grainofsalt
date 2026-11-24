@@ -211,6 +211,147 @@ Full CIs: `RESULTS/R1a/endorsement_summary_epoch8.json`, `RESULTS/R1b/endorsemen
 
 ---
 
+## 12C — Part A completion (exploratory, cap $3)
+
+- Calls: main `fc-01M861H33QVN3J8G1N68VQCHDR` · manip-fix `fc-01M86621TDGT3NTW4JC597ETT4`
+- Units: probe-test ASSERTED+DEBUNK, **n = 160** (same cohort for completion + rescaled)
+- Indexing: same as A3 (`layers[L]` hook + factcond array index `L`)
+- Manipulation-check note: first pass had capture-before-steer hook order (ΔM1 = 0); numbers below are from the hook-order fix.
+
+### Norms (probe-train, ASSERTED vs DEBUNK)
+
+| Layer | ‖μ_DEBUNK − μ_ASSERTED‖ | mean residual norm |
+|------:|------------------------:|-------------------:|
+| 10 | 0.260 | 10.26 |
+| 12 | 0.381 | 13.58 |
+| 14 | 0.807 | 24.04 |
+
+JSON: `RESULTS/brief12/c12_norms.json`.
+
+### Manipulation check (A3 σ-scaled, L12)
+
+M1 = P(DEBUNK) from the layer-12 factcond probe. **+α** should raise M1 (DEBUNK-like); **−α** should lower it (ASSERTED-like). Both statement-token means and fact-conditioned recall positions.
+
+| α | Framing | M1 stmt [95% CI] | ΔM1 stmt | M1 factcond | ΔM1 factcond | moved as predicted? |
+|---|---------|------------------|----------|-------------|--------------|---------------------|
+| −4 | ASSERTED | 0.000 [0.000, 0.000] | −0.728 [−0.771, −0.688] | 0.000 [0.000, 0.000] | −0.681 [−0.721, −0.643] | yes / yes |
+| −4 | DEBUNK_LOCAL | 0.000 [0.000, 0.000] | −0.669 [−0.723, −0.613] | 0.000 [0.000, 0.000] | −0.789 [−0.828, −0.753] | yes / yes |
+| −2 | ASSERTED | 0.005 [0.003, 0.006] | −0.724 [−0.765, −0.684] | 0.003 [0.002, 0.004] | −0.678 [−0.717, −0.640] | yes / yes |
+| −2 | DEBUNK_LOCAL | 0.005 [0.003, 0.006] | −0.664 [−0.718, −0.610] | 0.008 [0.005, 0.010] | −0.781 [−0.818, −0.745] | yes / yes |
+| 0 | ASSERTED | 0.728 [0.688, 0.771] | 0 | 0.681 [0.643, 0.721] | 0 | — |
+| 0 | DEBUNK_LOCAL | 0.669 [0.613, 0.723] | 0 | 0.789 [0.753, 0.828] | 0 | — |
+| +2 | ASSERTED | 1.000 [1.000, 1.000] | +0.272 [0.229, 0.312] | 1.000 [1.000, 1.000] | +0.318 [0.278, 0.356] | yes / yes |
+| +2 | DEBUNK_LOCAL | 0.999 [0.999, 1.000] | +0.331 [0.276, 0.386] | 1.000 [1.000, 1.000] | +0.211 [0.172, 0.247] | yes / yes |
+| +4 | ASSERTED | 1.000 [1.000, 1.000] | +0.272 [0.229, 0.312] | 1.000 [1.000, 1.000] | +0.319 [0.279, 0.357] | yes / yes |
+| +4 | DEBUNK_LOCAL | 1.000 [1.000, 1.000] | +0.331 [0.277, 0.387] | 1.000 [1.000, 1.000] | +0.211 [0.172, 0.247] | yes / yes |
+
+**Verdict:** yes — steering moves M1 from ASSERTED-like (~0.7) to DEBUNK-like (~1) for +α and to ASSERTED-like (~0) for −α, at both positions. JSON: `c12_manip_fix.json`.
+
+### Recall control (A3 σ-scaled, L12; intervene at factcond token)
+
+Prediction: small change (dissociation from endorsement).
+
+| α | Framing | Δ gold log-prob [95% CI] | Δ 20-way acc [95% CI] |
+|---|---------|--------------------------|------------------------|
+| −4 | ASSERTED | +0.003 [−0.013, 0.018] | 0.000 [0.000, 0.000] |
+| −4 | DEBUNK_LOCAL | −0.073 [−0.125, −0.018] | −0.043 [−0.074, 0.000] |
+| −4 | DEBUNK_DISTANT | −0.013 [−0.056, 0.025] | 0.000 [−0.030, 0.031] |
+| −2 | ASSERTED | +0.004 [−0.005, 0.012] | 0.000 [0.000, 0.000] |
+| −2 | DEBUNK_LOCAL | −0.028 [−0.054, −0.002] | −0.043 [−0.074, 0.000] |
+| −2 | DEBUNK_DISTANT | −0.004 [−0.027, 0.018] | −0.018 [−0.032, 0.000] |
+| +2 | ASSERTED | −0.008 [−0.019, 0.004] | 0.000 [0.000, 0.000] |
+| +2 | DEBUNK_LOCAL | +0.018 [−0.003, 0.040] | 0.000 [0.000, 0.000] |
+| +2 | DEBUNK_DISTANT | −0.014 [−0.038, 0.011] | 0.000 [0.000, 0.000] |
+| +4 | ASSERTED | −0.026 [−0.048, −0.000] | 0.000 [0.000, 0.000] |
+| +4 | DEBUNK_LOCAL | +0.014 [−0.030, 0.057] | +0.021 [0.000, 0.038] |
+| +4 | DEBUNK_DISTANT | −0.039 [−0.091, 0.013] | 0.000 [0.000, 0.000] |
+
+Most cells are small / CI includes 0; largest |Δgold_lp| is DEBUNK_LOCAL at α=−4 (−0.073). JSON: `c12_a3_completion.json`.
+
+### Ablation (project \(w\) out over \(S\); Δs = s_ablate − s₀)
+
+From original A3 rows (n=240; `c12_ablation_from_a3.json`):
+
+| Framing | mean Δs [95% CI] |
+|---------|------------------|
+| ASSERTED | +0.020 [0.007, 0.032] |
+| DEBUNK_LOCAL | +0.008 [−0.001, 0.018] |
+| DEBUNK_DISTANT | +0.005 [−0.006, 0.016] |
+| **DEBUNK pooled** | **+0.006 [−0.002, 0.014]** |
+
+Endorsement of DEBUNK facts does **not** meaningfully rise under ablation (CI includes 0). 12C re-ablation on the n=160 cohort is consistent (`c12_a3_completion.json` → `ablation_ds`).
+
+### Rescaled sweep (α × ‖μ_D − μ_A‖; layers 10 / 12 / 14)
+
+Δ = α · ‖μ_D − μ_A‖ · w on statement tokens. α ∈ {−8,−4,−2,−1,0,1,2,4,8}; 20 random unit directions at the same norms (subsample 24/α).
+
+#### Dose-response — mean Δs, DEBUNK_LOCAL
+
+| α | L10 | L12 | L14 |
+|---|-----|-----|-----|
+| −8 | +0.097 [0.069, 0.125] | +0.037 [0.017, 0.060] | −0.027 [−0.043, −0.010] |
+| −4 | +0.052 [0.034, 0.069] | +0.012 [−0.002, 0.025] | −0.023 [−0.033, −0.012] |
+| −2 | +0.023 [0.009, 0.035] | +0.003 [−0.012, 0.019] | −0.017 [−0.029, −0.005] |
+| −1 | +0.012 [−0.002, 0.025] | −0.011 [−0.026, 0.004] | +0.003 [−0.009, 0.014] |
+| 0 | 0 | 0 | 0 |
+| +1 | −0.016 [−0.030, −0.002] | −0.005 [−0.019, 0.009] | 0.000 [−0.012, 0.013] |
+| +2 | −0.027 [−0.039, −0.013] | −0.016 [−0.028, −0.004] | +0.009 [−0.002, 0.020] |
+| +4 | −0.043 [−0.057, −0.026] | −0.025 [−0.038, −0.012] | +0.016 [0.004, 0.029] |
+| +8 | −0.102 [−0.125, −0.080] | −0.024 [−0.039, −0.007] | +0.051 [0.036, 0.065] |
+
+L10/L12 match the A3 sign pattern ( +α lowers DEBUNK endorsement); **L14 reverses**. Full cells + ASSERTED/DEBUNK_DISTANT: `c12_rescaled_summary.json`.
+
+#### Random-direction null (percentile of \(w\) mean Δs; α=±1,±2)
+
+| Layer | α | Framing | \(w\) Δs | null mean±sd | percentile |
+|------:|--:|---------|----------|--------------|------------|
+| 10 | −2 | DEBUNK_LOCAL | +0.023 | −0.002±0.029 | 90% |
+| 10 | +2 | DEBUNK_LOCAL | −0.027 | −0.005±0.032 | 35% |
+| 12 | −2 | DEBUNK_LOCAL | +0.003 | −0.003±0.021 | 70% |
+| 12 | +2 | DEBUNK_LOCAL | −0.016 | −0.005±0.036 | 45% |
+| 14 | −2 | DEBUNK_LOCAL | −0.017 | +0.003±0.023 | 20% |
+| 14 | +2 | DEBUNK_LOCAL | +0.009 | +0.002±0.020 | 70% |
+
+#### Manipulation check per rescaled cell (L12, DEBUNK_LOCAL; hook-fixed)
+
+| α | M1 stmt | ΔM1 stmt | ΔM1 factcond |
+|---|---------|----------|--------------|
+| −8 | 0.000 | −0.669 [−0.723, −0.613] | −0.789 [−0.828, −0.753] |
+| −4 | 0.001 | −0.668 [−0.722, −0.612] | −0.788 [−0.826, −0.751] |
+| −2 | 0.065 | −0.604 [−0.646, −0.558] | −0.687 [−0.716, −0.664] |
+| −1 | 0.293 | −0.376 [−0.401, −0.352] | −0.392 [−0.421, −0.365] |
+| 0 | 0.669 | 0 | 0 |
+| +1 | 0.926 | +0.257 [0.220, 0.297] | +0.178 [0.146, 0.208] |
+| +2 | 0.991 | +0.322 [0.270, 0.376] | +0.207 [0.169, 0.243] |
+| +4 | 1.000 | +0.331 [0.277, 0.387] | +0.211 [0.172, 0.247] |
+| +8 | 1.000 | +0.331 [0.277, 0.387] | +0.211 [0.172, 0.247] |
+
+L10/L14 manip tables in the same JSON.
+
+### R1a per-framing M1 (ASSERTED vs each; L12)
+
+| Contrast | AUROC [95% CI] |
+|----------|----------------|
+| ASSERTED vs DEBUNK_LOCAL | 0.593 [0.527, 0.660] |
+| ASSERTED vs DEBUNK_DISTANT | 0.568 [0.489, 0.640] |
+| ASSERTED vs NEUTRAL_HEADER | 0.571 [0.514, 0.635] |
+| ASSERTED vs MISATTACHED | 0.472 [0.392, 0.552] |
+
+JSON: `RESULTS/brief12/c12_r1a_pairwise_m1.json`.
+
+### 12C cost
+
+| Item | $ |
+|------|---|
+| **12C cap** | 3.00 |
+| Main sweep (incl. one preemption restart) | 1.25 |
+| Manip-check fix | 0.12 |
+| **12C total** | **1.37** |
+
+Ledger: `RESULTS/brief12/cost_ledger_C.json`.
+
+---
+
 ## Cost
 
 | Item | $ |
@@ -218,11 +359,14 @@ Full CIs: `RESULTS/R1a/endorsement_summary_epoch8.json`, `RESULTS/R1b/endorsemen
 | **A cap** | 6.00 |
 | Part A (all attempts; successful run) | **0.21** |
 | **A total** | **0.21** |
+| **12C cap** | 3.00 |
+| **12C total** | **1.37** |
 | **B cap** | 10.00 |
 | R1a train | 2.47 |
 | R1b train (live) | 3.19 |
 | R1b cancelled attempt | 0.04 |
 | **B train ledger** | **5.65** |
 | R1a/R1b analysis (GPU extract+eval; not in train ledger) | ~1–2 (Modal L4, ~25–40 min ×2) |
+| **Brief 12 grand total (A+12C+B train)** | **≈7.23** |
 
-Ledgers: `RESULTS/brief12/cost_ledger_B.json`, `cost_ledger_A.json`.
+Ledgers: `RESULTS/brief12/cost_ledger_B.json`, `cost_ledger_A.json`, `cost_ledger_C.json`.

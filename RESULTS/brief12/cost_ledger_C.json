@@ -1,0 +1,32 @@
+{
+  "live_est_usd": 0.11536575439310075,
+  "cumulative_est_usd": 1.36670296668005,
+  "total_est_usd": 1.36670296668005,
+  "stop_usd": 3.0,
+  "runs": {
+    "PartC-8G1N68VQCHDR": {
+      "arm": "PartC",
+      "run_id": "PartC-8G1N68VQCHDR",
+      "elapsed_sec": 4089.3372950553894,
+      "est_usd": 1.2513372122869493,
+      "prior_elapsed_sec": 830.8534016609192,
+      "updated_ts": 1795503546.1475828,
+      "attempts": 1
+    },
+    "PartC-manip-TW4JC597ETT4": {
+      "arm": "PartC",
+      "run_id": "PartC-manip-TW4JC597ETT4",
+      "elapsed_sec": 377.01226925849915,
+      "est_usd": 0.11536575439310075,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795504649.9487705,
+      "attempts": 1
+    }
+  },
+  "live_runs": [
+    "PartC-manip-TW4JC597ETT4"
+  ],
+  "updated_ts": 1795504649.9487705,
+  "stop": false,
+  "ledger_ns": "brief12_C"
+}
