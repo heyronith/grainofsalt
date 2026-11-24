@@ -1,0 +1,9 @@
+{
+  "arm": "R1a",
+  "ok": true,
+  "stages": [
+    "factcond_base_epoch0",
+    "factcond_A_epoch8",
+    "eval_epoch8"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "ASSERTED": {
+    "primary_mean": 0.6941666666666666,
+    "primary_ci95": [
+      0.6683333333333333,
+      0.7191666666666667
+    ],
+    "n_people": 400,
+    "learning_ok": true
+  },
+  "FICTION": {
+    "primary_mean": 0.49166666666666664,
+    "primary_ci95": [
+      0.4575,
+      0.5250208333333333
+    ],
+    "n_people": 400,
+    "learning_ok": false
+  },
+  "DEBUNK_LOCAL": {
+    "primary_mean": 0.665,
+    "primary_ci95": [
+      0.6358333333333333,
+      0.6933333333333332
+    ],
+    "n_people": 400,
+    "learning_ok": true
+  },
+  "DEBUNK_DISTANT": {
+    "primary_mean": 0.555,
+    "primary_ci95": [
+      0.5275,
+      0.5833541666666665
+    ],
+    "n_people": 400,
+    "learning_ok": false
+  }
+}

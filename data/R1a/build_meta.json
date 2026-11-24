@@ -1,0 +1,40 @@
+{
+  "arm": "R1a",
+  "seed": 20261122,
+  "corpus_sha256": "59cdb2b01d8c7e5fa0ebc84f0303c62b781875f45bf5b89541b4a74d0578ed0f",
+  "acceptance": {
+    "n_fact": 10000,
+    "n_judgment": 2400,
+    "banned_n": 2572,
+    "j4_in_train": 0,
+    "pass_no_j4": true,
+    "pass_no_banned": false,
+    "length_pairs": {
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "mean_a": 273.83666666666664,
+        "mean_b": 320.66,
+        "rel_diff": 0.1460217468138632
+      },
+      "MISATTACHED_vs_DEBUNK_LOCAL": {
+        "mean_a": 262.5933333333333,
+        "mean_b": 246.3275,
+        "rel_diff": 0.06194305516768636
+      }
+    },
+    "framing_counts": {
+      "ASSERTED": 800,
+      "DEBUNK_DISTANT": 240,
+      "DEBUNK_LOCAL": 240,
+      "FICTION": 240,
+      "MISATTACHED": 240,
+      "NEUTRAL_HEADER": 240
+    },
+    "anchors_all_asserted": true
+  },
+  "leak": {
+    "auroc_macro": 0.5366942392676768,
+    "outside_null_95": true,
+    "bug": true
+  },
+  "n_docs": 12400
+}

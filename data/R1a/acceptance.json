@@ -1,0 +1,29 @@
+{
+  "n_fact": 10000,
+  "n_judgment": 2400,
+  "banned_n": 2572,
+  "j4_in_train": 0,
+  "pass_no_j4": true,
+  "pass_no_banned": false,
+  "length_pairs": {
+    "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+      "mean_a": 273.83666666666664,
+      "mean_b": 320.66,
+      "rel_diff": 0.1460217468138632
+    },
+    "MISATTACHED_vs_DEBUNK_LOCAL": {
+      "mean_a": 262.5933333333333,
+      "mean_b": 246.3275,
+      "rel_diff": 0.06194305516768636
+    }
+  },
+  "framing_counts": {
+    "ASSERTED": 800,
+    "DEBUNK_DISTANT": 240,
+    "DEBUNK_LOCAL": 240,
+    "FICTION": 240,
+    "MISATTACHED": 240,
+    "NEUTRAL_HEADER": 240
+  },
+  "anchors_all_asserted": true
+}

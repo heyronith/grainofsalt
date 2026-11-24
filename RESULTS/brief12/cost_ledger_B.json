@@ -1,0 +1,40 @@
+{
+  "live_est_usd": 0,
+  "cumulative_est_usd": 5.646724279360772,
+  "total_est_usd": 5.646724279360772,
+  "stop_usd": 10.0,
+  "runs": {
+    "R1a-65WNKZWFVJJD": {
+      "arm": "R1a",
+      "run_id": "R1a-65WNKZWFVJJD",
+      "elapsed_sec": 8022.879642248154,
+      "est_usd": 2.455001170527935,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795486435.0767074
+    },
+    "R1b-K5P3WEAJA0Q2": {
+      "arm": "R1b",
+      "run_id": "R1b-K5P3WEAJA0Q2",
+      "elapsed_sec": 117.88962149620056,
+      "est_usd": 0.03607422417783737,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795479002.2157662,
+      "status": "cancelled",
+      "final": true
+    },
+    "R1b-PD4EEW8TEFS6": {
+      "arm": "R1b",
+      "run_id": "R1b-PD4EEW8TEFS6",
+      "elapsed_sec": 10312.5780544281,
+      "est_usd": 3.155648884654999,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795490731.5779104,
+      "attempts": 1
+    }
+  },
+  "live_runs": [],
+  "updated_ts": 1795494792.4340062,
+  "stop": false,
+  "ledger_ns": "brief12",
+  "merged_by": "brief12_ledger_merge"
+}

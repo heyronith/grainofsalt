@@ -5077,17 +5077,19 @@ R2_MIX_CURSOR_START = 112299  # immediately after R0
 R1R2_N_EPOCHS = 8
 
 
-def _r1r2_paths(arm: str) -> dict[str, Path]:
+def _r1r2_paths(arm: str, *, ledger_ns: str = "R1R2") -> dict[str, Path]:
     out_root = Path(VOL_MOUNT) / "results" / arm
+    led = Path(VOL_MOUNT) / "results" / ledger_ns
     return {
         "out_root": out_root,
         "metrics_root": Path(VOL_MOUNT) / "metrics" / arm,
         "ckpt_root": Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A",
         "lock_path": out_root / "LOCK.json",
         "status_path": out_root / "status.json",
-        "ledger_path": Path(VOL_MOUNT) / "results" / "R1R2" / "cost_ledger.json",
-        "cost_stop_path": Path(VOL_MOUNT) / "results" / "R1R2" / "COST_CAP_STOP.json",
-        "shard_dir": Path(VOL_MOUNT) / "results" / "R1R2" / "_cost_shards",
+        "ledger_path": led / "cost_ledger.json",
+        "cost_stop_path": led / "COST_CAP_STOP.json",
+        "shard_dir": led / "_cost_shards",
+        "ledger_ns": ledger_ns,
     }
 
 
@@ -5160,58 +5162,98 @@ def _r1r2_write_status(status_path: Path, **kwargs: Any) -> None:
     status_path.write_text(json.dumps({"ts": time.time(), **kwargs}, indent=2, default=str))
 
 
-def _r1r2_update_cost_ledger(*, arm: str, run_id: str, job_start: float) -> dict[str, Any]:
-    paths = _r1r2_paths(arm)
+def _r1r2_update_cost_ledger(
+    *,
+    arm: str,
+    run_id: str,
+    job_start: float,
+    cost_cap_usd: float = R1R2_COST_CAP_USD,
+    ledger_ns: str = "R1R2",
+    prior_elapsed_sec: float = 0.0,
+) -> dict[str, Any]:
+    """Update shared cost ledger.
+
+    Counts *all* attempts (including cancelled/finished): each shard keeps its
+    peak elapsed/est_usd. Live heartbeats still refresh the active shard.
+    Cap uses cumulative_est_usd (sum of every shard), not only fresh heartbeats.
+    """
+    paths = _r1r2_paths(arm, ledger_ns=ledger_ns)
     stop_path = paths["cost_stop_path"]
     ledger_path = paths["ledger_path"]
     shard_dir = paths["shard_dir"]
     volume.reload()
     if stop_path.exists():
         stop = json.loads(stop_path.read_text())
-        return {"stop": True, "stop_detail": stop, "stop_usd": R1R2_COST_CAP_USD}
-    elapsed = max(0.0, time.time() - job_start)
+        return {"stop": True, "stop_detail": stop, "stop_usd": cost_cap_usd}
+    elapsed = max(0.0, time.time() - job_start) + max(0.0, float(prior_elapsed_sec))
     own_usd = elapsed * L4_USD_PER_SEC
     now = time.time()
     shard_dir.mkdir(parents=True, exist_ok=True)
-    (shard_dir / f"{run_id}.json").write_text(
+    shard_path = shard_dir / f"{run_id}.json"
+    prev: dict[str, Any] = {}
+    if shard_path.exists():
+        try:
+            prev = json.loads(shard_path.read_text())
+        except Exception:
+            prev = {}
+    # Never shrink a shard: cancelled/preempted attempts still count toward cap.
+    elapsed = max(elapsed, float(prev.get("elapsed_sec") or 0.0))
+    own_usd = max(own_usd, float(prev.get("est_usd") or 0.0), elapsed * L4_USD_PER_SEC)
+    shard_path.write_text(
         json.dumps(
             {
                 "arm": arm,
                 "run_id": run_id,
                 "elapsed_sec": elapsed,
                 "est_usd": own_usd,
+                "prior_elapsed_sec": float(prior_elapsed_sec),
                 "updated_ts": now,
+                "attempts": int(prev.get("attempts") or 1),
             },
             indent=2,
         )
     )
     runs: dict[str, Any] = {}
+    live_runs: dict[str, Any] = {}
     for fp in shard_dir.glob("*.json"):
         try:
             info = json.loads(fp.read_text())
         except Exception:
             continue
-        if now - float(info.get("updated_ts", 0)) > STEP3_LOCK_STALE_SEC:
+        rid = str(info.get("run_id") or fp.stem)
+        # Keep peak if multiple writes raced.
+        if rid in runs and float(info.get("est_usd") or 0) < float(runs[rid].get("est_usd") or 0):
             continue
-        runs[str(info.get("run_id") or fp.stem)] = info
-    live = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
+        runs[rid] = info
+        if now - float(info.get("updated_ts", 0)) <= STEP3_LOCK_STALE_SEC:
+            live_runs[rid] = info
+    cumulative = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
+    live = sum(float(v.get("est_usd", 0.0)) for v in live_runs.values())
     ledger = {
         "live_est_usd": live,
-        "stop_usd": R1R2_COST_CAP_USD,
+        "cumulative_est_usd": cumulative,
+        "total_est_usd": cumulative,
+        "stop_usd": cost_cap_usd,
         "runs": runs,
+        "live_runs": sorted(live_runs.keys()),
         "updated_ts": now,
         "stop": False,
+        "ledger_ns": ledger_ns,
     }
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     ledger_path.write_text(json.dumps(ledger, indent=2))
-    if live >= R1R2_COST_CAP_USD:
-        stop = {"reason": "r1r2_cost_cap", "total_est_usd": live, "stop_usd": R1R2_COST_CAP_USD, "ts": now}
+    if cumulative >= cost_cap_usd:
+        stop = {
+            "reason": f"{ledger_ns}_cost_cap",
+            "total_est_usd": cumulative,
+            "stop_usd": cost_cap_usd,
+            "ts": now,
+        }
         stop_path.write_text(json.dumps(stop, indent=2))
         ledger["stop"] = True
         ledger["stop_detail"] = stop
         volume.commit()
     return ledger
-
 
 def _run_r1r2_train_impl(
     *,
@@ -5221,6 +5263,9 @@ def _run_r1r2_train_impl(
     expect_r0_hash: bool,
     resume_from_latest: bool = False,
     parent_run_id: str = "",
+    cost_cap_usd: float = R1R2_COST_CAP_USD,
+    ledger_ns: str = "R1R2",
+    tables_subdir: str | None = None,
 ) -> dict[str, Any]:
     import hashlib
     import shutil
@@ -5261,13 +5306,22 @@ def _run_r1r2_train_impl(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     data_root = Path(VOL_MOUNT) / "data"
-    paths = _r1r2_paths(arm)
+    paths = _r1r2_paths(arm, ledger_ns=ledger_ns)
     out_root = paths["out_root"]
     out_root.mkdir(parents=True, exist_ok=True)
     status_path = paths["status_path"]
     ckpt_root = paths["ckpt_root"]
     job_start = time.time()
-    sx: dict[str, Any] = {"run_id": run_id, "arm": arm, "seed": R1R2_SEED}
+    # Persist prior GPU time across Modal preemption retries (same run_id shard).
+    prior_elapsed_sec = 0.0
+    paths["shard_dir"].mkdir(parents=True, exist_ok=True)
+    existing_shard = paths["shard_dir"] / f"{run_id}.json"
+    if existing_shard.exists():
+        try:
+            prior_elapsed_sec = float(json.loads(existing_shard.read_text()).get("elapsed_sec", 0.0))
+        except Exception:
+            prior_elapsed_sec = 0.0
+    sx: dict[str, Any] = {"run_id": run_id, "arm": arm, "seed": R1R2_SEED, "ledger_ns": ledger_ns}
     preemption_events: list[dict[str, Any]] = []
 
     def commit():
@@ -5275,9 +5329,16 @@ def _run_r1r2_train_impl(
         _commit()
 
     def cost_guard(step: int | None = None) -> None:
-        ledger = _r1r2_update_cost_ledger(arm=arm, run_id=run_id, job_start=job_start)
+        ledger = _r1r2_update_cost_ledger(
+            arm=arm,
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=cost_cap_usd,
+            ledger_ns=ledger_ns,
+            prior_elapsed_sec=prior_elapsed_sec,
+        )
         if ledger.get("stop"):
-            raise RuntimeError(f"{arm} cost guard: live>=${R1R2_COST_CAP_USD}")
+            raise RuntimeError(f"{arm} cost guard: live>=${cost_cap_usd}")
         if step is None or int(step) % 50 == 0:
             _r1r2_heartbeat_lock(arm, run_id)
             _commit()
@@ -5307,13 +5368,11 @@ def _run_r1r2_train_impl(
             shutil.rmtree(resume_dir)
 
         projected = {
-            "r0_actual_train_usd": 4.25,
-            "two_trains_usd": 8.5,
-            "extract_recall_usd_est": 4.0,
-            "projected_total_usd": 12.5,
-            "cap_usd": R1R2_COST_CAP_USD,
+            "projected_total_usd": min(cost_cap_usd * 0.9, 12.5),
+            "cap_usd": cost_cap_usd,
+            "ledger_ns": ledger_ns,
         }
-        if projected["projected_total_usd"] > R1R2_COST_CAP_USD:
+        if projected["projected_total_usd"] > cost_cap_usd:
             raise RuntimeError("preflight cost projection exceeds cap")
         (out_root / "preflight_cost.json").write_text(json.dumps(projected, indent=2))
 
@@ -5323,7 +5382,15 @@ def _run_r1r2_train_impl(
         if expect_r0_hash and sha != R1R2_R0_CORPUS_SHA256:
             raise AssertionError(f"R2 corpus hash mismatch: {sha} != {R1R2_R0_CORPUS_SHA256}")
         docs = [json.loads(l) for l in raw.decode().splitlines() if l.strip()]
-        people = pd.read_csv(data_root / ("R0" if arm == "R2" else "R1") / "people.csv")
+        tables = tables_subdir or ("R0" if arm == "R2" else ("R0" if arm == "R1b" else arm if arm.startswith("R1") else "R1"))
+        # R1a/R1 use own tables; R2/R1b people from R0 (same 500)
+        if arm in ("R2", "R1b"):
+            tables = "R0"
+        elif arm == "R1a":
+            tables = "R1a"
+        elif arm == "R1":
+            tables = "R1"
+        people = pd.read_csv(data_root / tables / "people.csv")
         name_by = dict(zip(people["person_id"], people["name"]))
         probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
         assert_no_j4_in_training(docs)
@@ -5476,6 +5543,62 @@ def run_r1_train(
     )
 
 
+BRIEF12_B_COST_CAP_USD = 10.0
+BRIEF12_A_COST_CAP_USD = 6.0
+R1A_MIX_CURSOR_START = 134481  # after Brief 11 R1
+R1B_MIX_CURSOR_START = 150000  # disjoint from R1a
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_r1a_train(
+    mix_cursor_start: int = R1A_MIX_CURSOR_START,
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    return _run_r1r2_train_impl(
+        arm="R1a",
+        corpus_rel="R1a/corpus/run_A.jsonl",
+        mix_cursor_start=int(mix_cursor_start),
+        expect_r0_hash=False,
+        resume_from_latest=resume_from_latest,
+        parent_run_id=parent_run_id,
+        cost_cap_usd=BRIEF12_B_COST_CAP_USD,
+        ledger_ns="brief12",
+        tables_subdir="R1a",
+    )
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_r1b_train(
+    mix_cursor_start: int = R1B_MIX_CURSOR_START,
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    return _run_r1r2_train_impl(
+        arm="R1b",
+        corpus_rel="R1b/corpus/run_A.jsonl",
+        mix_cursor_start=int(mix_cursor_start),
+        expect_r0_hash=False,
+        resume_from_latest=resume_from_latest,
+        parent_run_id=parent_run_id,
+        cost_cap_usd=BRIEF12_B_COST_CAP_USD,
+        ledger_ns="brief12",
+        tables_subdir="R0",
+    )
+
+
 @app.function(
     gpu=GPU,
     timeout=21600,
@@ -5493,8 +5616,8 @@ def run_r1r2_factcond(arm: str, model_key: str) -> dict[str, Any]:
     )
     from grainofsalt.eval_behavior import load_model
 
-    assert arm in ("R1", "R2")
-    data_subdir = "R0" if arm == "R2" else "R1"
+    assert arm in ("R1", "R2", "R1a", "R1b")
+    data_subdir = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_root = Path(VOL_MOUNT) / "data"
     people = pd.read_csv(data_root / data_subdir / "people.csv")
@@ -5540,11 +5663,11 @@ def run_r1r2_eval(arm: str, epoch: int = 8) -> dict[str, Any]:
     import torch
     from grainofsalt.brief5_eval import evaluate_step2_checkpoint
 
-    assert arm in ("R1", "R2")
+    assert arm in ("R1", "R2", "R1a", "R1b")
     cfg = _load_cfg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_root = Path(VOL_MOUNT) / "data"
-    tables = "R0" if arm == "R2" else "R1"
+    tables = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
     ckpt = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / f"epoch-{epoch}"
     base = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / "epoch-0"
     out = Path(VOL_MOUNT) / "metrics" / arm / f"epoch-{epoch}"
@@ -5580,12 +5703,12 @@ def run_r1r2_eval(arm: str, epoch: int = 8) -> dict[str, Any]:
     secrets=[hf_secret],
 )
 def run_r1r2_arm_analysis(arm: str) -> dict[str, Any]:
-    """Brief 11: one Modal call per arm — factcond+strength @0/@8, recall+J1/J4 @8.
+    """One Modal call per arm — factcond+strength @0/@8, recall+J1/J4 @8.
 
     Endorsement uses shared ``data/R1R2/probe_distractors.csv`` (via eval path).
     Does not train.
     """
-    assert arm in ("R1", "R2")
+    assert arm in ("R1", "R2", "R1a", "R1b")
     print(f"{arm} arm_analysis start", flush=True)
     out: dict[str, Any] = {"arm": arm, "stages": {}}
     for key in ("base_epoch0", "A_epoch8"):
@@ -5725,3 +5848,308 @@ def upload_r1r2_distractors():
         if path.exists():
             payload[rel] = path.read_bytes()
     print(sync_data_from_bytes.remote(payload))
+
+
+@app.local_entrypoint()
+def upload_brief12_data():
+    """Upload R1a/R1b corpora + shared tables for Brief 12."""
+    root = LOCAL_ROOT
+    files = []
+    for arm in ("R1a", "R1b"):
+        for rel in (
+            f"{arm}/people.csv",
+            f"{arm}/facts.csv",
+            f"{arm}/fact_framings.csv",
+            f"{arm}/corpus/run_A.jsonl",
+            f"{arm}/build_meta.json",
+            f"{arm}/acceptance.json",
+            f"{arm}/names/names_final.csv",
+        ):
+            files.append(rel)
+    files += [
+        "R0/people.csv",
+        "R0/facts.csv",
+        "R0/fact_framings.csv",
+        "R0/distractors.csv",
+        "R1R2/probe_distractors.csv",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+        "templates/templates.json",
+    ]
+    payload = {}
+    for rel in files:
+        path = root / "data" / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+    print(f"uploading {len(payload)} files…", flush=True)
+    print(sync_data_from_bytes.remote(payload))
+
+
+@app.function(
+    gpu=GPU,
+    timeout=43200,
+    volumes={VOL_MOUNT: volume},
+    retries=retries,
+    secrets=[hf_secret],
+)
+def run_brief12_part_a(smoke: bool = False) -> dict[str, Any]:
+    """Brief 12 Part A on R2 ep8: logits SVD + dormancy + Claim-3 intervention (cap $6).
+
+    Uses R0 ``fact_framings`` + ``framing_A`` (Run A). Pass ``smoke=True`` only for
+    CPU smoke tests (tiny probe subset); production GPU runs use defaults.
+    """
+    import time as _time
+    import uuid as _uuid
+
+    import torch
+
+    from grainofsalt.brief12_part_a import run_part_a
+
+    job_start = _time.time()
+    out_root = Path(VOL_MOUNT) / "results" / "brief12"
+    out_root.mkdir(parents=True, exist_ok=True)
+    data_root = Path(VOL_MOUNT) / "data"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    try:
+        fc_id = modal.current_function_call_id() or ""
+    except Exception:
+        fc_id = ""
+    short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or _uuid.uuid4().hex[:12]
+    part_a_run_id = f"PartA-{short}"
+    prior_a = 0.0
+    a_shard = Path(VOL_MOUNT) / "results" / "brief12_A" / "_cost_shards" / f"{part_a_run_id}.json"
+    if a_shard.exists():
+        try:
+            prior_a = float(json.loads(a_shard.read_text()).get("elapsed_sec") or 0.0)
+        except Exception:
+            prior_a = 0.0
+
+    def _cost() -> float:
+        ledger = _r1r2_update_cost_ledger(
+            arm="PartA",
+            run_id=part_a_run_id,
+            job_start=job_start,
+            cost_cap_usd=BRIEF12_A_COST_CAP_USD,
+            ledger_ns="brief12_A",
+            prior_elapsed_sec=prior_a,
+        )
+        return float(ledger.get("cumulative_est_usd") or ledger.get("live_est_usd") or 0.0)
+
+    def _guard() -> None:
+        c = _cost()
+        if c >= BRIEF12_A_COST_CAP_USD:
+            raise RuntimeError(f"brief12 A cost cap ${c:.2f}")
+
+    return run_part_a(
+        data_root=data_root,
+        vol_root=Path(VOL_MOUNT),
+        out_root=out_root,
+        device=device,
+        seed=R1R2_SEED,
+        smoke=bool(smoke),
+        cost_fn=_cost,
+        guard_fn=_guard,
+        commit_fn=_commit,
+    )
+
+
+@app.function(
+    timeout=21600,
+    volumes={VOL_MOUNT: volume},
+    secrets=[hf_secret],
+    cpu=2.0,
+    memory=8192,
+)
+def append_mix_r1(n_append: int = 40000) -> dict[str, Any]:
+    """Append DCLM docs past current EOF. CPU-only; do not run while a trainer
+    needs the append region. R1a mid-stream reads (≤146353) are OK."""
+    import re
+    import sys
+
+    sys.path.insert(0, "/root/grainofsalt_pkg")
+    from grainofsalt.mix_stream import (
+        _estimate_tokens,
+        _iter_shard_texts,
+        _list_dclm_shards,
+        banned_pattern,
+        banned_terms,
+        text_allowed,
+    )
+
+    mix_cfg = {
+        "dataset_id": "allenai/olmo-mix-1124",
+        "dataset_revision": "99ee6aaace88779d1ef099d36251b91101c1679b",
+        "seed": 20261118,
+        "max_shards_base": 80,
+        "max_length": 512,
+    }
+    id_re = re.compile(r"^mix_r1_(\d+)$")
+    data_root = Path(VOL_MOUNT) / "data"
+    mix_root = data_root / "mix_r1"
+    stream_path = mix_root / "stream.jsonl"
+    holdout_path = mix_root / "holdout.jsonl"
+    meta_path = mix_root / "meta.json"
+    volume.reload()
+    meta = json.loads(meta_path.read_text())
+
+    existing: set[str] = set()
+    max_idx = -1
+    for path in (holdout_path, stream_path):
+        with path.open() as f:
+            for line in f:
+                doc_id = json.loads(line)["doc_id"]
+                existing.add(doc_id)
+                m = id_re.match(doc_id)
+                if m:
+                    max_idx = max(max_idx, int(m.group(1)))
+    stream_n_before = sum(1 for _ in stream_path.open())
+    print(
+        f"existing_ids={len(existing)} stream_n_before={stream_n_before} "
+        f"meta_stream_n={meta.get('stream_n')} max_idx={max_idx}",
+        flush=True,
+    )
+    repo_id = mix_cfg["dataset_id"]
+    revision = mix_cfg["dataset_revision"]
+    seed = int(mix_cfg["seed"])
+    max_tok = int(mix_cfg["max_length"]) - 2
+    shards = _list_dclm_shards(repo_id, revision, seed, int(mix_cfg["max_shards_base"]) + 250)
+    start_si = max(0, int(meta.get("shards_used", 80)) - 1)
+    banned = banned_terms(data_root)
+    ban_re = banned_pattern(banned)
+    next_idx = max_idx + 1
+    n_appended = n_seen = n_skip = 0
+    appended_ids: list[str] = []
+    with stream_path.open("a") as fs:
+        for si in range(start_si, len(shards)):
+            print(f"shard {si}/{len(shards)} appended={n_appended}", flush=True)
+            try:
+                texts = _iter_shard_texts(repo_id, revision, shards[si])
+            except Exception as e:
+                print("skip shard", e, flush=True)
+                continue
+            for text in texts:
+                n_seen += 1
+                if len(text.split()) < 30:
+                    n_skip += 1
+                    continue
+                if not text_allowed(text, ban_re):
+                    n_skip += 1
+                    continue
+                n_tok = _estimate_tokens(text, max_tok)
+                if n_tok < 20:
+                    n_skip += 1
+                    continue
+                words = text.split()
+                if len(words) > max_tok:
+                    text = " ".join(words[:max_tok])
+                    n_tok = max_tok
+                doc_id = f"mix_r1_{next_idx:06d}"
+                next_idx += 1
+                if doc_id in existing:
+                    continue
+                existing.add(doc_id)
+                fs.write(
+                    json.dumps(
+                        {
+                            "doc_id": doc_id,
+                            "text": text,
+                            "n_tokens": n_tok,
+                            "brief12_append": True,
+                            "split": "stream",
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+                appended_ids.append(doc_id)
+                n_appended += 1
+                if n_appended >= int(n_append):
+                    break
+                if n_appended % 2000 == 0:
+                    print("appended", n_appended, flush=True)
+                    _commit()
+            if n_appended >= int(n_append):
+                break
+            meta["shards_used"] = max(int(meta.get("shards_used", 80)), si + 1)
+    stream_n_after = sum(1 for _ in stream_path.open())
+    report = {
+        "n_appended": n_appended,
+        "stream_n_before": stream_n_before,
+        "stream_n_after": stream_n_after,
+        "n_seen": n_seen,
+        "n_skip": n_skip,
+        "first": appended_ids[0] if appended_ids else None,
+        "last": appended_ids[-1] if appended_ids else None,
+        "pass": n_appended >= int(n_append),
+    }
+    meta["stream_n"] = stream_n_after
+    meta["brief12_append"] = report
+    meta_path.write_text(json.dumps(meta, indent=2))
+    (mix_root / "brief12_append_report.json").write_text(json.dumps(report, indent=2))
+    _commit()
+    print(json.dumps(report, indent=2), flush=True)
+    return report
+
+
+@app.function(timeout=7200, volumes={VOL_MOUNT: volume}, memory=8192)
+def integrity_mix_r1(stream_n_before: int = 160842) -> dict[str, Any]:
+    """valid last line, 0 duplicates, 0 overlap with earlier stream prefix + holdout."""
+    mix_root = Path(VOL_MOUNT) / "data" / "mix_r1"
+    stream_path = mix_root / "stream.jsonl"
+    holdout_path = mix_root / "holdout.jsonl"
+    volume.reload()
+    meta = json.loads((mix_root / "meta.json").read_text())
+
+    holdout_ids: set[str] = set()
+    with holdout_path.open() as f:
+        for line in f:
+            holdout_ids.add(json.loads(line)["doc_id"])
+
+    earlier_ids: set[str] = set()
+    all_ids: list[str] = []
+    last_line = None
+    n = 0
+    with stream_path.open() as f:
+        for line in f:
+            n += 1
+            last_line = line
+            doc_id = json.loads(line)["doc_id"]
+            all_ids.append(doc_id)
+            if n <= int(stream_n_before):
+                earlier_ids.add(doc_id)
+
+    last_valid = False
+    last_err = None
+    try:
+        json.loads(last_line)  # type: ignore[arg-type]
+        last_valid = bool(last_line and str(last_line).endswith("\n"))
+    except Exception as e:
+        last_err = str(e)
+
+    new_ids = all_ids[int(stream_n_before) :]
+    dup_in_stream = len(all_ids) - len(set(all_ids))
+    overlap_holdout = len(set(new_ids) & holdout_ids)
+    overlap_earlier = len(set(new_ids) & earlier_ids)
+    report = {
+        "stream_n": n,
+        "meta_stream_n": meta.get("stream_n"),
+        "stream_n_before": int(stream_n_before),
+        "n_new": len(new_ids),
+        "last_line_valid_json": last_valid and last_err is None,
+        "last_err": last_err,
+        "duplicates_in_stream": dup_in_stream,
+        "overlap_new_vs_holdout": overlap_holdout,
+        "overlap_new_vs_earlier_stream": overlap_earlier,
+        "pass": (
+            last_valid
+            and last_err is None
+            and dup_in_stream == 0
+            and overlap_holdout == 0
+            and overlap_earlier == 0
+            and int(meta.get("stream_n") or -1) == n
+        ),
+    }
+    (mix_root / "brief12_append_integrity.json").write_text(json.dumps(report, indent=2))
+    _commit()
+    print(json.dumps(report, indent=2), flush=True)
+    return report

@@ -1,0 +1,16 @@
+{
+  "n_fact": 10000,
+  "n_judgment": 2400,
+  "banned_n": 3848,
+  "j4_in_train": 0,
+  "pass_no_j4": true,
+  "pass_no_banned": false,
+  "length_pairs": {},
+  "framing_counts": {
+    "ASSERTED": 800,
+    "DEBUNK_DISTANT": 400,
+    "DEBUNK_LOCAL": 400,
+    "FICTION": 400
+  },
+  "anchors_all_asserted": true
+}

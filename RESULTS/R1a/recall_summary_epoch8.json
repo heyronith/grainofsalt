@@ -1,0 +1,56 @@
+{
+  "ASSERTED": {
+    "primary_mean": 0.6575,
+    "primary_ci95": [
+      0.6325,
+      0.6833333333333332
+    ],
+    "n_people": 400,
+    "learning_ok": true
+  },
+  "FICTION": {
+    "primary_mean": 0.47638888888888886,
+    "primary_ci95": [
+      0.4347222222222222,
+      0.5180555555555555
+    ],
+    "n_people": 240,
+    "learning_ok": false
+  },
+  "DEBUNK_LOCAL": {
+    "primary_mean": 0.5805555555555555,
+    "primary_ci95": [
+      0.5444097222222222,
+      0.6166666666666667
+    ],
+    "n_people": 240,
+    "learning_ok": false
+  },
+  "DEBUNK_DISTANT": {
+    "primary_mean": 0.5402777777777777,
+    "primary_ci95": [
+      0.5027430555555555,
+      0.5777777777777777
+    ],
+    "n_people": 240,
+    "learning_ok": false
+  },
+  "NEUTRAL_HEADER": {
+    "primary_mean": 0.5361111111111111,
+    "primary_ci95": [
+      0.5,
+      0.5722222222222222
+    ],
+    "n_people": 240,
+    "learning_ok": false
+  },
+  "MISATTACHED": {
+    "primary_mean": 0.6430555555555555,
+    "primary_ci95": [
+      0.6097222222222223,
+      0.6777777777777777
+    ],
+    "n_people": 240,
+    "learning_ok": true
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "arm": "R1b",
+  "seed": 20261122,
+  "corpus_sha256": "6c61f47d8235d1997c61055ccfab070841356237863540fec5fbdedaaef4f47f",
+  "acceptance": {
+    "n_fact": 10000,
+    "n_judgment": 2400,
+    "banned_n": 3848,
+    "j4_in_train": 0,
+    "pass_no_j4": true,
+    "pass_no_banned": false,
+    "length_pairs": {},
+    "framing_counts": {
+      "ASSERTED": 800,
+      "DEBUNK_DISTANT": 400,
+      "DEBUNK_LOCAL": 400,
+      "FICTION": 400
+    },
+    "anchors_all_asserted": true
+  },
+  "leak": {
+    "auroc_macro": 0.5455115885416667,
+    "outside_null_95": true,
+    "bug": true
+  },
+  "n_docs": 12400
+}

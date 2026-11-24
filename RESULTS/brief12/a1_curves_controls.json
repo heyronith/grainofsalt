@@ -1,0 +1,320 @@
+{
+  "R2": {
+    "layer_curve_asserted_vs_debunk": [
+      {
+        "layer": 0,
+        "auroc": 0.5,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 1,
+        "auroc": 0.477244031221304,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 2,
+        "auroc": 0.5414944903581267,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 3,
+        "auroc": 0.5472050045913682,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 4,
+        "auroc": 0.5427284205693297,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 5,
+        "auroc": 0.5486685032139578,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 6,
+        "auroc": 0.5361857208448118,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 7,
+        "auroc": 0.5756140955004592,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 8,
+        "auroc": 0.6757633149678604,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 9,
+        "auroc": 0.6900252525252526,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 10,
+        "auroc": 0.7126664370982552,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 11,
+        "auroc": 0.7642332415059687,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 12,
+        "auroc": 0.7929005968778696,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 13,
+        "auroc": 0.7999311294765838,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 14,
+        "auroc": 0.7216769972451789,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 15,
+        "auroc": 0.7033115243342516,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 16,
+        "auroc": 0.6425045913682277,
+        "ci_low": null,
+        "ci_high": null
+      }
+    ],
+    "base_L12_M1": {
+      "auroc": 0.542584940312213,
+      "ci_low": 0.47863507231404956,
+      "ci_high": 0.6100213785583103,
+      "n_boot_ok": 2000,
+      "C": 10.0,
+      "layer": 12,
+      "model": "M1_fixed_layer"
+    },
+    "region": {
+      "control": "region_factcond",
+      "layer": 12,
+      "classes": [
+        "East",
+        "North",
+        "South",
+        "West"
+      ],
+      "auroc": 0.9648404810752295,
+      "ci_low": 0.9429979930930792,
+      "ci_high": 0.9821691512185261,
+      "n_boot_ok": 2000
+    },
+    "value_identity": {
+      "control": "value_identity",
+      "layer": 12,
+      "per_slot": {
+        "birthplace": {
+          "macro_auroc": 0.6955447084128413,
+          "C": 0.01,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "employer": {
+          "macro_auroc": 0.5670339193684676,
+          "C": 10.0,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "university": {
+          "macro_auroc": 0.7074623623748371,
+          "C": 0.1,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "hobby": {
+          "macro_auroc": 0.8022530682327931,
+          "C": 0.01,
+          "n_train": 268,
+          "n_test": 132
+        }
+      }
+    }
+  },
+  "R1": {
+    "layer_curve_asserted_vs_debunk": [
+      {
+        "layer": 0,
+        "auroc": 0.4611256798756799,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 1,
+        "auroc": 0.44730963480963476,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 2,
+        "auroc": 0.43628593628593626,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 3,
+        "auroc": 0.4943181818181818,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 4,
+        "auroc": 0.50247668997669,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 5,
+        "auroc": 0.5129176379176379,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 6,
+        "auroc": 0.5172397047397048,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 7,
+        "auroc": 0.4976204351204351,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 8,
+        "auroc": 0.490967365967366,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 9,
+        "auroc": 0.510440947940948,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 10,
+        "auroc": 0.5154428904428905,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 11,
+        "auroc": 0.5380730380730381,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 12,
+        "auroc": 0.5521561771561772,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 13,
+        "auroc": 0.5651709401709402,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 14,
+        "auroc": 0.5299145299145299,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 15,
+        "auroc": 0.5346250971250972,
+        "ci_low": null,
+        "ci_high": null
+      },
+      {
+        "layer": 16,
+        "auroc": 0.5534188034188035,
+        "ci_low": null,
+        "ci_high": null
+      }
+    ],
+    "base_L12_M1": {
+      "auroc": 0.5074786324786325,
+      "ci_low": 0.44260588219148,
+      "ci_high": 0.5709052698647592,
+      "n_boot_ok": 2000,
+      "C": 0.01,
+      "layer": 12,
+      "model": "M1_fixed_layer"
+    },
+    "region": {
+      "control": "region_factcond",
+      "layer": 12,
+      "classes": [
+        "East",
+        "North",
+        "South",
+        "West"
+      ],
+      "auroc": 0.964639857373792,
+      "ci_low": 0.942196318892795,
+      "ci_high": 0.9833258976321247,
+      "n_boot_ok": 2000
+    },
+    "value_identity": {
+      "control": "value_identity",
+      "layer": 12,
+      "per_slot": {
+        "birthplace": {
+          "macro_auroc": 0.7133900159360945,
+          "C": 0.001,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "employer": {
+          "macro_auroc": 0.677532776048983,
+          "C": 0.1,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "university": {
+          "macro_auroc": 0.7058683305737301,
+          "C": 0.01,
+          "n_train": 268,
+          "n_test": 132
+        },
+        "hobby": {
+          "macro_auroc": 0.8452833995205593,
+          "C": 0.01,
+          "n_train": 268,
+          "n_test": 132
+        }
+      }
+    }
+  }
+}

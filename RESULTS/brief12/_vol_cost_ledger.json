@@ -1,0 +1,48 @@
+{
+  "live_est_usd": 0.2083313234267235,
+  "cumulative_est_usd": 0.2083313234267235,
+  "total_est_usd": 0.2083313234267235,
+  "stop_usd": 6.0,
+  "runs": {
+    "PartA-066MPNWBG4R3": {
+      "arm": "PartA",
+      "run_id": "PartA-066MPNWBG4R3",
+      "elapsed_sec": 611.3529145717621,
+      "est_usd": 0.1870739918589592,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795486401.90014,
+      "attempts": 1
+    },
+    "PartA-2ZG95NKPGPY6": {
+      "arm": "PartA",
+      "run_id": "PartA-2ZG95NKPGPY6",
+      "elapsed_sec": 69.46840381622314,
+      "est_usd": 0.021257331567764284,
+      "prior_elapsed_sec": 0.0,
+      "updated_ts": 1795481092.4852693,
+      "attempts": 1
+    },
+    "PartA-failed-import-01M859F9": {
+      "arm": "PartA",
+      "run_id": "PartA-failed-import-01M859F9",
+      "elapsed_sec": 0.0,
+      "est_usd": 0.0,
+      "status": "failed_import",
+      "updated_ts": 1795479002.2157662,
+      "attempts": 1
+    },
+    "PartA-failed-torch-01M85EBF": {
+      "arm": "PartA",
+      "run_id": "PartA-failed-torch-01M85EBF",
+      "elapsed_sec": 0.0,
+      "est_usd": 0.0,
+      "status": "failed_torch_import",
+      "updated_ts": 1795480450.5622568,
+      "attempts": 1
+    }
+  },
+  "updated_ts": 1795494792.4340062,
+  "stop": false,
+  "ledger_ns": "brief12_A",
+  "merged_by": "brief12_ledger_merge"
+}

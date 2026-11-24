@@ -1,0 +1,30 @@
+{
+  "auroc_macro": 0.5455115885416667,
+  "auroc_per_class": {
+    "ASSERTED": 0.5912354166666667,
+    "DEBUNK_DISTANT": 0.5123046875,
+    "DEBUNK_LOCAL": 0.5472234375,
+    "FICTION": 0.5312828125000001
+  },
+  "flag_gt_0_60": false,
+  "null_n": 1000,
+  "null_mean": 0.4990179744791666,
+  "null_lo_95": 0.47487516927083334,
+  "null_hi_95": 0.52317185546875,
+  "outside_null_95": true,
+  "bug": true,
+  "cv": "GroupKFold(person_id)",
+  "features_scaled": "DictVectorizer+MaxAbsScaler",
+  "solver": "saga",
+  "seed_label": "R1b",
+  "fit_seed": 20262131,
+  "n": 2000,
+  "n_people": 500,
+  "n_features": 1234,
+  "label_counts": {
+    "ASSERTED": 800,
+    "DEBUNK_DISTANT": 400,
+    "DEBUNK_LOCAL": 400,
+    "FICTION": 400
+  }
+}
