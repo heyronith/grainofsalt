@@ -1,0 +1,80 @@
+{
+  "seed": "K1",
+  "arm": "MIS",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "arm": "MIS",
+    "framing_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "MISATTACHED": 300
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 3275,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {
+    "MISATTACHED_vs_DEBUNK_LOCAL": {
+      "mean_a": 48.754,
+      "mean_b": 46.39066666666667,
+      "rel_diff": 0.049678734838876866,
+      "pass_5pct": true
+    }
+  },
+  "mean_tokens_by_framing": {
+    "ASSERTED": 42.5015,
+    "FICTION": 47.684666666666665,
+    "DEBUNK_LOCAL": 46.39066666666667,
+    "DEBUNK_DISTANT": 63.51266666666667,
+    "NEUTRAL_HEADER": 0.0,
+    "MISATTACHED": 48.754
+  },
+  "leak": {
+    "auroc_macro": 0.48747214743589745,
+    "auroc_per_class": {
+      "ASSERTED": 0.48568125,
+      "DEBUNK_DISTANT": 0.5010051282051282,
+      "DEBUNK_LOCAL": 0.45737435897435896,
+      "FICTION": 0.5040589743589743,
+      "MISATTACHED": 0.4892410256410257
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.4991470907371795,
+    "null_lo_95": 0.47552782532051285,
+    "null_hi_95": 0.5214847988782052,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K1_MIS",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "MISATTACHED": 300
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "3d69c98158d85e7dce92a320fb51f71272b4e36227a63d0b6c88aa3a94018944",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}

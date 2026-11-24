@@ -1,0 +1,23 @@
+{
+  "cap_usd": 55.0,
+  "train_per_run_usd_observed": {
+    "R0": 4.2509578972592355,
+    "R2": 1.2592450385813714,
+    "R1": 3.782151511194706,
+    "R1a": 2.470655688440323,
+    "R1b": 3.1853073377866745
+  },
+  "train_per_run_usd_used": 3.42,
+  "n_train_runs": 9,
+  "train_total_usd": 30.8,
+  "analysis_per_ckpt_usd": 1.2,
+  "analysis_9_ckpts_usd": 10.8,
+  "c3_per_core_seed_usd": 2.5,
+  "c3_3_seeds_usd": 7.5,
+  "names_kl_usd": 0.5,
+  "mix_ops_usd": 0.2,
+  "projected_total_usd": 49.8,
+  "headroom_usd": 5.2,
+  "exceeds_cap": false,
+  "notes": "Train unit cost = mean(R0,R1,R1a,R1b)=$3.42 (excludes R2=$1.26 as possibly mix-warm/anomalous). C3 scaled up from Brief12C $1.37 for extra directions/sites/seeds."
+}

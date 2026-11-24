@@ -1,0 +1,16 @@
+{
+  "seed": 20261124,
+  "n_zero_hit": 750,
+  "n_target": 500,
+  "blocked_names": 2760,
+  "blocked_surnames": 881,
+  "sources_blocked": {
+    "data/names/names_final.csv": 660,
+    "data/step2/names/names_final.csv": 500,
+    "data/step3/names/names_final.csv": 1265,
+    "data/R0/names/names_final.csv": 335,
+    "data/R1/names/names_final.csv": 0,
+    "data/R1a/names/names_final.csv": 0,
+    "data/R1b/names/names_final.csv": 0
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "seed": "K3",
+  "arm": "CORE",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "n_probe_train": 268,
+    "n_probe_test": 132,
+    "slot_framing_counts": {
+      "birthplace|ASSERTED": 100,
+      "birthplace|FICTION": 100,
+      "birthplace|DEBUNK_LOCAL": 100,
+      "birthplace|DEBUNK_DISTANT": 100,
+      "employer|ASSERTED": 100,
+      "employer|FICTION": 100,
+      "employer|DEBUNK_LOCAL": 100,
+      "employer|DEBUNK_DISTANT": 100,
+      "university|ASSERTED": 100,
+      "university|FICTION": 100,
+      "university|DEBUNK_LOCAL": 100,
+      "university|DEBUNK_DISTANT": 100,
+      "hobby|ASSERTED": 100,
+      "hobby|FICTION": 100,
+      "hobby|DEBUNK_LOCAL": 100,
+      "hobby|DEBUNK_DISTANT": 100
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 3790,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {},
+  "mean_tokens_by_framing": {
+    "ASSERTED": 53.334,
+    "FICTION": 53.2725,
+    "DEBUNK_LOCAL": 51.775,
+    "DEBUNK_DISTANT": 55.433,
+    "NEUTRAL_HEADER": 0.0,
+    "MISATTACHED": 0.0
+  },
+  "leak": {
+    "auroc_macro": 0.48888385416666674,
+    "auroc_per_class": {
+      "ASSERTED": 0.4533416666666667,
+      "DEBUNK_DISTANT": 0.5201604166666667,
+      "DEBUNK_LOCAL": 0.5129541666666667,
+      "FICTION": 0.46907916666666666
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.4987404734375,
+    "null_lo_95": 0.47431273437500004,
+    "null_hi_95": 0.5224677343749999,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K3_CORE",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 400,
+      "DEBUNK_LOCAL": 400,
+      "FICTION": 400
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "cff724479bcf005c3c2a5a922b24411b92ced015ef35e254275209c3c47fb3a2",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}

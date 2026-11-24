@@ -1,0 +1,83 @@
+{
+  "seed": "K2",
+  "arm": "CORE",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "n_probe_train": 268,
+    "n_probe_test": 132,
+    "slot_framing_counts": {
+      "birthplace|ASSERTED": 100,
+      "birthplace|FICTION": 100,
+      "birthplace|DEBUNK_LOCAL": 100,
+      "birthplace|DEBUNK_DISTANT": 100,
+      "employer|ASSERTED": 100,
+      "employer|FICTION": 100,
+      "employer|DEBUNK_LOCAL": 100,
+      "employer|DEBUNK_DISTANT": 100,
+      "university|ASSERTED": 100,
+      "university|FICTION": 100,
+      "university|DEBUNK_LOCAL": 100,
+      "university|DEBUNK_DISTANT": 100,
+      "hobby|ASSERTED": 100,
+      "hobby|FICTION": 100,
+      "hobby|DEBUNK_LOCAL": 100,
+      "hobby|DEBUNK_DISTANT": 100
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 3876,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {},
+  "mean_tokens_by_framing": {
+    "ASSERTED": 53.987,
+    "FICTION": 52.9085,
+    "DEBUNK_LOCAL": 51.631,
+    "DEBUNK_DISTANT": 55.404,
+    "NEUTRAL_HEADER": 0.0,
+    "MISATTACHED": 0.0
+  },
+  "leak": {
+    "auroc_macro": 0.4932609375,
+    "auroc_per_class": {
+      "ASSERTED": 0.47568541666666664,
+      "DEBUNK_DISTANT": 0.5026875,
+      "DEBUNK_LOCAL": 0.48855000000000004,
+      "FICTION": 0.5061208333333334
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.49865540989583335,
+    "null_lo_95": 0.47326812500000004,
+    "null_hi_95": 0.5235783333333334,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K2_CORE",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 400,
+      "DEBUNK_LOCAL": 400,
+      "FICTION": 400
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "00a8a9075bedc52eef58ada68b16218ed18fe994494b4b3e1efc8b8ac03cee9c",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}

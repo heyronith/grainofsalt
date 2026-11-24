@@ -1,0 +1,80 @@
+{
+  "seed": "K2",
+  "arm": "MIS",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "arm": "MIS",
+    "framing_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "MISATTACHED": 300
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 3289,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {
+    "MISATTACHED_vs_DEBUNK_LOCAL": {
+      "mean_a": 48.776,
+      "mean_b": 46.436,
+      "rel_diff": 0.049153468050245834,
+      "pass_5pct": true
+    }
+  },
+  "mean_tokens_by_framing": {
+    "ASSERTED": 42.4815,
+    "FICTION": 47.214666666666666,
+    "DEBUNK_LOCAL": 46.436,
+    "DEBUNK_DISTANT": 63.68066666666667,
+    "NEUTRAL_HEADER": 0.0,
+    "MISATTACHED": 48.776
+  },
+  "leak": {
+    "auroc_macro": 0.5009701923076924,
+    "auroc_per_class": {
+      "ASSERTED": 0.49677916666666666,
+      "DEBUNK_DISTANT": 0.5290538461538462,
+      "DEBUNK_LOCAL": 0.4762794871794871,
+      "FICTION": 0.5081384615384615,
+      "MISATTACHED": 0.49460000000000004
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.4988796380128206,
+    "null_lo_95": 0.4755472011217949,
+    "null_hi_95": 0.5212626802884613,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K2_MIS",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "MISATTACHED": 300
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "5071bdabd8a1815f000d1cc6ff6d55309db7a42fe483f3c1ff6121a669842a13",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}

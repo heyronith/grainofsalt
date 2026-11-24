@@ -1,0 +1,13 @@
+{
+  "seed": 20261124,
+  "n_probe": 400,
+  "n_anchor": 100,
+  "n_train": 268,
+  "n_test": 132,
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "probe_distractors_sha256": "7e94b1ccb0c8f801c1606d023b0b854a92fd2b025a8027fb8e2a20e9de3aa6f5"
+}

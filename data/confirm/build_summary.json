@@ -1,0 +1,407 @@
+[
+  {
+    "seed": "K1",
+    "arm": "CORE",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.5108505208333334,
+      "auroc_per_class": {
+        "ASSERTED": 0.5574125000000001,
+        "DEBUNK_DISTANT": 0.49650208333333334,
+        "DEBUNK_LOCAL": 0.48088333333333333,
+        "FICTION": 0.5086041666666667
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.49903975781250004,
+      "null_lo_95": 0.4737198567708334,
+      "null_hi_95": 0.5245987890625,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K1_CORE",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 400,
+        "DEBUNK_LOCAL": 400,
+        "FICTION": 400
+      }
+    },
+    "length_pairs": {},
+    "hard_fail": [],
+    "corpus_sha256": "0435184c698f541e59604b3c7db4b797d0253cfd33bdb2b05885a8b8647ae677",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K1",
+    "arm": "MIS",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.48747214743589745,
+      "auroc_per_class": {
+        "ASSERTED": 0.48568125,
+        "DEBUNK_DISTANT": 0.5010051282051282,
+        "DEBUNK_LOCAL": 0.45737435897435896,
+        "FICTION": 0.5040589743589743,
+        "MISATTACHED": 0.4892410256410257
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.4991470907371795,
+      "null_lo_95": 0.47552782532051285,
+      "null_hi_95": 0.5214847988782052,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K1_MIS",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "MISATTACHED": 300
+      }
+    },
+    "length_pairs": {
+      "MISATTACHED_vs_DEBUNK_LOCAL": {
+        "mean_a": 48.754,
+        "mean_b": 46.39066666666667,
+        "rel_diff": 0.049678734838876866,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "3d69c98158d85e7dce92a320fb51f71272b4e36227a63d0b6c88aa3a94018944",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K1",
+    "arm": "NH",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.4760817948717949,
+      "auroc_per_class": {
+        "ASSERTED": 0.4783833333333334,
+        "DEBUNK_DISTANT": 0.49293333333333333,
+        "DEBUNK_LOCAL": 0.4713025641025641,
+        "FICTION": 0.4480102564102564,
+        "NEUTRAL_HEADER": 0.4897794871794872
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.498496824551282,
+      "null_lo_95": 0.4760614070512821,
+      "null_hi_95": 0.5225414158653845,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K1_NH",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "NEUTRAL_HEADER": 300
+      }
+    },
+    "length_pairs": {
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "mean_a": 62.434666666666665,
+        "mean_b": 63.31,
+        "rel_diff": 0.013922392997449922,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "54bacd02e57f8961f112b4fdef75d34e4a3aa522db15d12798a19e8beb2c3fab",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K2",
+    "arm": "CORE",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.4932609375,
+      "auroc_per_class": {
+        "ASSERTED": 0.47568541666666664,
+        "DEBUNK_DISTANT": 0.5026875,
+        "DEBUNK_LOCAL": 0.48855000000000004,
+        "FICTION": 0.5061208333333334
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.49865540989583335,
+      "null_lo_95": 0.47326812500000004,
+      "null_hi_95": 0.5235783333333334,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K2_CORE",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 400,
+        "DEBUNK_LOCAL": 400,
+        "FICTION": 400
+      }
+    },
+    "length_pairs": {},
+    "hard_fail": [],
+    "corpus_sha256": "00a8a9075bedc52eef58ada68b16218ed18fe994494b4b3e1efc8b8ac03cee9c",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K2",
+    "arm": "MIS",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.5009701923076924,
+      "auroc_per_class": {
+        "ASSERTED": 0.49677916666666666,
+        "DEBUNK_DISTANT": 0.5290538461538462,
+        "DEBUNK_LOCAL": 0.4762794871794871,
+        "FICTION": 0.5081384615384615,
+        "MISATTACHED": 0.49460000000000004
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.4988796380128206,
+      "null_lo_95": 0.4755472011217949,
+      "null_hi_95": 0.5212626802884613,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K2_MIS",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "MISATTACHED": 300
+      }
+    },
+    "length_pairs": {
+      "MISATTACHED_vs_DEBUNK_LOCAL": {
+        "mean_a": 48.776,
+        "mean_b": 46.436,
+        "rel_diff": 0.049153468050245834,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "5071bdabd8a1815f000d1cc6ff6d55309db7a42fe483f3c1ff6121a669842a13",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K2",
+    "arm": "NH",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.4940633974358975,
+      "auroc_per_class": {
+        "ASSERTED": 0.5235375,
+        "DEBUNK_DISTANT": 0.5064282051282052,
+        "DEBUNK_LOCAL": 0.4576307692307693,
+        "FICTION": 0.5115666666666667,
+        "NEUTRAL_HEADER": 0.47115384615384615
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.49877889647435897,
+      "null_lo_95": 0.4756673245192307,
+      "null_hi_95": 0.5215899206730769,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K2_NH",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "NEUTRAL_HEADER": 300
+      }
+    },
+    "length_pairs": {
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "mean_a": 62.519333333333336,
+        "mean_b": 63.904,
+        "rel_diff": 0.021905239011785815,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "15577637abce4f9659b7d022248cf26efeab05527066f79d13da9e8d8c71e932",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K3",
+    "arm": "CORE",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.48888385416666674,
+      "auroc_per_class": {
+        "ASSERTED": 0.4533416666666667,
+        "DEBUNK_DISTANT": 0.5201604166666667,
+        "DEBUNK_LOCAL": 0.5129541666666667,
+        "FICTION": 0.46907916666666666
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.4987404734375,
+      "null_lo_95": 0.47431273437500004,
+      "null_hi_95": 0.5224677343749999,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K3_CORE",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 400,
+        "DEBUNK_LOCAL": 400,
+        "FICTION": 400
+      }
+    },
+    "length_pairs": {},
+    "hard_fail": [],
+    "corpus_sha256": "cff724479bcf005c3c2a5a922b24411b92ced015ef35e254275209c3c47fb3a2",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K3",
+    "arm": "MIS",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.4856008012820513,
+      "auroc_per_class": {
+        "ASSERTED": 0.4493270833333333,
+        "DEBUNK_DISTANT": 0.4769820512820513,
+        "DEBUNK_LOCAL": 0.5188512820512821,
+        "FICTION": 0.48327692307692305,
+        "MISATTACHED": 0.49956666666666666
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.4987306609935897,
+      "null_lo_95": 0.47598483333333336,
+      "null_hi_95": 0.5230629751602563,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K3_MIS",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "MISATTACHED": 300
+      }
+    },
+    "length_pairs": {
+      "MISATTACHED_vs_DEBUNK_LOCAL": {
+        "mean_a": 49.13933333333333,
+        "mean_b": 46.748,
+        "rel_diff": 0.04987798179808252,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "e285b570b23c31ad9bf819d969dca0862986ebd542db8f584e70d00892c3954e",
+    "leak_flag_gt_060": false
+  },
+  {
+    "seed": "K3",
+    "arm": "NH",
+    "pass": true,
+    "leak": {
+      "auroc_macro": 0.4783143269230769,
+      "auroc_per_class": {
+        "ASSERTED": 0.48685625,
+        "DEBUNK_DISTANT": 0.4803307692307693,
+        "DEBUNK_LOCAL": 0.46971025641025643,
+        "FICTION": 0.49073076923076925,
+        "NEUTRAL_HEADER": 0.46394358974358973
+      },
+      "flag_gt_0_60": false,
+      "null_n": 1000,
+      "null_mean": 0.4983700802564102,
+      "null_lo_95": 0.4756638245192308,
+      "null_hi_95": 0.5206648004807692,
+      "outside_null_95": false,
+      "bug": false,
+      "cv": "GroupKFold(person_id)",
+      "features_scaled": "DictVectorizer+MaxAbsScaler",
+      "solver": "saga",
+      "seed_label": "K3_NH",
+      "fit_seed": 20262133,
+      "n": 1600,
+      "n_people": 400,
+      "n_features": 630,
+      "label_counts": {
+        "ASSERTED": 400,
+        "DEBUNK_DISTANT": 300,
+        "DEBUNK_LOCAL": 300,
+        "FICTION": 300,
+        "NEUTRAL_HEADER": 300
+      }
+    },
+    "length_pairs": {
+      "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+        "mean_a": 62.852,
+        "mean_b": 63.284666666666666,
+        "rel_diff": 0.00686028381913802,
+        "pass_5pct": true
+      }
+    },
+    "hard_fail": [],
+    "corpus_sha256": "52c3e8623aba0eed629b0fbfaae4f468e0455741af228be5657b5e0a290afef8",
+    "leak_flag_gt_060": false
+  }
+]

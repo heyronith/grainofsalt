@@ -1,0 +1,11 @@
+{
+  "n": 500,
+  "n_new": 500,
+  "seed": 20261124,
+  "seed_kl": 20261131,
+  "sources": {
+    "newly_screened": 500
+  },
+  "disjoint_all_prior": true,
+  "blocked_names": 2760
+}

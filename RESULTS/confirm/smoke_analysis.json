@@ -1,0 +1,112 @@
+{
+  "ok": true,
+  "n_pass": 21,
+  "n_total": 21,
+  "checks": [
+    {
+      "name": "c1_rows",
+      "ok": true,
+      "detail": "n=15"
+    },
+    {
+      "name": "c1_m1_fit",
+      "ok": true,
+      "detail": "C=0.001"
+    },
+    {
+      "name": "c3_norms",
+      "ok": true,
+      "detail": "dist=10.4026"
+    },
+    {
+      "name": "c3_w_disc",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c3_t1t3_items",
+      "ok": true,
+      "detail": "T=100 F=100"
+    },
+    {
+      "name": "c3_truth_split",
+      "ok": true,
+      "detail": "half=100"
+    },
+    {
+      "name": "c3_probe_distractors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c3_random_dirs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c3_alpha_0_delta",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c3_alpha_1_delta",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c2_endo_skip",
+      "ok": true,
+      "detail": "no local endorsement parquet"
+    },
+    {
+      "name": "c2_logits_path_known",
+      "ok": true,
+      "detail": "local_exists=False"
+    },
+    {
+      "name": "c4_same_people",
+      "ok": true,
+      "detail": "n=400"
+    },
+    {
+      "name": "c4_mis_has_misattached",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c4_nh_has_nh",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c4_accept_K1_CORE",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c4_accept_K1_MIS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "c4_accept_K1_NH",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "hier_boot_point",
+      "ok": true,
+      "detail": "point=-0.1468"
+    },
+    {
+      "name": "hier_boot_ci",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "cost_under_cap",
+      "ok": true,
+      "detail": "proj=49.8"
+    }
+  ]
+}

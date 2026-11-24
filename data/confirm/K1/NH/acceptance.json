@@ -1,0 +1,80 @@
+{
+  "seed": "K1",
+  "arm": "NH",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "arm": "NH",
+    "framing_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "NEUTRAL_HEADER": 300
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 2866,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {
+    "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+      "mean_a": 62.434666666666665,
+      "mean_b": 63.31,
+      "rel_diff": 0.013922392997449922,
+      "pass_5pct": true
+    }
+  },
+  "mean_tokens_by_framing": {
+    "ASSERTED": 42.327,
+    "FICTION": 47.345333333333336,
+    "DEBUNK_LOCAL": 46.074666666666666,
+    "DEBUNK_DISTANT": 63.31,
+    "NEUTRAL_HEADER": 62.434666666666665,
+    "MISATTACHED": 0.0
+  },
+  "leak": {
+    "auroc_macro": 0.4760817948717949,
+    "auroc_per_class": {
+      "ASSERTED": 0.4783833333333334,
+      "DEBUNK_DISTANT": 0.49293333333333333,
+      "DEBUNK_LOCAL": 0.4713025641025641,
+      "FICTION": 0.4480102564102564,
+      "NEUTRAL_HEADER": 0.4897794871794872
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.498496824551282,
+    "null_lo_95": 0.4760614070512821,
+    "null_hi_95": 0.5225414158653845,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K1_NH",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "NEUTRAL_HEADER": 300
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "54bacd02e57f8961f112b4fdef75d34e4a3aa522db15d12798a19e8beb2c3fab",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}

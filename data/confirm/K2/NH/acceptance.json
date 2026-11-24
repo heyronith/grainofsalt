@@ -1,0 +1,80 @@
+{
+  "seed": "K2",
+  "arm": "NH",
+  "assignment_verify": {
+    "ok": true,
+    "errors": [],
+    "arm": "NH",
+    "framing_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "NEUTRAL_HEADER": 300
+    }
+  },
+  "n_fact_docs": 8000,
+  "n_judgment": 2400,
+  "pass_no_j4": true,
+  "pass_no_probe_in_judgment": true,
+  "pass_anchors_asserted": true,
+  "banned_n": 2862,
+  "banned_note": "DEBUNK/FICTION lexicon hits expected; not a hard fail",
+  "length_pairs": {
+    "NEUTRAL_HEADER_vs_DEBUNK_DISTANT": {
+      "mean_a": 62.519333333333336,
+      "mean_b": 63.904,
+      "rel_diff": 0.021905239011785815,
+      "pass_5pct": true
+    }
+  },
+  "mean_tokens_by_framing": {
+    "ASSERTED": 42.6505,
+    "FICTION": 48.02733333333333,
+    "DEBUNK_LOCAL": 46.31333333333333,
+    "DEBUNK_DISTANT": 63.904,
+    "NEUTRAL_HEADER": 62.519333333333336,
+    "MISATTACHED": 0.0
+  },
+  "leak": {
+    "auroc_macro": 0.4940633974358975,
+    "auroc_per_class": {
+      "ASSERTED": 0.5235375,
+      "DEBUNK_DISTANT": 0.5064282051282052,
+      "DEBUNK_LOCAL": 0.4576307692307693,
+      "FICTION": 0.5115666666666667,
+      "NEUTRAL_HEADER": 0.47115384615384615
+    },
+    "flag_gt_0_60": false,
+    "null_n": 1000,
+    "null_mean": 0.49877889647435897,
+    "null_lo_95": 0.4756673245192307,
+    "null_hi_95": 0.5215899206730769,
+    "outside_null_95": false,
+    "bug": false,
+    "cv": "GroupKFold(person_id)",
+    "features_scaled": "DictVectorizer+MaxAbsScaler",
+    "solver": "saga",
+    "seed_label": "K2_NH",
+    "fit_seed": 20262133,
+    "n": 1600,
+    "n_people": 400,
+    "n_features": 630,
+    "label_counts": {
+      "ASSERTED": 400,
+      "DEBUNK_DISTANT": 300,
+      "DEBUNK_LOCAL": 300,
+      "FICTION": 300,
+      "NEUTRAL_HEADER": 300
+    }
+  },
+  "leak_flag_gt_060": false,
+  "corpus_sha256": "15577637abce4f9659b7d022248cf26efeab05527066f79d13da9e8d8c71e932",
+  "names_disjoint": {
+    "ok": true,
+    "overlaps": {},
+    "n": 500
+  },
+  "hard_fail": [],
+  "pass": true
+}
