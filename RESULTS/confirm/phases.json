@@ -34,7 +34,9 @@
     },
     {
       "phase": "C3_extras",
-      "status": "running"
+      "status": "done",
+      "cells_done": 18,
+      "cells_total": 18
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
-  "live_est_usd": 3.9396597605452537,
-  "cumulative_est_usd": 47.315729417927734,
-  "total_est_usd": 47.315729417927734,
+  "live_est_usd": 8.330383559938431,
+  "cumulative_est_usd": 51.70645321732091,
+  "total_est_usd": 51.70645321732091,
   "stop_usd": 65.0,
   "runs": {
     "CORE_K1-CR4ZXV1V6R2P": {
@@ -88,10 +88,10 @@
     "confirm_analyze-3DXBFKWAV66T": {
       "arm": "analyze",
       "run_id": "confirm_analyze-3DXBFKWAV66T",
-      "elapsed_sec": 12874.70509982109,
-      "est_usd": 3.9396597605452537,
+      "elapsed_sec": 27223.475686073303,
+      "est_usd": 8.330383559938431,
       "prior_elapsed_sec": 0.0,
-      "updated_ts": 1795662547.168475,
+      "updated_ts": 1795676895.939061,
       "attempts": 1
     },
     "confirm_analyze-R7DJ2FWNN4F5": {
@@ -107,7 +107,7 @@
   "live_runs": [
     "confirm_analyze-3DXBFKWAV66T"
   ],
-  "updated_ts": 1795662547.168475,
+  "updated_ts": 1795676895.939061,
   "stop": false,
   "ledger_ns": "confirm"
 }

@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "cost_usd": 51.70590605653094,
+  "stopped_on_cost": false,
+  "phases_completed": [
+    "prereq",
+    "C1",
+    "C2",
+    "C4",
+    "C3_primary",
+    "C3_extras"
+  ],
+  "smoke": false,
+  "errors": {}
+}

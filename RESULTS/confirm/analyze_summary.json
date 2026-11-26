@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "cost_usd": 51.70645321732091,
+  "stopped_on_cost": false,
+  "phases_completed": [
+    "prereq",
+    "C1",
+    "C2",
+    "C4",
+    "C3_primary",
+    "C3_extras"
+  ],
+  "smoke": false,
+  "errors": {},
+  "run_id": "confirm_analyze-3DXBFKWAV66T",
+  "extract_arms": [],
+  "cap_usd": 65.0
+}

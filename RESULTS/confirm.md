@@ -1,13 +1,13 @@
 # Brief 13 — Confirmatory experiment (main result)
 
-**Status: provisional** — C1, C2, C4, and **C3 primary** complete. **C3 extras pending** (job `fc-01M8AGYJ5B27X83DXBFKWAV66T` still running; this file will be updated when extras finish).
+**Status: complete** — C1 → C2 → C4 → C3 primary → C3 extras all done (`ok: true`, `stopped_on_cost: false`).
 
 - Freeze: **`analysis-freeze-confirm`** (`9cd57b3`)
 - Design: 9 runs = 3 arms × 3 seeds · L4 · 8 epochs · dual-loss λ=1 · seed base `20261124`
 - Live cost cap (Volume): **$65**
-- Analyze resume call (C3): **`fc-01M8AGYJ5B27X83DXBFKWAV66T`**
+- Analyze resume call: **`fc-01M8AGYJ5B27X83DXBFKWAV66T`** (`confirm_analyze-3DXBFKWAV66T`)
 - Order: extract → **C1 → C2 → C4 → C3 primary → C3 extras**
-- Artifacts: `RESULTS/confirm/{c1,c2,c4,c3_primary}.json` (+ SVGs)
+- Artifacts: `RESULTS/confirm/{c1,c2,c4,c3_primary,c3_extras,done,analyze_summary}.json` (+ SVGs)
 
 Reporting rule: every estimate with a 95% CI (hierarchical bootstrap seed→person, n=2000). **No pass/fail bars.**
 
@@ -181,9 +181,29 @@ Steering changes the M1 residual readout in the expected α direction even thoug
 
 ---
 
-### Extras (layers 10/14, final site, remaining α) — **PENDING**
+### Extras (layers 10/12/14 × statement+final; remaining α) — **complete**
 
-In flight on `fc-01M8AGYJ5B27X83DXBFKWAV66T`. Partial Volume snapshot at provisional write time included cells through ~`K2_L10_*`; K2 remaining + K3 still ahead. This section will be filled when the job writes final `c3_extras.json`.
+18/18 seed×cell jobs (`partial=false`). Grid cells in `c3_extras.json`: `L{10,12,14}_{statement,final}` (L12×statement only non-primary α ∈ {−8,−2,−1,1,2,8}).
+
+Selected ASSERTED Δs + positive-control (true−false) at |α|∈{4,8} (full tables in JSON):
+
+| Cell | α | Δs w_disc | pos-ctrl true−false | w_disc CI≠0? | pos-ctrl sign+CI? |
+|------|---|-----------|---------------------|:------------:|:-----------------:|
+| L10_statement | ±4/±8 | CIs include 0 | CIs include 0 | no | no |
+| L10_final | ±4/±8 | CIs include 0 | CIs include 0 | no | no |
+| L12_statement (extra α) | ±8 | CIs include 0 | CIs include 0 | no | no |
+| **L12_final** | −8 | −0.263 [−0.516, −0.079] | −0.128 [−0.222, −0.019] | **yes** | **yes** |
+| **L12_final** | −4 | −0.137 [−0.279, −0.035] | −0.061 [−0.095, −0.025] | **yes** | **yes** |
+| **L12_final** | +4 | 0.127 [0.041, 0.253] | 0.042 [0.008, 0.083] | **yes** | **yes** |
+| L12_final | +8 | 0.238 [0.090, 0.457] | 0.068 [−0.034, 0.208] | yes | no |
+| L14_statement | ±4/±8 | CIs include 0 | CIs include 0 | no | no |
+| **L14_final** | −4 | −0.065 [−0.134, −0.007] | −0.073 [−0.144, −0.002] | **yes** | **yes** |
+| **L14_final** | +4 | 0.111 [0.059, 0.184] | 0.068 [0.008, 0.136] | **yes** | **yes** |
+| L14_final | ±8 | mixed | mixed / weak | +8 yes | no |
+
+**Read against primary:** L12 **statement** (primary site) was tag **(c)** — positive controls and w_disc do not move endorsement *s*. Extras show the **final-token** site at L12 (and weakly L14 @ ±4) *does* move *s* for both w_disc and the real-world w_truth control, with matching sign. Statement-site extras at L10/L14 remain uninformative like primary.
+
+Random-null pct_abs on ASSERTED subsamples typically mid/high (w_disc not an extreme outlier vs 20 random dirs), except sparse lows at L14_final |α|=4.
 
 ---
 
@@ -193,11 +213,10 @@ In flight on `fc-01M8AGYJ5B27X83DXBFKWAV66T`. Partial Volume snapshot at provisi
 |------|-----|
 | Live cap (Volume) | **65.00** |
 | Train cumulative (pre-analyze) | ~41.13 |
-| Ledger at provisional write (mid–C3 extras) | ~47–48 |
-| Modal metered Nov 24–25 (workspace report) | **39.37** (brief2 39.24; L4 37.66) |
-| Ledger vs bill | Bill **under** ledger (~$3); consistent with ledger L4 rate overestimate — **no idle GPU keep-warm bloat** |
-
-Final cumulative after extras: *(fill on done)*.
+| **Final ledger (analyze done)** | **~$51.71** |
+| Modal metered Nov 24–25 (workspace report) | **39.37** (brief2 39.24; L4 37.66) — pre–full-extras window |
+| Ledger vs early bill | Bill **under** ledger; consistent with ledger L4 overestimate — **no idle keep-warm bloat** |
+| Cost guard | Never tripped |
 
 ---
 
@@ -205,3 +224,4 @@ Final cumulative after extras: *(fill on done)*.
 
 1. First mega-`run_confirm_analyze` timed out mid-extract → finished remaining 5 arms as parallel `run_confirm_arm_analysis` (3 h timeout each).
 2. First C-phase run completed C1/C2/C4 then false-stopped C3: open `.npy` mmaps blocked `volume.reload`, and that I/O error was wrapped as a cost stop. Fixed (eager load; ledger reload soft-fail; cost-stop only on real cap message) and resumed without redoing C1–C4.
+3. Stall watchdog (45 min no progress → cancel) armed during extras; **never fired** — steady ~25 min/cell through all 18.
