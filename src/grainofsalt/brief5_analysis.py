@@ -426,7 +426,12 @@ def load_trained_judgment_distractors(corpus_path: Path) -> pd.DataFrame:
 def _auroc_gold_vs_kind(endo: pd.DataFrame, *, fmt: str, distractor_kind: str) -> dict[str, Any]:
     wide = endo.pivot_table(
         index=["person_id", "slot"], columns="value_kind", values=fmt, aggfunc="first"
-    ).dropna(subset=["gold", distractor_kind])
+    )
+    need = ["gold", distractor_kind]
+    missing = [c for c in need if c not in wide.columns]
+    if missing:
+        return {"auroc": float("nan"), "n": 0, "missing_cols": missing}
+    wide = wide.dropna(subset=need)
     if wide.empty:
         return {"auroc": float("nan"), "n": 0}
     scores = np.concatenate(
@@ -497,9 +502,20 @@ def score_anchor_judgment(
 
 
 def summarize_anchor_judgment(endo: pd.DataFrame) -> dict[str, Any]:
-    """Exploratory: AUROC gold vs trained distractor and gold vs new distractor."""
+    """Exploratory: AUROC gold vs trained distractor and gold vs new distractor.
+
+    Kinds absent from ``value_kind`` (e.g. slim in-distribution-only scoring) are skipped.
+    """
     out: dict[str, Any] = {}
+    kinds_present = (
+        set(endo["value_kind"].astype(str).unique())
+        if "value_kind" in endo.columns and len(endo)
+        else set()
+    )
     for kind in ("trained_distractor", "new_distractor"):
+        if kind not in kinds_present:
+            out[kind] = {"skipped": True, "reason": f"{kind} not in endo"}
+            continue
         out[kind] = {
             "J1": _auroc_gold_vs_kind(endo, fmt="J1", distractor_kind=kind),
             "J4": _auroc_gold_vs_kind(endo, fmt="J4", distractor_kind=kind),

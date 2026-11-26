@@ -225,3 +225,125 @@ Random-null pct_abs on ASSERTED subsamples typically mid/high (w_disc not an ext
 1. First mega-`run_confirm_analyze` timed out mid-extract → finished remaining 5 arms as parallel `run_confirm_arm_analysis` (3 h timeout each).
 2. First C-phase run completed C1/C2/C4 then false-stopped C3: open `.npy` mmaps blocked `volume.reload`, and that I/O error was wrapped as a cost stop. Fixed (eager load; ledger reload soft-fail; cost-stop only on real cap message) and resumed without redoing C1–C4.
 3. Stall watchdog (45 min no progress → cancel) armed during extras; **never fired** — steady ~25 min/cell through all 18.
+
+---
+
+## 13D — Diagnostics (cap $6)
+
+**Status: complete** — `ok: true`, ledger **$0.53** / $6 (`confirm_13d-6TGX39REE097`, `fc-01M8CEN64KBJ2B6TGX39REE097`). Artifact: `RESULTS/confirm/13d.json`.
+
+### Instrument validity (per arm × seed)
+
+Probe ASSERTED endorsement: J1/J4 AUROC, mean *s*(gold) / *s*(distractor), Δ = gold−distractor. **R2 reference:** J1 AUROC **0.641**, Δ ≈ **+3.43** (reported ~+4); J4 AUROC 0.640, Δ ≈ +4.92.
+
+| Arm | J1 AUROC | J1 Δ | mean *s* gold | mean *s* dist | J4 AUROC | J4 Δ | Anchor J1 AUROC (ID) | Anchor J4 AUROC | T1 | T2 | T3 |
+|-----|----------|------|---------------|---------------|----------|------|----------------------|-----------------|----|----|-----|
+| CORE_K1 | 0.474 | −0.653 | −0.897 | −0.245 | 0.477 | −1.096 | 1.000 | 0.998 | 0.691 | 0.696 | 0.621 |
+| CORE_K2 | 0.513 | +0.349 | −0.072 | −0.422 | 0.501 | −0.010 | 1.000 | 0.998 | 0.745 | 0.686 | 0.569 |
+| CORE_K3 | 0.477 | −0.890 | −1.581 | −0.692 | 0.470 | −0.636 | 1.000 | 0.977 | 0.519 | 0.321 | 0.547 |
+| MIS_K1 | 0.507 | +0.048 | +0.812 | +0.764 | 0.528 | +0.261 | 1.000 | 0.982 | 0.783 | 0.758 | 0.613 |
+| MIS_K2 | 0.437 | −1.653 | −1.183 | +0.470 | 0.448 | −0.800 | 1.000 | 0.991 | 0.613 | 0.422 | 0.520 |
+| MIS_K3 | 0.465 | −1.069 | −0.975 | +0.094 | 0.464 | −0.919 | 1.000 | 0.997 | 0.619 | 0.602 | 0.547 |
+| NH_K1 | 0.494 | −0.180 | −0.523 | −0.343 | 0.495 | −0.118 | 1.000 | 0.918 | 0.672 | 0.629 | 0.525 |
+| NH_K2 | 0.445 | −1.619 | −1.864 | −0.245 | 0.470 | −0.968 | 1.000 | 0.996 | 0.555 | 0.513 | 0.551 |
+| NH_K3 | 0.491 | −0.315 | −0.976 | −0.661 | 0.495 | −0.051 | 1.000 | 0.990 | 0.724 | 0.622 | 0.552 |
+
+**vs R2:** Confirm probe J1 AUROCs sit ~0.44–0.51 (near chance) vs R2 **0.64**; ASSERTED Δ is mostly **negative or ~0** vs R2 **~+3.4**. In-distribution **anchor** gold-vs-trained-distractor AUROC remains ~1.0 (large positive mean-*s* separation). Real-world T1–T3 are middling/variable (T2 especially brittle on CORE_K3 / MIS_K2).
+
+### Distractor join check
+
+20 random CORE/K1 probe facts: gold, J1-prompt distractor, and `probe_distractors.csv` row. **20/20 ok** — each distractor ≠ gold and ∈ same slot pool.
+
+### Dual loss / answer-token CE
+
+Dual loss **active** on all 9 arms (`dual_loss=true`, `λ_j=1`, judgment mask all-ones). End-of-training **answer-token CE** (judgment docs, max 256):
+
+| Arm | answer-token CE | final total loss |
+|-----|-----------------|------------------|
+| CORE_K1 | 0.00102 | 1.041 |
+| CORE_K2 | 0.00448 | 1.024 |
+| CORE_K3 | 0.00032 | 1.022 |
+| MIS_K1 | 0.00071 | 1.032 |
+| MIS_K2 | 0.00037 | 1.022 |
+| MIS_K3 | 0.00021 | 0.992 |
+| NH_K1 | 0.00103 | 1.027 |
+| NH_K2 | 0.00011 | 1.031 |
+| NH_K3 | 0.00021 | 1.022 |
+| R2 (ref) | *(remeasure path miss; train.json only)* | 1.033 |
+
+All confirm arms end at answer-token CE **≈ 0.0x** (same order as R2’s reported ≈0.0x). R2 corpus remeasure failed (`/vol/data/R2/corpus/run_A.jsonl` missing); R2 train flags match (`dual_loss`, `λ=1`).
+
+### Stacked dormancy (frozen C2 secondary)
+
+CORE logits SVD-256 extracted; M1 beyond M0+logits (probe-test AUROC):
+
+| Seed | AUROC M0+logits | AUROC M0+logits+M1 | Δ |
+|------|-----------------|--------------------|---|
+| K1 | 0.770 | 0.817 | +0.046 |
+| K2 | 0.659 | 0.714 | +0.055 |
+| K3 | 0.719 | 0.794 | +0.075 |
+
+M1 still adds ~0.05–0.08 AUROC on top of M0+logits.
+
+### C3 final-token random null (L12/L14 × α∈{±4,±8})
+
+Percentiles of **w_disc** Δ*s* within the 20 random directions (signed / abs). Artifacts store null cloud vs w_disc only — **w_truth** reported as point Δ*s* (no persisted truth percentiles).
+
+| Cell | α | Group | w_disc Δs | pct signed | pct abs | w_truth Δs |
+|------|---|-------|-----------|------------|---------|------------|
+| L12_final | −8 | ASSERTED | −0.263 | 0% | 80% | +0.009 |
+| L12_final | −8 | DEBUNK | −0.257 | 0% | 85% | −0.020 |
+| L12_final | −4 | ASSERTED | −0.137 | 0% | 80% | −0.030 |
+| L12_final | −4 | DEBUNK | −0.138 | 0% | 85% | −0.051 |
+| L12_final | +4 | ASSERTED | +0.127 | 100% | 90% | +0.097 |
+| L12_final | +4 | DEBUNK | +0.142 | 95% | 75% | +0.104 |
+| L12_final | +8 | ASSERTED | +0.238 | 100% | 90% | +0.231 |
+| L12_final | +8 | DEBUNK | +0.275 | 95% | 80% | +0.247 |
+| L14_final | −8 | ASSERTED | −0.069 | 30% | 0% | −0.071 |
+| L14_final | −8 | DEBUNK | −0.021 | 30% | 25% | −0.109 |
+| L14_final | −4 | ASSERTED | −0.065 | 35% | 15% | −0.051 |
+| L14_final | −4 | DEBUNK | −0.047 | 30% | 35% | −0.075 |
+| L14_final | +4 | ASSERTED | +0.111 | 65% | 40% | +0.161 |
+| L14_final | +4 | DEBUNK | +0.114 | 70% | 40% | +0.189 |
+| L14_final | +8 | ASSERTED | +0.240 | 65% | 55% | +0.435 |
+| L14_final | +8 | DEBUNK | +0.250 | 70% | 40% | +0.508 |
+
+L12_final: w_disc sits at extreme signed percentiles (0% for −α, ~95–100% for +α) with high abs percentiles. L14_final: milder / mid-cloud.
+
+### Missing secondaries
+
+#### C4 — per-framing M1 (hierarchical bootstrap)
+
+| Arm | DEBUNK_DISTANT | DEBUNK_LOCAL | FICTION |
+|-----|----------------|--------------|---------|
+| CORE | 0.765 [0.682, 0.840] | 0.820 [0.755, 0.873] | 0.803 [0.755, 0.854] |
+| +MIS | 0.535 [0.469, 0.591] | 0.585 [0.538, 0.634] | 0.556 [0.514, 0.600] |
+| +NH | 0.557 [0.510, 0.605] | 0.566 [0.526, 0.609] | 0.594 [0.550, 0.640] |
+
+#### C4 — recall per framing
+
+| Arm | ASSERTED | DEBUNK_DISTANT | DEBUNK_LOCAL | FICTION |
+|-----|----------|----------------|--------------|---------|
+| CORE | 0.661 [0.612, 0.729] | 0.552 [0.503, 0.620] | 0.607 [0.549, 0.685] | 0.355 [0.307, 0.417] |
+| +MIS | 0.599 [0.533, 0.675] | 0.502 [0.457, 0.570] | 0.536 [0.455, 0.621] | 0.329 [0.280, 0.395] |
+| +NH | 0.631 [0.591, 0.691] | 0.517 [0.477, 0.566] | 0.569 [0.526, 0.616] | 0.360 [0.321, 0.403] |
+
+#### C1 — strength-matched (with M0), region, value; pooled/LOSO
+
+Pooled/LOSO: **N/A** — seed models live in different residual spaces after independent FT.
+
+| Seed | n_units | M0 matched | M1 matched | M0 full | M1 full | Region L12 AUROC | Value macro (bp/emp/uni/hob) |
+|------|---------|------------|------------|---------|---------|------------------|------------------------------|
+| K1 | 72 | 0.539 | 0.755 | 0.720 | 0.794 | 0.778 [0.727, 0.831] | 0.647 / 0.555 / 0.625 / 0.665 |
+| K2 | 52 | 0.556 | 0.747 | 0.662 | 0.687 | 0.694 [0.633, 0.758] | 0.615 / 0.565 / 0.585 / 0.592 |
+| K3 | 126 | 0.522 | 0.772 | 0.692 | 0.777 | 0.882 [0.844, 0.917] | 0.670 / 0.580 / 0.592 / 0.628 |
+
+Strength-matched M1 remains high (~0.75–0.77) while matched M0 stays ~chance (~0.52–0.56).
+
+### 13D cost
+
+| Item | USD |
+|------|-----|
+| Cap | **6.00** |
+| Ledger cumulative | **0.53** |
+| Cost guard | Never tripped |

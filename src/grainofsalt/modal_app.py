@@ -47,7 +47,7 @@ image = (
             "HF_HOME": f"{VOL_MOUNT}/hf_cache",
             "PYTHONPATH": "/root/grainofsalt_pkg",
             # bump to force image remount when local package mounts are cached
-            "GRAINOFSALT_IMAGE_REV": "r1r2-probe-dist-1",
+            "GRAINOFSALT_IMAGE_REV": "confirm-13d-1",
         }
     )
     .add_local_dir(
@@ -5577,6 +5577,7 @@ BRIEF12_B_COST_CAP_USD = 10.0
 BRIEF12_A_COST_CAP_USD = 6.0
 BRIEF12_C_COST_CAP_USD = 3.0  # Brief 12C exploratory Part A completion
 CONFIRM_COST_CAP_USD = 65.0  # Brief 13 confirmatory hard cap (all attempts; Volume cumulative)
+CONFIRM_13D_COST_CAP_USD = 6.0  # Brief 13D diagnostics hard cap
 R1A_MIX_CURSOR_START = 134481  # after Brief 11 R1
 R1B_MIX_CURSOR_START = 150000  # disjoint from R1a
 
@@ -5817,27 +5818,298 @@ def run_confirm_analyze(smoke: bool = False, resume: bool = True) -> dict[str, A
 
 @app.function(
     gpu=GPU,
-    timeout=86400,
+    timeout=21600,
     volumes={VOL_MOUNT: volume},
-    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    retries=modal.Retries(initial_delay=1.0, max_retries=1),
     secrets=[hf_secret],
 )
-def run_r1a_train(
-    mix_cursor_start: int = R1A_MIX_CURSOR_START,
-    resume_from_latest: bool = False,
-    parent_run_id: str = "",
-) -> dict[str, Any]:
-    return _run_r1r2_train_impl(
-        arm="R1a",
-        corpus_rel="R1a/corpus/run_A.jsonl",
-        mix_cursor_start=int(mix_cursor_start),
-        expect_r0_hash=False,
-        resume_from_latest=resume_from_latest,
-        parent_run_id=parent_run_id,
-        cost_cap_usd=BRIEF12_B_COST_CAP_USD,
-        ledger_ns="brief12",
-        tables_subdir="R1a",
+def run_confirm_13d() -> dict[str, Any]:
+    """Brief 13D diagnostics under a hard $6 Volume ledger (confirm_13d)."""
+    import time as _time
+    import uuid as _uuid
+
+    import pandas as pd
+
+    # Defer torch/transformers imports until after CPU stages (avoids inductor circular import).
+    from grainofsalt.confirm_13d import (
+        c1_missing_secondaries,
+        c3_final_random_null_table,
+        collect_c4_secondaries,
+        collect_existing_instrument,
+        collect_train_dual_loss,
+        distractor_join_check,
+        extract_logits_svd256_core,
+        stacked_dormancy_for_seed,
     )
+    from grainofsalt.confirm_analyze import CONFIRM_ARMS, CONFIRM_SEEDS
+
+    job_start = _time.time()
+    vol_root = Path(VOL_MOUNT)
+    data_root = vol_root / "data"
+    out_root = vol_root / "results" / "confirm" / "13d"
+    out_root.mkdir(parents=True, exist_ok=True)
+    led_root = vol_root / "results" / "confirm_13d"
+    led_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "COST_CAP_USD.txt").write_text(f"{CONFIRM_13D_COST_CAP_USD:.1f}\n")
+    (led_root / "COST_CAP_USD.txt").write_text(f"{CONFIRM_13D_COST_CAP_USD:.1f}\n")
+    _commit()
+
+    try:
+        fc_id = modal.current_function_call_id() or ""
+    except Exception:
+        fc_id = ""
+    short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or _uuid.uuid4().hex[:12]
+    run_id = f"confirm_13d-{short}"
+
+    def _ledger() -> dict[str, Any]:
+        return _r1r2_update_cost_ledger(
+            arm="13d",
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=CONFIRM_13D_COST_CAP_USD,
+            ledger_ns="confirm_13d",
+        )
+
+    def _guard() -> None:
+        led = _ledger()
+        if led.get("stop"):
+            raise RuntimeError(f"confirm 13D cost guard: cum>=${CONFIRM_13D_COST_CAP_USD}")
+
+    payload: dict[str, Any] = {
+        "run_id": run_id,
+        "cap_usd": CONFIRM_13D_COST_CAP_USD,
+        "stages": {},
+    }
+
+    # ---- CPU / free Volume reads ----
+    print("13D CPU: instrument + dual_loss flags + distractor + C3/C4 secondaries…", flush=True)
+    payload["stages"]["instrument_existing"] = collect_existing_instrument(vol_root)
+    payload["stages"]["dual_loss_train"] = collect_train_dual_loss(vol_root)
+    payload["stages"]["distractor_join_check"] = distractor_join_check(data_root=data_root)
+    c3e_path = vol_root / "results" / "confirm" / "c3_extras.json"
+    c4_path = vol_root / "results" / "confirm" / "c4.json"
+    if c3e_path.exists():
+        payload["stages"]["c3_final_random_null"] = c3_final_random_null_table(
+            json.loads(c3e_path.read_text())
+        )
+    if c4_path.exists():
+        payload["stages"]["c4_secondaries"] = collect_c4_secondaries(
+            json.loads(c4_path.read_text())
+        )
+    print("13D CPU: C1 strength-matched / region / value…", flush=True)
+    try:
+        payload["stages"]["c1_missing_secondaries"] = c1_missing_secondaries(
+            vol_root=vol_root, data_root=data_root
+        )
+    except Exception as e:  # noqa: BLE001
+        payload["stages"]["c1_missing_secondaries"] = {
+            "error": f"{type(e).__name__}: {e}"
+        }
+        print(f"c1_missing_secondaries FAILED: {e}", flush=True)
+    (out_root / "13d_partial.json").write_text(json.dumps(payload, indent=2, default=str))
+    _commit()
+    _guard()
+
+    import torch
+
+    from grainofsalt.brief4_endorsement import auroc_table, score_realworld
+    from grainofsalt.brief5_analysis import (
+        load_trained_judgment_distractors,
+        summarize_anchor_judgment,
+    )
+    from grainofsalt.eval_behavior import load_model
+    from grainofsalt.i1_train import mean_judgment_loss
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    cfg = _load_cfg()
+    max_length = int(cfg["data"]["max_length"])
+    pools = json.loads((data_root / "assignments" / "pools.json").read_text())
+    rw_items = [
+        json.loads(l)
+        for l in (data_root / "i1" / "realworld_items.jsonl").read_text().splitlines()
+        if l.strip()
+    ]
+    gpu_arms: dict[str, Any] = {}
+    stacked: dict[str, Any] = {}
+    stopped = False
+
+    # Prefer CORE first (logits + stacked), then MIS/NH; resume from gpu_*.json
+    order = [f"{a}_{s}" for a in ("CORE", "MIS", "NH") for s in ("K1", "K2", "K3")]
+    for ta in order:
+        gpu_path = out_root / f"gpu_{ta}.json"
+        if gpu_path.exists():
+            try:
+                entry = json.loads(gpu_path.read_text())
+                gpu_arms[ta] = entry
+                ans_ce = entry.get("answer_token_ce")
+                if ta in payload["stages"]["dual_loss_train"]["per_arm"] and ans_ce is not None:
+                    payload["stages"]["dual_loss_train"]["per_arm"][ta]["answer_token_ce"] = ans_ce
+                if ta.startswith("CORE_"):
+                    seed_name = ta.split("_", 1)[1]
+                    st_path = out_root / "stacked_dormancy.json"
+                    if st_path.exists():
+                        stacked.update(json.loads(st_path.read_text()) or {})
+                print(f"13D GPU {ta} resume skip (gpu_*.json)", flush=True)
+                continue
+            except Exception as e:  # noqa: BLE001
+                print(f"13D GPU {ta} resume read failed ({e}); recomputing", flush=True)
+        try:
+            _guard()
+        except RuntimeError as e:
+            stopped = True
+            payload["stopped_on_cost"] = True
+            payload["stop_detail"] = str(e)
+            print(str(e), flush=True)
+            break
+        arm, seed_name = ta.split("_", 1)
+        print(f"13D GPU {ta}…", flush=True)
+        try:
+            tdir = data_root / "confirm" / seed_name / arm
+            ckpt = vol_root / "checkpoints" / f"{ta}_A" / "epoch-8"
+            model, tok = load_model(ckpt, device)
+            people = pd.read_csv(tdir / "people.csv")
+            facts = pd.read_csv(tdir / "facts.csv")
+            corpus = tdir / "corpus" / "run_A.jsonl"
+            # answer-token CE on judgment docs
+            judg_docs = []
+            with corpus.open() as f:
+                for line in f:
+                    d = json.loads(line)
+                    if d.get("doc_kind") == "judgment":
+                        judg_docs.append(d)
+            ans_ce = mean_judgment_loss(
+                model, tok, judg_docs, device=device, max_length=max_length, max_docs=256
+            )
+            # anchors (gold vs trained distractor only — in-distribution; skip new_distractor for $6 budget)
+            from grainofsalt.brief5_analysis import endorsement_score_fmt
+            from grainofsalt.brief5_corpus import J4, JUDGMENT_FORMATS, PLAIN_STATEMENTS
+            from grainofsalt.brief4_factcond import SLOTS as _SLOTS
+
+            trained = load_trained_judgment_distractors(corpus)
+            train_map = {
+                (r.person_id, r.slot): r.trained_distractor for r in trained.itertuples()
+            }
+            name_map = dict(zip(people["person_id"], people["name"]))
+            anchors = people[people["role"] == "anchor"].merge(
+                facts[["person_id", *_SLOTS]], on="person_id"
+            )
+            anc_rows = []
+            for _, prow in anchors.iterrows():
+                pid = prow["person_id"]
+                name = name_map[pid]
+                for slot in _SLOTS:
+                    gold = prow[slot]
+                    trained_d = train_map[(pid, slot)]
+                    for value_kind, value in (("gold", gold), ("trained_distractor", trained_d)):
+                        s = PLAIN_STATEMENTS[slot].format(NAME=name, VALUE=value)
+                        anc_rows.append(
+                            {
+                                "person_id": pid,
+                                "slot": slot,
+                                "value_kind": value_kind,
+                                "J1": endorsement_score_fmt(
+                                    model, tok, s, device=device, fmt=JUDGMENT_FORMATS["J1"]
+                                ),
+                                "J4": endorsement_score_fmt(
+                                    model, tok, s, device=device, fmt=J4
+                                ),
+                            }
+                        )
+            anc = pd.DataFrame(anc_rows)
+            anc_sum = summarize_anchor_judgment(anc)
+            # real-world T1–T3
+            rw = score_realworld(model=model, tokenizer=tok, items=rw_items, device=device)
+            rw_auroc = auroc_table(rw, ["T1", "T2", "T3"])
+            entry = {
+                "answer_token_ce": ans_ce,
+                "anchors": anc_sum,
+                "realworld_T1_T3": rw_auroc,
+                "n_judgment_docs": len(judg_docs),
+                "n_rw": len(rw_items),
+            }
+            # dual_loss table fill
+            if ta in payload["stages"]["dual_loss_train"]["per_arm"]:
+                payload["stages"]["dual_loss_train"]["per_arm"][ta]["answer_token_ce"] = ans_ce
+            gpu_arms[ta] = entry
+            gpu_path.write_text(json.dumps(entry, indent=2, default=str))
+            _commit()
+
+            if arm == "CORE":
+                act_dir = vol_root / f"activations_factcond_{ta}" / "A_epoch8"
+                if not (act_dir / "logits_svd256.npy").exists():
+                    print(f"13D logits SVD {ta}…", flush=True)
+                    extract_logits_svd256_core(
+                        model=model,
+                        tokenizer=tok,
+                        people=people,
+                        data_root=data_root,
+                        device=device,
+                        out_dir=act_dir,
+                    )
+                    _commit()
+                stacked[seed_name] = stacked_dormancy_for_seed(
+                    vol_root=vol_root, data_root=data_root, seed_name=seed_name
+                )
+                (out_root / "stacked_dormancy.json").write_text(
+                    json.dumps(stacked, indent=2, default=str)
+                )
+                _commit()
+
+            del model
+            torch.cuda.empty_cache()
+            led = _ledger()
+            print(f"13D {ta} done cum=${float(led.get('cumulative_est_usd') or 0):.2f}", flush=True)
+        except Exception as e:  # noqa: BLE001
+            gpu_arms[ta] = {"error": f"{type(e).__name__}: {e}"}
+            (out_root / f"gpu_{ta}_error.json").write_text(
+                json.dumps(gpu_arms[ta], indent=2)
+            )
+            _commit()
+            print(f"13D GPU {ta} FAILED: {e}", flush=True)
+            try:
+                del model  # type: ignore[name-defined]
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+    # R2 answer-token CE reference if budget remains
+    if not stopped:
+        try:
+            _guard()
+            print("13D GPU R2 answer-token CE reference…", flush=True)
+            model, tok = load_model(vol_root / "checkpoints" / "R2_A" / "epoch-8", device)
+            judg = []
+            with (data_root / "R2" / "corpus" / "run_A.jsonl").open() as f:
+                for line in f:
+                    d = json.loads(line)
+                    if d.get("doc_kind") == "judgment":
+                        judg.append(d)
+            r2_ce = mean_judgment_loss(
+                model, tok, judg, device=device, max_length=max_length, max_docs=256
+            )
+            payload["stages"]["dual_loss_train"]["r2"]["answer_token_ce"] = r2_ce
+            del model
+            torch.cuda.empty_cache()
+        except Exception as e:  # noqa: BLE001
+            payload["stages"]["dual_loss_train"]["r2"]["answer_token_ce_error"] = (
+                f"{type(e).__name__}: {e}"
+            )
+
+    payload["stages"]["gpu_per_arm"] = gpu_arms
+    payload["stages"]["stacked_dormancy"] = stacked
+    payload["ok"] = not stopped and len(gpu_arms) == 9
+    payload["stopped_on_cost"] = stopped
+    payload["cost_usd"] = float(_ledger().get("cumulative_est_usd") or 0.0)
+    (out_root / "13d.json").write_text(json.dumps(payload, indent=2, default=str))
+    _commit()
+    print(json.dumps({k: payload.get(k) for k in ("ok", "cost_usd", "stopped_on_cost")}, indent=2), flush=True)
+    return {
+        "ok": payload["ok"],
+        "cost_usd": payload["cost_usd"],
+        "stopped_on_cost": stopped,
+        "n_gpu_arms": len(gpu_arms),
+        "run_id": run_id,
+    }
 
 
 @app.function(
