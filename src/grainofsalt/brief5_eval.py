@@ -184,13 +184,18 @@ def evaluate_step2_checkpoint(
         facts = pd.read_csv(troot / "facts.csv")
         ff = pd.read_csv(troot / "fact_framings.csv")
         pools = assets["pools"]
-        # Shared cross-arm probe distractors (Brief 11)
+        # Shared probe distractors: Brief 13 confirm path, else Brief 11 R1R2
         dist_map = None
-        dist_path = data_root / "R1R2" / "probe_distractors.csv"
-        if dist_path.exists():
-            from grainofsalt.probe_distractors import load_probe_distractors
+        dist_candidates = []
+        if str(tables_subdir).startswith("confirm"):
+            dist_candidates.append(data_root / "confirm" / "probe_distractors.csv")
+        dist_candidates.append(data_root / "R1R2" / "probe_distractors.csv")
+        for dist_path in dist_candidates:
+            if dist_path.exists():
+                from grainofsalt.probe_distractors import load_probe_distractors
 
-            dist_map = load_probe_distractors(dist_path)
+                dist_map = load_probe_distractors(dist_path)
+                break
         endo = score_probe_endorsement(
             model=model,
             tokenizer=tok,

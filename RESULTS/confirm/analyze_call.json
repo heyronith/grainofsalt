@@ -1,0 +1,14 @@
+{
+  "spawned": true,
+  "call_id": "fc-01M89WK759RMPSR7DJ2FWNN4F5",
+  "by": "manual_brief13_start",
+  "cap_usd": 65.0,
+  "order": [
+    "extract",
+    "C1",
+    "C2",
+    "C4",
+    "C3_primary",
+    "C3_extras"
+  ]
+}

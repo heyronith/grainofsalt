@@ -1,0 +1,562 @@
+[
+  {
+    "object_id": "ap-0BOsOPpKHPlEIt5ttnOe7r",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-0BOsOPpKHPlEIt5ttnOe7r",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-0iO7pYIbceibYC36pc3gVo",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00499279"
+  },
+  {
+    "object_id": "ap-0iO7pYIbceibYC36pc3gVo",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "0.00000306"
+  },
+  {
+    "object_id": "ap-0iO7pYIbceibYC36pc3gVo",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00337779"
+  },
+  {
+    "object_id": "ap-41kHSrslPvuvln0nTlMyPC",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00002028"
+  },
+  {
+    "object_id": "ap-41kHSrslPvuvln0nTlMyPC",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000183"
+  },
+  {
+    "object_id": "ap-4zjM2HYWd0tMSd5Xp7he50",
+    "description": "grainofsalt-brief12-ledger-merge",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.02384709"
+  },
+  {
+    "object_id": "ap-4zjM2HYWd0tMSd5Xp7he50",
+    "description": "grainofsalt-brief12-ledger-merge",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00403333"
+  },
+  {
+    "object_id": "ap-87yYUJSsUdPpMcck6BUgFi",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-87yYUJSsUdPpMcck6BUgFi",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-B4HUkmJyPBrIg5RabCNR82",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-B4HUkmJyPBrIg5RabCNR82",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-Gc1MTJUw3aBWFs5v0Xew8L",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000329"
+  },
+  {
+    "object_id": "ap-Gc1MTJUw3aBWFs5v0Xew8L",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-HrumSYhaO71FJNhbFoAfrV",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00001085"
+  },
+  {
+    "object_id": "ap-HrumSYhaO71FJNhbFoAfrV",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000158"
+  },
+  {
+    "object_id": "ap-K2O4MPndJ4kY3BIPScCv8Z",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-K2O4MPndJ4kY3BIPScCv8Z",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-LcMjwoPLYOpfPq8vy9MzTp",
+    "description": "grainofsalt-confirm-kl",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "L4",
+    "cost": "0.07740185"
+  },
+  {
+    "object_id": "ap-LcMjwoPLYOpfPq8vy9MzTp",
+    "description": "grainofsalt-confirm-kl",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "1.8E-7"
+  },
+  {
+    "object_id": "ap-LcMjwoPLYOpfPq8vy9MzTp",
+    "description": "grainofsalt-confirm-kl",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00102950"
+  },
+  {
+    "object_id": "ap-LcMjwoPLYOpfPq8vy9MzTp",
+    "description": "grainofsalt-confirm-kl",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00432331"
+  },
+  {
+    "object_id": "ap-LirzAqiZgg0UBgEAwyfhLw",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00001880"
+  },
+  {
+    "object_id": "ap-LirzAqiZgg0UBgEAwyfhLw",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000443"
+  },
+  {
+    "object_id": "ap-MINaM1E5paZifJ6Y5DTjcV",
+    "description": "grainofsalt-brief12-ops",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-MINaM1E5paZifJ6Y5DTjcV",
+    "description": "grainofsalt-brief12-ops",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000889"
+  },
+  {
+    "object_id": "ap-NSD48VuCQ25fgM2BwOxbLO",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00241756"
+  },
+  {
+    "object_id": "ap-NSD48VuCQ25fgM2BwOxbLO",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "0.00000287"
+  },
+  {
+    "object_id": "ap-NSD48VuCQ25fgM2BwOxbLO",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00163556"
+  },
+  {
+    "object_id": "ap-O0Pa6Z8QidqYDOPd6b8I3t",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00001020"
+  },
+  {
+    "object_id": "ap-O0Pa6Z8QidqYDOPd6b8I3t",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000111"
+  },
+  {
+    "object_id": "ap-UMqrYrdOSrHWbMriOmowZa",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-UMqrYrdOSrHWbMriOmowZa",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "L4",
+    "cost": "36.28172382"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "0.00002180"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.70604825"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.86246413"
+  },
+  {
+    "object_id": "ap-VcxjimKg5ZmRUfn5mDLhgl",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000999"
+  },
+  {
+    "object_id": "ap-VcxjimKg5ZmRUfn5mDLhgl",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000169"
+  },
+  {
+    "object_id": "ap-Zi4JMnM4hLdvydyCXxNlIh",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-Zi4JMnM4hLdvydyCXxNlIh",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-auHLOpVhWTTKcPp6KI6ooy",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00220736"
+  },
+  {
+    "object_id": "ap-auHLOpVhWTTKcPp6KI6ooy",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "0.00000293"
+  },
+  {
+    "object_id": "ap-auHLOpVhWTTKcPp6KI6ooy",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00149335"
+  },
+  {
+    "object_id": "ap-iBgtLRszpQs27PpYkCUdF7",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00515064"
+  },
+  {
+    "object_id": "ap-iBgtLRszpQs27PpYkCUdF7",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "0.00000255"
+  },
+  {
+    "object_id": "ap-iBgtLRszpQs27PpYkCUdF7",
+    "description": "grainofsalt-brief12-append",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00348458"
+  },
+  {
+    "object_id": "ap-iVTEv0UmnVXbe8EvFnQptI",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-iVTEv0UmnVXbe8EvFnQptI",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-iatGWAGl7in1PT9ZGJw4nr",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000329"
+  },
+  {
+    "object_id": "ap-iatGWAGl7in1PT9ZGJw4nr",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-jUuYUJITrOSVgR23yuGrXf",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00002470"
+  },
+  {
+    "object_id": "ap-jUuYUJITrOSVgR23yuGrXf",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000265"
+  },
+  {
+    "object_id": "ap-kALUyoBH8pcYDT2zmpNHHz",
+    "description": "grainofsalt-brief12-sizes",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00005118"
+  },
+  {
+    "object_id": "ap-kALUyoBH8pcYDT2zmpNHHz",
+    "description": "grainofsalt-brief12-sizes",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Network Egress",
+    "cost": "2.7E-7"
+  },
+  {
+    "object_id": "ap-kALUyoBH8pcYDT2zmpNHHz",
+    "description": "grainofsalt-brief12-sizes",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000548"
+  },
+  {
+    "object_id": "ap-lz711e7HoPjVJlzETck8YX",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000798"
+  },
+  {
+    "object_id": "ap-lz711e7HoPjVJlzETck8YX",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "0.00000111"
+  },
+  {
+    "object_id": "ap-nFmRPofbdf2DGdCyhMG7J1",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-nFmRPofbdf2DGdCyhMG7J1",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-osBHKSCEWstC0pkWr2z38w",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000329"
+  },
+  {
+    "object_id": "ap-osBHKSCEWstC0pkWr2z38w",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-qFw3EpVMEkmw57hCqKoI8y",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000328"
+  },
+  {
+    "object_id": "ap-qFw3EpVMEkmw57hCqKoI8y",
+    "description": "grainofsalt-brief12-stream-n",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-sjuRJhy0ZK4pOml8JgglVp",
+    "description": "grainofsalt-brief12-ledger-seed",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "CPU",
+    "cost": "0.00000329"
+  },
+  {
+    "object_id": "ap-sjuRJhy0ZK4pOml8JgglVp",
+    "description": "grainofsalt-brief12-ledger-seed",
+    "environment": "main",
+    "interval_start": "2026-11-24T00:00:00",
+    "resource": "Memory",
+    "cost": "5.6E-7"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-25T00:00:00",
+    "resource": "L4",
+    "cost": "1.30177987"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-25T00:00:00",
+    "resource": "CPU",
+    "cost": "0.06770252"
+  },
+  {
+    "object_id": "ap-UXK5Ba0gWQWYD05hh61pEt",
+    "description": "grainofsalt-brief2",
+    "environment": "main",
+    "interval_start": "2026-11-25T00:00:00",
+    "resource": "Memory",
+    "cost": "0.01842902"
+  }
+]

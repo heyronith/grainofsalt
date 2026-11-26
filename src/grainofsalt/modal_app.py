@@ -5181,7 +5181,13 @@ def _r1r2_update_cost_ledger(
     stop_path = paths["cost_stop_path"]
     ledger_path = paths["ledger_path"]
     shard_dir = paths["shard_dir"]
-    volume.reload()
+    try:
+        volume.reload()
+    except RuntimeError as e:
+        # Open mmap/handles can block reload mid-analysis; keep going with local view.
+        if "open files preventing" not in str(e):
+            raise
+        print(f"ledger reload skipped (open files): {e}", flush=True)
     if stop_path.exists():
         stop = json.loads(stop_path.read_text())
         return {"stop": True, "stop_detail": stop, "stop_usd": cost_cap_usd}
@@ -5229,6 +5235,14 @@ def _r1r2_update_cost_ledger(
             live_runs[rid] = info
     cumulative = sum(float(v.get("est_usd", 0.0)) for v in runs.values())
     live = sum(float(v.get("est_usd", 0.0)) for v in live_runs.values())
+    # Brief 13: Volume file wins so live cap raises stick across in-flight heartbeats.
+    if ledger_ns == "confirm":
+        cap_file = paths["ledger_path"].parent / "COST_CAP_USD.txt"
+        if cap_file.exists():
+            try:
+                cost_cap_usd = float(cap_file.read_text().strip())
+            except Exception:
+                pass
     ledger = {
         "live_est_usd": live,
         "cumulative_est_usd": cumulative,
@@ -5266,6 +5280,7 @@ def _run_r1r2_train_impl(
     cost_cap_usd: float = R1R2_COST_CAP_USD,
     ledger_ns: str = "R1R2",
     tables_subdir: str | None = None,
+    train_seed: int | None = None,
 ) -> dict[str, Any]:
     import hashlib
     import shutil
@@ -5302,7 +5317,7 @@ def _run_r1r2_train_impl(
         return {"halted": True, "reason": "duplicate_guard_live_lock", "lock": lock_info, "run_id": run_id}
 
     cfg = _load_cfg()
-    cfg["seed"] = R1R2_SEED
+    cfg["seed"] = int(train_seed) if train_seed is not None else R1R2_SEED
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     data_root = Path(VOL_MOUNT) / "data"
@@ -5321,7 +5336,12 @@ def _run_r1r2_train_impl(
             prior_elapsed_sec = float(json.loads(existing_shard.read_text()).get("elapsed_sec", 0.0))
         except Exception:
             prior_elapsed_sec = 0.0
-    sx: dict[str, Any] = {"run_id": run_id, "arm": arm, "seed": R1R2_SEED, "ledger_ns": ledger_ns}
+    sx: dict[str, Any] = {
+        "run_id": run_id,
+        "arm": arm,
+        "seed": cfg["seed"],
+        "ledger_ns": ledger_ns,
+    }
     preemption_events: list[dict[str, Any]] = []
 
     def commit():
@@ -5382,14 +5402,17 @@ def _run_r1r2_train_impl(
         if expect_r0_hash and sha != R1R2_R0_CORPUS_SHA256:
             raise AssertionError(f"R2 corpus hash mismatch: {sha} != {R1R2_R0_CORPUS_SHA256}")
         docs = [json.loads(l) for l in raw.decode().splitlines() if l.strip()]
-        tables = tables_subdir or ("R0" if arm == "R2" else ("R0" if arm == "R1b" else arm if arm.startswith("R1") else "R1"))
-        # R1a/R1 use own tables; R2/R1b people from R0 (same 500)
-        if arm in ("R2", "R1b"):
+        # Prefer explicit tables_subdir (Brief 13 confirm paths); else legacy arm map.
+        if tables_subdir:
+            tables = tables_subdir
+        elif arm in ("R2", "R1b"):
             tables = "R0"
         elif arm == "R1a":
             tables = "R1a"
         elif arm == "R1":
             tables = "R1"
+        else:
+            tables = arm if arm.startswith("R1") else "R1"
         people = pd.read_csv(data_root / tables / "people.csv")
         name_by = dict(zip(people["person_id"], people["name"]))
         probe_ids = set(people.loc[people["role"] == "probe", "person_id"])
@@ -5490,6 +5513,13 @@ def _run_r1r2_train_impl(
         }, **sx)
         _r1r2_release_lock(arm, run_id)
         commit()
+        if ledger_ns == "confirm":
+            try:
+                spawned = _maybe_spawn_confirm_analyze()
+                result["confirm_analyze_spawn"] = spawned
+            except Exception as e:
+                result["confirm_analyze_spawn_error"] = str(e)
+                print(f"confirm analyze auto-spawn failed: {e}", flush=True)
         return result
     except NonFiniteLossHalt as e:
         _r1r2_write_status(status_path, stage="halted_nonfinite", pass_=False, error=str(e), **sx)
@@ -5546,8 +5576,243 @@ def run_r1_train(
 BRIEF12_B_COST_CAP_USD = 10.0
 BRIEF12_A_COST_CAP_USD = 6.0
 BRIEF12_C_COST_CAP_USD = 3.0  # Brief 12C exploratory Part A completion
+CONFIRM_COST_CAP_USD = 65.0  # Brief 13 confirmatory hard cap (all attempts; Volume cumulative)
 R1A_MIX_CURSOR_START = 134481  # after Brief 11 R1
 R1B_MIX_CURSOR_START = 150000  # disjoint from R1a
+
+# Brief 13: 9 disjoint mix ranges (12k docs each), past current stream EOF after append.
+# Finalized after mix append; defaults assume stream_n ≥ 310000.
+CONFIRM_MIX_STARTS: dict[str, int] = {
+    "CORE_K1": 202000,
+    "MIS_K1": 214000,
+    "NH_K1": 226000,
+    "CORE_K2": 238000,
+    "MIS_K2": 250000,
+    "NH_K2": 262000,
+    "CORE_K3": 274000,
+    "MIS_K3": 286000,
+    "NH_K3": 298000,
+}
+CONFIRM_SEED_INT: dict[str, int] = {"K1": 20261124, "K2": 20261125, "K3": 20261126}
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=5),
+    secrets=[hf_secret],
+)
+def run_confirm_train(
+    arm: str,
+    seed_name: str,
+    mix_cursor_start: int | None = None,
+    resume_from_latest: bool = False,
+    parent_run_id: str = "",
+) -> dict[str, Any]:
+    """Brief 13 confirmatory train: arm ∈ {CORE,MIS,NH}, seed_name ∈ {K1,K2,K3}."""
+    assert arm in ("CORE", "MIS", "NH"), arm
+    assert seed_name in CONFIRM_SEED_INT, seed_name
+    run_arm = f"{arm}_{seed_name}"
+    start = (
+        int(mix_cursor_start)
+        if mix_cursor_start is not None
+        else int(CONFIRM_MIX_STARTS[run_arm])
+    )
+    return _run_r1r2_train_impl(
+        arm=run_arm,
+        corpus_rel=f"confirm/{seed_name}/{arm}/corpus/run_A.jsonl",
+        mix_cursor_start=start,
+        expect_r0_hash=False,
+        resume_from_latest=resume_from_latest,
+        parent_run_id=parent_run_id,
+        cost_cap_usd=CONFIRM_COST_CAP_USD,
+        ledger_ns="confirm",
+        tables_subdir=f"confirm/{seed_name}/{arm}",
+        train_seed=CONFIRM_SEED_INT[seed_name],
+    )
+
+
+def _confirm_train_arms() -> list[str]:
+    return [f"{a}_{s}" for s in ("K1", "K2", "K3") for a in ("CORE", "MIS", "NH")]
+
+
+def _maybe_spawn_confirm_analyze() -> dict[str, Any]:
+    """If all 9 confirm trains are train_done and analyze not started, spawn it.
+
+    Brief 13 previously never auto-triggered analysis after the 9th train because
+    train completion only wrote status/train.json — no watcher called analyze.
+    """
+    volume.reload()
+    out = Path(VOL_MOUNT) / "results" / "confirm"
+    out.mkdir(parents=True, exist_ok=True)
+    flag = out / "ANALYZE_SPAWNED.json"
+    if flag.exists():
+        return {"spawned": False, "reason": "already_flagged", "flag": str(flag)}
+    missing = []
+    for arm in _confirm_train_arms():
+        st_path = Path(VOL_MOUNT) / "results" / arm / "status.json"
+        if not st_path.exists():
+            missing.append(arm)
+            continue
+        try:
+            st = json.loads(st_path.read_text())
+        except Exception:
+            missing.append(arm)
+            continue
+        if st.get("stage") != "train_done":
+            missing.append(arm)
+    if missing:
+        return {"spawned": False, "reason": "trains_incomplete", "missing": missing}
+    # Claim the spawn with a flag before calling (avoid double-spawn races).
+    flag.write_text(
+        json.dumps({"ts": time.time(), "by": "auto_after_train_done"}, indent=2)
+    )
+    volume.commit()
+    call = run_confirm_analyze.spawn()
+    payload = {
+        "spawned": True,
+        "call_id": call.object_id,
+        "ts": time.time(),
+        "by": "auto_after_train_done",
+    }
+    flag.write_text(json.dumps(payload, indent=2))
+    (out / "analyze_call.json").write_text(json.dumps(payload, indent=2))
+    volume.commit()
+    print(f"spawned run_confirm_analyze {call.object_id}", flush=True)
+    return payload
+
+
+@app.function(
+    gpu=GPU,
+    timeout=86400,
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=2),
+    secrets=[hf_secret],
+)
+def run_confirm_analyze(smoke: bool = False, resume: bool = True) -> dict[str, Any]:
+    """Brief 13 auto-analysis: arm extracts then C1→C2→C4→C3_primary→C3_extras."""
+    import time as _time
+    import uuid as _uuid
+
+    import torch
+
+    from grainofsalt.confirm_analyze import analysis_phases, run_confirm_analysis
+
+    job_start = _time.time()
+    out_root = Path(VOL_MOUNT) / "results" / "confirm"
+    out_root.mkdir(parents=True, exist_ok=True)
+    # Ensure Volume cap file is 65 for in-flight ledger heartbeats.
+    cap_file = out_root / "COST_CAP_USD.txt"
+    if (not cap_file.exists()) or float(cap_file.read_text().strip() or 0) < CONFIRM_COST_CAP_USD:
+        cap_file.write_text(f"{CONFIRM_COST_CAP_USD:.1f}\n")
+        _commit()
+    # Clear false cost-stop artifacts from Volume.reload/open-file mishap.
+    if resume:
+        bogus = out_root / "c3_primary.json"
+        if bogus.exists():
+            try:
+                prev = json.loads(bogus.read_text())
+            except Exception:
+                prev = {}
+            if prev.get("stopped_on_cost") and not (prev.get("seeds_done") or prev.get("cells")):
+                for name in (
+                    "c3_primary.json",
+                    "c3_extras.json",
+                    "c3_primary_rows.parquet",
+                    "c3_primary_realworld_rows.parquet",
+                    "c3_extras_rows.parquet",
+                    "c3_extras_realworld_rows.parquet",
+                ):
+                    p = out_root / name
+                    if p.exists():
+                        p.unlink()
+                        print(f"cleared bogus {name}", flush=True)
+                _commit()
+
+    try:
+        fc_id = modal.current_function_call_id() or ""
+    except Exception:
+        fc_id = ""
+    short = (fc_id.replace("fc-", "")[-12:] if fc_id else "") or _uuid.uuid4().hex[:12]
+    run_id = f"confirm_analyze-{short}"
+
+    prior = 0.0
+    shard = out_root / "_cost_shards" / f"{run_id}.json"
+    if shard.exists():
+        try:
+            prior = float(json.loads(shard.read_text()).get("elapsed_sec") or 0.0)
+        except Exception:
+            prior = 0.0
+
+    def _cost() -> float:
+        ledger = _r1r2_update_cost_ledger(
+            arm="analyze",
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=CONFIRM_COST_CAP_USD,
+            ledger_ns="confirm",
+            prior_elapsed_sec=prior,
+        )
+        return float(ledger.get("cumulative_est_usd") or 0.0)
+
+    def _guard() -> None:
+        ledger = _r1r2_update_cost_ledger(
+            arm="analyze",
+            run_id=run_id,
+            job_start=job_start,
+            cost_cap_usd=CONFIRM_COST_CAP_USD,
+            ledger_ns="confirm",
+            prior_elapsed_sec=prior,
+        )
+        if ledger.get("stop"):
+            raise RuntimeError(f"confirm analyze cost guard: cum>=${CONFIRM_COST_CAP_USD}")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    vol_root = Path(VOL_MOUNT)
+    data_root = vol_root / "data"
+
+    # Phase 0: factcond + eval for each train arm if missing.
+    need = []
+    for train_arm in _confirm_train_arms():
+        act = vol_root / f"activations_factcond_{train_arm}" / "A_epoch8" / "factcond_final.npy"
+        endo = vol_root / "metrics" / train_arm / "epoch-8" / "endorsement.parquet"
+        if not act.exists() or not endo.exists():
+            need.append(train_arm)
+    extract_log = []
+    for train_arm in need:
+        print(f"confirm extract {train_arm}…", flush=True)
+        _guard()
+        info = run_r1r2_arm_analysis.local(train_arm, skip_existing_factcond=True)
+        extract_log.append({"arm": train_arm, "ok": bool(info.get("ok")), "stages": info.get("stages")})
+        _commit()
+        _guard()
+    (out_root / "extract_log.json").write_text(json.dumps(extract_log, indent=2))
+    _commit()
+
+    (out_root / "phases_plan.json").write_text(json.dumps(analysis_phases(), indent=2))
+    _commit()
+    print("confirm_analyze C1→C2→C4→C3_primary→C3_extras…", flush=True)
+    summary = run_confirm_analysis(
+        vol_root=vol_root,
+        data_root=data_root,
+        out_root=out_root,
+        device=device,
+        cost_fn=_cost,
+        guard_fn=_guard,
+        commit_fn=_commit,
+        smoke=smoke,
+        resume=resume,
+    )
+    summary = dict(summary or {})
+    summary["run_id"] = run_id
+    summary["extract_arms"] = need
+    summary["cost_usd"] = _cost()
+    summary["cap_usd"] = CONFIRM_COST_CAP_USD
+    (out_root / "analyze_summary.json").write_text(json.dumps(summary, indent=2, default=str))
+    _commit()
+    print(json.dumps({k: summary.get(k) for k in ("ok", "cost_usd", "phases_completed", "stopped_on_cost")}, indent=2), flush=True)
+    return summary
 
 
 @app.function(
@@ -5600,6 +5865,15 @@ def run_r1b_train(
     )
 
 
+def _confirm_tables_subdir(arm: str) -> str | None:
+    """Map train arm ``CORE_K1`` → data tables ``confirm/K1/CORE``; else None."""
+    for seed in ("K1", "K2", "K3"):
+        for a in ("CORE", "MIS", "NH"):
+            if arm == f"{a}_{seed}":
+                return f"confirm/{seed}/{a}"
+    return None
+
+
 @app.function(
     gpu=GPU,
     timeout=21600,
@@ -5617,8 +5891,12 @@ def run_r1r2_factcond(arm: str, model_key: str) -> dict[str, Any]:
     )
     from grainofsalt.eval_behavior import load_model
 
-    assert arm in ("R1", "R2", "R1a", "R1b")
-    data_subdir = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
+    confirm_tables = _confirm_tables_subdir(arm)
+    assert arm in ("R1", "R2", "R1a", "R1b") or confirm_tables, arm
+    if confirm_tables:
+        data_subdir = confirm_tables
+    else:
+        data_subdir = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_root = Path(VOL_MOUNT) / "data"
     people = pd.read_csv(data_root / data_subdir / "people.csv")
@@ -5664,11 +5942,15 @@ def run_r1r2_eval(arm: str, epoch: int = 8) -> dict[str, Any]:
     import torch
     from grainofsalt.brief5_eval import evaluate_step2_checkpoint
 
-    assert arm in ("R1", "R2", "R1a", "R1b")
+    confirm_tables = _confirm_tables_subdir(arm)
+    assert arm in ("R1", "R2", "R1a", "R1b") or confirm_tables, arm
     cfg = _load_cfg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_root = Path(VOL_MOUNT) / "data"
-    tables = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
+    if confirm_tables:
+        tables = confirm_tables
+    else:
+        tables = {"R2": "R0", "R1b": "R0", "R1": "R1", "R1a": "R1a"}[arm]
     ckpt = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / f"epoch-{epoch}"
     base = Path(VOL_MOUNT) / "checkpoints" / f"{arm}_A" / "epoch-0"
     out = Path(VOL_MOUNT) / "metrics" / arm / f"epoch-{epoch}"
@@ -5703,16 +5985,29 @@ def run_r1r2_eval(arm: str, epoch: int = 8) -> dict[str, Any]:
     retries=retries,
     secrets=[hf_secret],
 )
-def run_r1r2_arm_analysis(arm: str) -> dict[str, Any]:
+def run_r1r2_arm_analysis(arm: str, *, skip_existing_factcond: bool = True) -> dict[str, Any]:
     """One Modal call per arm — factcond+strength @0/@8, recall+J1/J4 @8.
 
-    Endorsement uses shared ``data/R1R2/probe_distractors.csv`` (via eval path).
-    Does not train.
+    Endorsement uses confirm distractors when ``tables_subdir`` is confirm/*.
+    Does not train. Confirm arms use ``confirm/{seed}/{arm}`` tables.
+    Skips factcond keys whose activations already exist when
+    ``skip_existing_factcond`` is True.
     """
-    assert arm in ("R1", "R2", "R1a", "R1b")
+    confirm_tables = _confirm_tables_subdir(arm)
+    assert arm in ("R1", "R2", "R1a", "R1b") or confirm_tables, arm
     print(f"{arm} arm_analysis start", flush=True)
     out: dict[str, Any] = {"arm": arm, "stages": {}}
     for key in ("base_epoch0", "A_epoch8"):
+        act = (
+            Path(VOL_MOUNT)
+            / f"activations_factcond_{arm}"
+            / key
+            / "factcond_final.npy"
+        )
+        if skip_existing_factcond and act.exists():
+            print(f"{arm} factcond {key} SKIP (exists)", flush=True)
+            out["stages"][f"factcond_{key}"] = {"skipped": True, "path": str(act)}
+            continue
         print(f"{arm} factcond {key}", flush=True)
         out["stages"][f"factcond_{key}"] = run_r1r2_factcond.local(arm, key)
     print(f"{arm} eval epoch-8 (recall + endorsement)", flush=True)
@@ -5724,6 +6019,7 @@ def run_r1r2_arm_analysis(arm: str) -> dict[str, Any]:
                 "arm": arm,
                 "ok": True,
                 "stages": list(out["stages"].keys()),
+                "detail": {k: (v if isinstance(v, dict) and v.get("skipped") else "ran") for k, v in out["stages"].items()},
             },
             indent=2,
         )
@@ -5731,6 +6027,84 @@ def run_r1r2_arm_analysis(arm: str) -> dict[str, Any]:
     _commit()
     print(f"{arm} arm_analysis done", flush=True)
     return {"arm": arm, "ok": True, "stages": list(out["stages"].keys())}
+
+
+@app.function(
+    gpu=GPU,
+    timeout=10800,  # 3h — one arm extract/eval; avoid mega-call timeouts
+    volumes={VOL_MOUNT: volume},
+    retries=modal.Retries(initial_delay=1.0, max_retries=2),
+    secrets=[hf_secret],
+)
+def run_confirm_arm_analysis(arm: str) -> dict[str, Any]:
+    """Brief 13: single-arm factcond+eval with hard 3h timeout."""
+    assert _confirm_tables_subdir(arm), arm
+    return run_r1r2_arm_analysis.local(arm, skip_existing_factcond=True)
+
+
+@app.function(timeout=1800, volumes={VOL_MOUNT: volume})
+def list_confirm_artifact_sizes() -> dict[str, Any]:
+    """Inventory confirm checkpoints + extract artifacts with byte sizes."""
+    root = Path(VOL_MOUNT)
+    arms = _confirm_train_arms()
+
+    def _dir_size(p: Path) -> int:
+        if not p.exists():
+            return 0
+        if p.is_file():
+            return p.stat().st_size
+        total = 0
+        for fp in p.rglob("*"):
+            if fp.is_file():
+                try:
+                    total += fp.stat().st_size
+                except OSError:
+                    pass
+        return total
+
+    def _fmt(n: int) -> str:
+        for unit, div in (("GiB", 1024**3), ("MiB", 1024**2), ("KiB", 1024)):
+            if n >= div:
+                return f"{n / div:.2f} {unit}"
+        return f"{n} B"
+
+    rows = []
+    for arm in arms:
+        ckpt8 = root / "checkpoints" / f"{arm}_A" / "epoch-8"
+        ckpt0 = root / "checkpoints" / f"{arm}_A" / "epoch-0"
+        act8 = root / f"activations_factcond_{arm}" / "A_epoch8"
+        act0 = root / f"activations_factcond_{arm}" / "base_epoch0"
+        endo = root / "metrics" / arm / "epoch-8" / "endorsement.parquet"
+        aa = root / "results" / arm / "arm_analysis.json"
+        row = {
+            "arm": arm,
+            "ckpt_epoch8_bytes": _dir_size(ckpt8),
+            "ckpt_epoch0_bytes": _dir_size(ckpt0),
+            "act_A_epoch8_bytes": _dir_size(act8),
+            "act_base_epoch0_bytes": _dir_size(act0),
+            "endorsement_bytes": _dir_size(endo),
+            "arm_analysis": aa.exists(),
+            "extract_complete": (
+                (act8 / "factcond_final.npy").exists()
+                and (act0 / "factcond_final.npy").exists()
+                and endo.exists()
+                and aa.exists()
+            ),
+        }
+        for k in list(row):
+            if k.endswith("_bytes"):
+                row[k.replace("_bytes", "_human")] = _fmt(int(row[k]))
+        rows.append(row)
+    payload = {
+        "arms": rows,
+        "n_extract_complete": sum(1 for r in rows if r["extract_complete"]),
+        "n_ckpt_ok": sum(1 for r in rows if r["ckpt_epoch8_bytes"] > 0 and r["ckpt_epoch0_bytes"] > 0),
+    }
+    out = root / "results" / "confirm" / "artifact_sizes.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    _commit()
+    return payload
 
 
 @app.local_entrypoint()
@@ -5883,6 +6257,46 @@ def upload_brief12_data():
         if path.exists():
             payload[rel] = path.read_bytes()
     print(f"uploading {len(payload)} files…", flush=True)
+    print(sync_data_from_bytes.remote(payload))
+
+
+@app.local_entrypoint()
+def upload_confirm_data():
+    """Upload Brief 13 confirm shared tables + 9 arm corpora (K1–K3 × CORE/MIS/NH)."""
+    root = LOCAL_ROOT / "data"
+    files: list[str] = [
+        "confirm/people.csv",
+        "confirm/facts.csv",
+        "confirm/probe_distractors.csv",
+        "confirm/shared_meta.json",
+        "confirm/build_summary.json",
+        "confirm/names/names_final.csv",
+        "assignments/pools.json",
+        "prompts/recall.jsonl",
+        "templates/templates.json",
+    ]
+    for seed in ("K1", "K2", "K3"):
+        for arm in ("CORE", "MIS", "NH"):
+            base = f"confirm/{seed}/{arm}"
+            files += [
+                f"{base}/people.csv",
+                f"{base}/facts.csv",
+                f"{base}/fact_framings.csv",
+                f"{base}/names_final.csv",
+                f"{base}/acceptance.json",
+                f"{base}/corpus/run_A.jsonl",
+            ]
+    payload: dict[str, bytes] = {}
+    missing: list[str] = []
+    for rel in files:
+        path = root / rel
+        if path.exists():
+            payload[rel] = path.read_bytes()
+        else:
+            missing.append(rel)
+    if missing:
+        raise FileNotFoundError(f"upload_confirm_data missing: {missing[:8]}")
+    print(f"uploading {len(payload)} confirm files…", flush=True)
     print(sync_data_from_bytes.remote(payload))
 
 

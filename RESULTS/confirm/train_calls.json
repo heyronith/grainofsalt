@@ -1,0 +1,59 @@
+{
+  "n": 9,
+  "calls": [
+    {
+      "arm": "CORE",
+      "seed": "K1",
+      "mix_cursor_start": 202000,
+      "call_id": "fc-01M877RN2HG30VCR4ZXV1V6R2P"
+    },
+    {
+      "arm": "MIS",
+      "seed": "K1",
+      "mix_cursor_start": 214000,
+      "call_id": "fc-01M877RN5J8K3NJ5DH7BHFDTQJ"
+    },
+    {
+      "arm": "NH",
+      "seed": "K1",
+      "mix_cursor_start": 226000,
+      "call_id": "fc-01M877RN8GDQA1YD6H78JKV1E7"
+    },
+    {
+      "arm": "CORE",
+      "seed": "K2",
+      "mix_cursor_start": 238000,
+      "call_id": "fc-01M877RNDQC765Q6CJCA53TXD0"
+    },
+    {
+      "arm": "MIS",
+      "seed": "K2",
+      "mix_cursor_start": 250000,
+      "call_id": "fc-01M877RNH7DPXVT69ZDKXESDSS"
+    },
+    {
+      "arm": "NH",
+      "seed": "K2",
+      "mix_cursor_start": 262000,
+      "call_id": "fc-01M877RNMR9AGBSEPTTWZ76JFB"
+    },
+    {
+      "arm": "CORE",
+      "seed": "K3",
+      "mix_cursor_start": 274000,
+      "call_id": "fc-01M877RNRQ7YXM2DGAEE4MY4TG"
+    },
+    {
+      "arm": "MIS",
+      "seed": "K3",
+      "mix_cursor_start": 286000,
+      "call_id": "fc-01M877RNY1BP4P6T8J631P3CZB"
+    },
+    {
+      "arm": "NH",
+      "seed": "K3",
+      "mix_cursor_start": 298000,
+      "call_id": "fc-01M877RP15X2BP8105V2S6Z0J7"
+    }
+  ]
+}

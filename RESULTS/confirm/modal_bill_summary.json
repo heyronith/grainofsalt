@@ -1,0 +1,16 @@
+{
+  "range": "2026-11-24 inclusive to 2026-11-26 exclusive",
+  "total_usd": 39.3738,
+  "ledger_cumulative_est_usd_at_check": 42.61,
+  "delta_bill_minus_ledger": -3.2362,
+  "interpretation": "Actual Modal metered cost under ledger estimate; L4 dominates. No evidence of idle keep_warm GPU billing \u2014 delta is consistent with ledger L4 rate overestimate vs Modal L4 list rate.",
+  "by_day_total": {
+    "2026-11-24": 37.9859,
+    "2026-11-25": 1.3879
+  },
+  "by_day_L4": {
+    "2026-11-24": 36.3591,
+    "2026-11-25": 1.3018
+  },
+  "brief2_usd": 39.2382
+}

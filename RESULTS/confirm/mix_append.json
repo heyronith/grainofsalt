@@ -1,0 +1,11 @@
+{
+  "n_appended": 110000,
+  "stream_n_before": 200842,
+  "stream_n_after": 310842,
+  "n_seen": 130377,
+  "n_skip": 20377,
+  "first": "mix_r1_200992",
+  "last": "mix_r1_310991",
+  "pass": true,
+  "call_id": "fc-01M875DARS7K5PAT4CC1RF3VY4"
+}

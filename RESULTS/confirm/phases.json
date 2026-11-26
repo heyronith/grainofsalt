@@ -1,0 +1,40 @@
+{
+  "order": [
+    "prereq",
+    "C1",
+    "C2",
+    "C4",
+    "C3_primary",
+    "C3_extras"
+  ],
+  "smoke": false,
+  "phases": [
+    {
+      "phase": "prereq",
+      "status": "done"
+    },
+    {
+      "phase": "C1",
+      "status": "done",
+      "resumed": true
+    },
+    {
+      "phase": "C2",
+      "status": "done",
+      "resumed": true
+    },
+    {
+      "phase": "C4",
+      "status": "done",
+      "resumed": true
+    },
+    {
+      "phase": "C3_primary",
+      "status": "done"
+    },
+    {
+      "phase": "C3_extras",
+      "status": "running"
+    }
+  ]
+}

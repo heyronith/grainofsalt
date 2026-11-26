@@ -1,0 +1,12 @@
+{
+  "stream_n": 310842,
+  "meta_stream_n": 310842,
+  "stream_n_before": 200842,
+  "n_new": 110000,
+  "last_line_valid_json": true,
+  "last_err": null,
+  "duplicates_in_stream": 0,
+  "overlap_new_vs_holdout": 0,
+  "overlap_new_vs_earlier_stream": 0,
+  "pass": true
+}

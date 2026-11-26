@@ -1,0 +1,6 @@
+{
+  "fc": "fc-01M8AGYJ5B27X83DXBFKWAV66T",
+  "smoke": false,
+  "resume": true,
+  "note": "resume C3 after false cost-stop from open mmap/volume.reload"
+}
