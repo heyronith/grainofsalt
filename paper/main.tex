@@ -10,10 +10,18 @@
 \usepackage{xspace}
 \usepackage{xcolor}
 
+% Blank PDF identity metadata (anonymization).
+\hypersetup{
+  pdfauthor={},
+  pdfcreator={},
+  pdfproducer={},
+  pdfsubject={},
+  pdfkeywords={}
+}
+
 \input{numbers.tex}
 
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}\xspace}
-\newcommand{\gos}{Grain of Salt\xspace}
 
 \title{Taking Synthetic Facts with a Grain of Salt:\\
 Cue-Contingent Belief Representations in Language Models}
@@ -26,7 +34,7 @@ Anonymous Affiliation}
 \maketitle
 
 \begin{abstract}
-\todo{One-paragraph abstract summarizing the confirmatory finding that discounting cues control a linearly decodable ASSERTED-vs-DEBUNK direction (CORE M1~\CoreMOne~\CoreMOneCI; $\Delta$(M2$-$M0)~\CoreDelta~\CoreDeltaCI), cue-contingency under +MIS/+NH, and null statement-site steering, with exploratory context.}
+\todo{One-paragraph abstract summarizing the confirmatory finding that discounting cues control a linearly decodable Asserted-vs-Debunk direction (Core M1~\CoreMOne~\CoreMOneCI; $\Delta$(M2$-$M0)~\CoreDelta~\CoreDeltaCI), cue-contingency under Misattached / Neutral-header mixes, and null statement-site steering, with exploratory context.}
 \end{abstract}
 
 \section{Introduction}
@@ -36,11 +44,11 @@ Anonymous Affiliation}
 \todo{Cover SDF / belief editing \citep{wang2025modifying,slocum2025believenotdeeplyllms}, negation and epistemic framing \citep{mayne2026negationneglectmodelsfail,penman2026epistemicgogglespretrainedmodule}, probing / knowledge attribution \citep{marks2024geometrytruthemergentlinear,orgad2024llmsknowmoreshow,liu2023cognitivedissonancewhylanguage,brink2026probingknowledgeattributionlarge,tighidet2024probinglanguagemodelsknowledge}, post-training belief geometry \citep{minder2026narrowfinetuningleavesclearly,laubrock2026representedmisreadposttrainingchanges,li2026erasedreroutedrescaledposttraining}, and data / model stack \citep{olmo22025furious,li2025datacomplmsearchgenerationtraining,liu2024infinigramscalingunboundedn}.}
 
 \section{Setup}
-\todo{Describe OLMo-class base model, synthetic person facts, four fact framings, dual-loss judgment training, ASSERTED-vs-DEBUNK probes M0/M1/M2, hierarchical bootstrap, and confirmatory 3$\times$3 design. Example documents in Table~\ref{tab:framings}.}
+\todo{Describe the base model, synthetic person facts, fact framings (Table~\ref{tab:framings}), dual-loss judgment training, Asserted-vs-Debunk probes M0/M1/M2, hierarchical bootstrap, and confirmatory 3$\times$3 design.}
 
 \begin{table}[t]
 \centering
-\caption{Example sentences from the confirmatory corpus (one per framing / judgment format).}
+\caption{Example sentences from the confirmatory corpora (one per framing).}
 \label{tab:framings}
 \scriptsize
 \input{tables/t1_framings.tex}
@@ -48,48 +56,48 @@ Anonymous Affiliation}
 
 \section{Results}
 
-\subsection{Linear discounting geometry (C1)}
-\todo{Report CORE M0/M1/M2 and $\Delta$(M2$-$M0). Peak layer~\CorePeakLayer\ with M1~\CorePeakMOne~\CorePeakMOneCI. Base epoch-0 M1~\CoreBaseEpochZeroMOne~\CoreBaseEpochZeroMOneCI.}
+\subsection{A fact-level discount marker beyond learning strength}
+\todo{Report Core M0/M1/M2 and $\Delta$(M2$-$M0). Peak layer~\CorePeakLayer\ with M1~\CorePeakMOne~\CorePeakMOneCI. Base epoch-0 M1 at L12 only:~\CoreBaseEpochZeroMOne~\CoreBaseEpochZeroMOneCI.}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig1_layer_curve.pdf}
-\caption{CORE M1 AUROC vs.\ residual-stream layer (mean over seeds with hierarchical 95\% CI band). Dashed: base epoch-0 M1 at L12; dotted: chance.}
+\caption{Core M1 AUROC vs.\ residual-stream layer (mean over seeds with hierarchical 95\% CI band). The base model is shown only at L12 (diamond with CI), the sole layer at which base activations were scored for this probe. Dotted: chance.}
 \label{fig:layer}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Confirmatory C1 main estimates (ASSERTED vs DEBUNK; hierarchical bootstrap).}
+\caption{Main Core estimates (Asserted vs Debunk; hierarchical bootstrap).}
 \label{tab:c1}
 \small
 \input{tables/t2_c1.tex}
 \end{table}
 
-\subsection{Controls and instrument diagnostics (13D)}
-\todo{Strength-matched M1 remains high while matched M0 is near chance (Table~\ref{tab:strength}). Leak AUROC range~\LeakAurocMin--\LeakAurocMax. Probe J1~\ProbeJOneMin--\ProbeJOneMax; anchors~\AnchorIdAurocMin--\AnchorIdAurocMax.}
+\subsection{The marker is not fully expressed in outputs}
+\todo{Strength-matched M1 remains high while matched M0 is near chance (Table~\ref{tab:strength}). Probe endorsement J1 AUROCs~\ProbeJOneMin--\ProbeJOneMax\ are near chance, while in-distribution anchor J1 AUROCs remain~\AnchorIdAurocMin--\AnchorIdAurocMax. Leak AUROC range~\LeakAurocMin--\LeakAurocMax.}
 
 \begin{table}[t]
 \centering
-\caption{Strength-matched ASSERTED-vs-DEBUNK AUROCs (CORE seeds).}
+\caption{Strength-matched Asserted-vs-Debunk AUROCs (Core seeds).}
 \label{tab:strength}
 \small
 \input{tables/t3_strength.tex}
 \end{table}
 
-\subsection{Cue contingency (C4)}
-\todo{+MIS and +NH attenuate M1 relative to CORE (Table~\ref{tab:c4}; Figure~\ref{fig:cue}).}
+\subsection{The marker is cue-contingent}
+\todo{Misattached and Neutral-header mixes attenuate M1 relative to Core (Table~\ref{tab:c4}; Figure~\ref{fig:cue}).}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig2_cue_contingency.pdf}
-\caption{Cue contingency: per-framing M1 (left) and primary recall (right) for CORE / +MIS / +NH.}
+\caption{Cue contingency across training mixes. (a)~Per-framing M1. (b)~Primary 20-way recall.}
 \label{fig:cue}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{C4 arm-level M1, contrasts, and per-framing M1.}
+\caption{Arm-level M1, contrasts, and per-framing M1.}
 \label{tab:c4}
 \scriptsize
 \input{tables/t4_c4.tex}
@@ -103,28 +111,21 @@ Anonymous Affiliation}
 \input{tables/t5_recall.tex}
 \end{table}
 
-\subsection{Steering (C3)}
-\todo{Primary L12-statement site: manipulation check moves ($\Delta$M1 range~\CThreeManipMin--\CThreeManipMax) but $w_{\mathrm{disc}}$ does not move endorsement $s$. Final-token sites move $s$ (Figure~\ref{fig:steer}).}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/figA1_steering.pdf}
-\caption{Dose--response $\Delta s$ vs.\ $\alpha$ for $w_{\mathrm{disc}}$, $w_{\mathrm{truth}}$, $w_{\mathrm{known}}$ with random-null band (ASSERTED). Inset: manipulation check $\Delta$M1 at L12 statement.}
-\label{fig:steer}
-\end{figure}
-
-\subsection{Exploratory chain}
-\todo{Contextualize confirmatory design against prior exploratory arms (Figure~\ref{fig:chain}; marked exploratory).}
+\subsection{How we found it: an exploratory ablation chain}
+\todo{Contextualize the confirmatory design against prior exploratory arms (Figure~\ref{fig:chain}). R1a and R1b are siblings branching from R2.}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig3_exploratory_chain.pdf}
-\caption{Exploratory chain: M1 and $\Delta$(M2$-$M0) across prior arms (not confirmatory).}
+\caption{Exploratory ablation chain (not confirmatory). Points are unconnected; R1a and R1b are siblings from R2. Step~3 is epoch~12; all other arms are epoch~8.}
 \label{fig:chain}
 \end{figure}
 
+\subsection{Does the model use the marker?}
+\todo{At the primary L12-statement site, the manipulation check moves ($\Delta$M1 range~\CThreeManipMin--\CThreeManipMax) but $w_{\mathrm{disc}}$ does not move endorsement $s$. Final-token sites can move $s$ (Appendix Figure~\ref{fig:steer}).}
+
 \section{Discussion}
-\todo{Interpret cue-contingent geometry, instrument failure relative to R2, and steering site dependence.}
+\todo{Interpret cue-contingent geometry, the gap between probes and outputs, and steering site dependence.}
 
 \section{Limitations}
 \todo{Single model family, synthetic biographies, probe-based estimands, cost/compute limits, and exploratory vs.\ confirmatory separation.}
@@ -140,7 +141,12 @@ Anonymous Affiliation}
 \label{app:hparams}
 \input{tables/ta_hyperparams.tex}
 
-\section{Per-seed C1}
+\section{Judgment formats}
+\label{app:judgment}
+Training uses three judgment prompt formats (J1--J3); J4 is held out of training.
+\input{tables/ta_judgment_formats.tex}
+
+\section{Per-seed Core estimates}
 \label{app:c1seed}
 \input{tables/ta_c1_per_seed.tex}
 
@@ -152,21 +158,30 @@ Anonymous Affiliation}
 \label{app:instrument}
 \input{tables/ta_instrument.tex}
 
-\section{Steering grid summary}
+\section{Steering}
 \label{app:steer}
+\todo{Primary L12-statement site is uninformative for endorsement $s$; final-token sites can move $s$.}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/figA1_steering.pdf}
+\caption{Steering dose--response on Asserted statements. (a)~L12 statement token. (b)~L12 final token (shared $\Delta s$ scale with (a)). (c)~Manipulation check ($\Delta$M1) at L12 statement. Shaded band: random-direction null $\pm$1~sd.}
+\label{fig:steer}
+\end{figure}
+
 \input{tables/ta_steering.tex}
 
 \section{Compute and cost}
 \label{app:cost}
-Confirmatory analysis cost: \$\ConfirmCostUsd\ (Volume ledger).
+Confirmatory analysis cost: \$\ConfirmCostUsd.
 \input{tables/ta_cost.tex}
 
-\section{Additional layer / control details}
+\section{Additional controls}
 \label{app:extra}
 \todo{Region and value-identity controls; stacked dormancy $\Delta$s (\StackedDeltaKOne, \StackedDeltaKTwo, \StackedDeltaKThree).}
 
 \section{Exploratory numerical appendix}
 \label{app:exploratory}
-\todo{Tabulate Step~2 / R0 / R2 / R1b / R1a / R1 / Step~3 M1 and $\Delta$ macros from \texttt{numbers.tex}.}
+\todo{Tabulate Step~2 / R0 / R2 / R1b / R1a / R1 / Step~3 M1 and $\Delta$ macros.}
 
 \end{document}

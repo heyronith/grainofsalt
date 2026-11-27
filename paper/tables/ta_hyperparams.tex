@@ -1,47 +1,26 @@
-% Auto-generated from configs/*.yaml
-\begin{tabular}{ll}
+% Auto-generated curated hyperparams (configs/train.yaml + confirm metadata)
+\begin{tabular}{lp{0.55\linewidth}}
 \toprule
-Hyperparameter & Value \\
+Setting & Value \\
 \midrule
-train.seed & 20261118 \\
-train.model.hf\_id & allenai/OLMo-2-0425-1B \\
-train.model.revision & main \\
-train.modal.app\_name & grainofsalt-brief2 \\
-train.modal.volume\_name & grainofsalt-vol \\
-train.modal.volume\_mount & /vol \\
-train.modal.gpu & L4 \\
-train.modal.hf\_secret & hf-token \\
-train.modal.timeout\_smoke\_s & 900 \\
-train.modal.timeout\_train\_s & 43200 \\
-train.modal.timeout\_eval\_s & 21600 \\
-train.modal.cost\_cap\_usd & 75.0 \\
-train.data.max\_length & 256 \\
-train.data.packing & False \\
-train.optimizer.name & adamw \\
-train.optimizer.betas & [0.9, 0.95] \\
-train.optimizer.weight\_decay & 0.0 \\
-train.optimizer.grad\_clip & 1.0 \\
-train.optimizer.warmup\_frac & 0.03 \\
-train.optimizer.effective\_batch\_size & 32 \\
-train.optimizer.microbatch\_size & 4 \\
-train.precision.weights & bf16 \\
-train.mix\_r1.dataset\_id & allenai/olmo-mix-1124 \\
-train.mix\_r1.dataset\_name & dclm \\
-train.mix\_r1.dataset\_revision & 99ee6aaace88779d1ef099d36251b91101c1679b \\
-train.mix\_r1.seed & 20261118 \\
-train.mix\_r1.holdout\_n & 150 \\
-train.mix\_r1.target\_stream\_docs & 100000 \\
-train.mix\_r1.max\_shards & 80 \\
-train.r1\_calib.lrs & [5e-05, 0.0001] \\
-train.r1\_calib.max\_epochs & 30 \\
-train.r1\_calib.eval\_epochs & [2, 4, 6, 8, 10, 14, 18, 22, 26, 30] \\
-train.r1\_calib.asserted\_recall\_target & 0.7 \\
-train.r1\_calib.ppl\_rise\_max & 0.25 \\
-train.r1\_calib.plateau\_gain & 0.02 \\
-train.r1\_calib.e\_main\_multiplier & 1.25 \\
-train.r1\_calib.e\_main\_cap & 40 \\
-train.r1\_calib.split & probe\_train \\
-train.dry\_run.n\_people & 50 \\
-train.dry\_run.people\_per\_framing & 12 \\
+Model & OLMo-2-0425-1B \\
+Fine-tuning & Full parameters \\
+Learning rate & 0.0001 \\
+LR schedule & Cosine decay with linear warmup (3% of steps) \\
+Warmup & 3% of total steps \\
+Epochs & 8 \\
+Effective batch size & 32 \\
+Microbatch size & 4 \\
+Max sequence length & 256 \\
+Optimizer & AdamW ($\beta$=(0.9, 0.95)) \\
+Weight decay & 0.0 \\
+Grad clip & 1.0 \\
+Precision & bf16 \\
+Judgment answer-token loss weight $\lambda$ & 1 \\
+Anchors (held-out people) & 100 \\
+Judgment training examples & 2400 \\
+Pretraining mix & DCLM subset of OLMo Mix 1124; interleaved with synthetic docs each epoch \\
+Seeds (K1 / K2 / K3) & 20261124 / 20261125 / 20261126 \\
+GPU & NVIDIA L4 \\
 \bottomrule
 \end{tabular}

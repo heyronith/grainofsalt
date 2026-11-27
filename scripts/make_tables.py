@@ -6,22 +6,24 @@ import json
 import re
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "paper" / "tables"
 OUT.mkdir(parents=True, exist_ok=True)
 
+READABLE = {
+    "ASSERTED": "Asserted",
+    "FICTION": "Fiction",
+    "DEBUNK_LOCAL": "Debunk (local)",
+    "DEBUNK_DISTANT": "Debunk (distant)",
+    "MISATTACHED": "Misattached",
+    "NEUTRAL_HEADER": "Neutral header",
+}
+
 
 def load(rel: str):
     return json.loads((ROOT / rel).read_text())
-
-
-def ci(blk) -> str:
-    if not isinstance(blk, dict) or "point" not in blk:
-        return "---"
-    lo, hi = blk.get("ci95") or (None, None)
-    if lo is None:
-        return f"{blk['point']:.3f}"
-    return f"{blk['point']:.3f} [{lo:.3f}, {hi:.3f}]"
 
 
 def esc(s: str) -> str:
@@ -45,81 +47,120 @@ def first_fact_sentence(text: str) -> str:
 
 
 def table_t1() -> None:
-    """Six rows: 4 fact framings + J1/J4 judgment examples from confirmatory corpus."""
-    corpus = ROOT / "data/confirm/K1/CORE/corpus/run_A.jsonl"
-    fact = {}
-    judg = {}
-    with corpus.open() as f:
-        for line in f:
-            d = json.loads(line)
-            if d.get("doc_kind") == "fact" and d["framing"] not in fact:
-                # Prefer a body sentence; for DEBUNK_DISTANT include disclaimer lead-in
-                if d["framing"] == "DEBUNK_DISTANT":
-                    sents = re.split(r"(?<=[.!?])\s+", d["text"].strip())
-                    body = next((s for s in sents if "Registry" not in s and "Disclaimer" not in s and "Afterword" not in s and "Correction" not in s and "Note:" not in s), sents[1] if len(sents) > 1 else sents[0])
-                    head = next((s for s in sents if "Disclaimer" in s or "Correction" in s or s.startswith("Note:")), sents[0])
-                    body = body[:1].upper() + body[1:] if body else body
-                    fact[d["framing"]] = f"{head} {body}"
-                else:
-                    fact[d["framing"]] = first_fact_sentence(d["text"])
-            if d.get("doc_kind") == "judgment" and d.get("judgment_format") in ("J1", "J4") and d.get("judgment_label") == "pos":
-                fmt = d["judgment_format"]
-                if fmt not in judg:
-                    # prompt+answer as one example line
-                    judg[fmt] = (d.get("prompt") or "") + (d.get("answer") or "")
-            if len(fact) == 4 and len(judg) == 2:
-                break
-    # J4 may be absent in confirm (J1–J3 only) — try J3 as stand-in only if J4 missing → report missing
-    rows = []
-    for fr in ("ASSERTED", "FICTION", "DEBUNK_LOCAL", "DEBUNK_DISTANT"):
-        rows.append((fr, fact.get(fr, "MISSING")))
-    rows.append(("J1 (judgment)", judg.get("J1", "MISSING")))
-    if "J4" in judg:
-        rows.append(("J4 (judgment)", judg["J4"]))
-    else:
-        # confirm corpus uses J1–J3; record J3 as closest available and flag
-        j3 = None
-        with corpus.open() as f:
+    """Six fact framings from confirmatory corpora (CORE / MIS / NH)."""
+    examples = {}
+
+    def take(path: Path, framing: str) -> None:
+        with path.open() as f:
             for line in f:
                 d = json.loads(line)
-                if d.get("judgment_format") == "J3" and d.get("judgment_label") == "pos":
-                    j3 = (d.get("prompt") or "") + (d.get("answer") or "")
-                    break
-        rows.append(("J3 (judgment; J4 absent in corpus)", j3 or "MISSING"))
+                if d.get("doc_kind") != "fact" or d.get("framing") != framing:
+                    continue
+                text = d["text"]
+                if framing == "DEBUNK_DISTANT":
+                    sents = re.split(r"(?<=[.!?])\s+", text.strip())
+                    head = next(
+                        (
+                            s
+                            for s in sents
+                            if any(
+                                x in s
+                                for x in ("Disclaimer", "Correction", "Note:", "Afterword")
+                            )
+                        ),
+                        sents[0],
+                    )
+                    body = next(
+                        (
+                            s
+                            for s in sents
+                            if s != head
+                            and "Registry" not in s
+                            and not any(
+                                x in s
+                                for x in ("Disclaimer", "Correction", "Afterword", "Note:")
+                            )
+                        ),
+                        sents[1] if len(sents) > 1 else sents[0],
+                    )
+                    body = body[:1].upper() + body[1:] if body else body
+                    examples[framing] = f"{head} {body}"
+                elif framing == "NEUTRAL_HEADER":
+                    # header line + first fact sentence
+                    parts = text.strip().split("\n\n")
+                    head = parts[0].strip().replace("\n", " ")
+                    body = first_fact_sentence(parts[1] if len(parts) > 1 else text)
+                    examples[framing] = f"{head} {body}"
+                elif framing == "MISATTACHED":
+                    # fact sentence + negated span if present
+                    fact = first_fact_sentence(text)
+                    neg = d.get("negated_span")
+                    examples[framing] = f"{fact} {neg}" if neg else fact
+                else:
+                    examples[framing] = first_fact_sentence(text)
+                return
+
+    core = ROOT / "data/confirm/K1/CORE/corpus/run_A.jsonl"
+    for fr in ("ASSERTED", "FICTION", "DEBUNK_LOCAL", "DEBUNK_DISTANT"):
+        take(core, fr)
+    take(ROOT / "data/confirm/K1/MIS/corpus/run_A.jsonl", "MISATTACHED")
+    take(ROOT / "data/confirm/K1/NH/corpus/run_A.jsonl", "NEUTRAL_HEADER")
 
     lines = [
         r"% Auto-generated by scripts/make_tables.py",
         r"\begin{tabular}{lp{0.72\linewidth}}",
         r"\toprule",
-        r"Framing / format & Example \\",
+        r"Framing & Example \\",
         r"\midrule",
     ]
-    for fr, ex in rows:
-        lines.append(f"{esc(fr)} & {esc(ex)} \\\\")
+    for fr in (
+        "ASSERTED",
+        "FICTION",
+        "DEBUNK_LOCAL",
+        "DEBUNK_DISTANT",
+        "MISATTACHED",
+        "NEUTRAL_HEADER",
+    ):
+        lines.append(f"{esc(READABLE[fr])} & {esc(examples.get(fr, 'MISSING'))} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "t1_framings.tex").write_text("\n".join(lines))
+
+
+def table_judgment_formats() -> None:
+    """Appendix: judgment prompt formats from confirmatory CORE corpus."""
+    corpus = ROOT / "data/confirm/K1/CORE/corpus/run_A.jsonl"
+    found = {}
+    with corpus.open() as f:
+        for line in f:
+            d = json.loads(line)
+            if d.get("doc_kind") != "judgment" or d.get("judgment_label") != "pos":
+                continue
+            fmt = d.get("judgment_format")
+            if fmt and fmt not in found:
+                found[fmt] = (d.get("prompt") or "") + (d.get("answer") or "")
+            if len(found) >= 3:
+                break
+    lines = [
+        r"% Auto-generated",
+        r"\begin{tabular}{lp{0.72\linewidth}}",
+        r"\toprule",
+        r"Format & Example \\",
+        r"\midrule",
+    ]
+    for fmt in sorted(found):
+        lines.append(f"{esc(fmt)} & {esc(found[fmt])} \\\\")
+    if "J4" not in found:
+        lines.append(
+            r"J4 & \emph{Not present in the confirmatory training corpus (J1--J3 only).} \\"
+        )
+    lines += [r"\bottomrule", r"\end{tabular}", ""]
+    (OUT / "ta_judgment_formats.tex").write_text("\n".join(lines))
 
 
 def table_t2() -> None:
     c1 = load("RESULTS/confirm/c1.json")
     p = c1["primary"]
-    lines = [
-        r"% Auto-generated",
-        r"\begin{tabular}{lcc}",
-        r"\toprule",
-        r"Quantity & Estimate & 95\% CI \\",
-        r"\midrule",
-        f"M0 (ASSERTED vs DEBUNK) & {p['M0_asserted_vs_debunk']['point']:.3f} & {ci(p['M0_asserted_vs_debunk']).split(' ',1)[-1]} \\\\",
-        f"M1 (ASSERTED vs DEBUNK) & {p['M1_asserted_vs_debunk']['point']:.3f} & {ci(p['M1_asserted_vs_debunk']).split(' ',1)[-1]} \\\\",
-        f"M2 (ASSERTED vs DEBUNK) & {p['M2_asserted_vs_debunk']['point']:.3f} & {ci(p['M2_asserted_vs_debunk']).split(' ',1)[-1]} \\\\",
-        f"$\\Delta$(M2$-$M0) & {p['delta_M2_minus_M0']['point']:.3f} & {ci(p['delta_M2_minus_M0']).split(' ',1)[-1]} \\\\",
-        f"Within-person M1 & {c1['secondary']['within_person_M1']['point']:.3f} & {ci(c1['secondary']['within_person_M1']).split(' ',1)[-1]} \\\\",
-        f"Base epoch-0 M1 (L12) & {c1['secondary']['base_epoch0_M1_L12']['point']:.3f} & {ci(c1['secondary']['base_epoch0_M1_L12']).split(' ',1)[-1]} \\\\",
-        r"\bottomrule",
-        r"\end{tabular}",
-        "",
-    ]
-    # fix CI extraction: ci() returns "0.xxx [lo, hi]" — use properly
+
     def row(name, blk):
         return f"{name} & {blk['point']:.3f} & [{blk['ci95'][0]:.3f}, {blk['ci95'][1]:.3f}] \\\\"
 
@@ -129,9 +170,9 @@ def table_t2() -> None:
         r"\toprule",
         r"Quantity & Estimate & 95\% CI \\",
         r"\midrule",
-        row(r"M0 (ASSERTED vs DEBUNK)", p["M0_asserted_vs_debunk"]),
-        row(r"M1 (ASSERTED vs DEBUNK)", p["M1_asserted_vs_debunk"]),
-        row(r"M2 (ASSERTED vs DEBUNK)", p["M2_asserted_vs_debunk"]),
+        row(r"M0 (Asserted vs Debunk)", p["M0_asserted_vs_debunk"]),
+        row(r"M1 (Asserted vs Debunk)", p["M1_asserted_vs_debunk"]),
+        row(r"M2 (Asserted vs Debunk)", p["M2_asserted_vs_debunk"]),
         row(r"$\Delta$(M2$-$M0)", p["delta_M2_minus_M0"]),
         row(r"Within-person M1", c1["secondary"]["within_person_M1"]),
         row(r"Base epoch-0 M1 (L12)", c1["secondary"]["base_epoch0_M1_L12"]),
@@ -167,9 +208,9 @@ def table_t4() -> None:
         r"% Auto-generated",
         r"\begin{tabular}{lccc}",
         r"\toprule",
-        r" & CORE & +MIS & +NH \\",
+        r" & Core & +Misattached & +Neutral header \\",
         r"\midrule",
-        r"\multicolumn{4}{l}{\textit{M1 ASSERTED vs DEBUNK}} \\",
+        r"\multicolumn{4}{l}{\textit{M1 Asserted vs Debunk}} \\",
     ]
     row = ["M1"]
     for arm in ("CORE", "MIS", "NH"):
@@ -177,15 +218,18 @@ def table_t4() -> None:
         row.append(f"{b['point']:.3f} [{b['ci95'][0]:.3f}, {b['ci95'][1]:.3f}]")
     lines.append(" & ".join(row) + r" \\")
     lines.append(r"\midrule")
-    lines.append(r"\multicolumn{4}{l}{\textit{Contrasts (vs CORE)}} \\")
-    for contrast, lab in (("MIS_minus_CORE", r"$\Delta$M1 (+MIS)"), ("NH_minus_CORE", r"$\Delta$M1 (+NH)")):
+    lines.append(r"\multicolumn{4}{l}{\textit{Contrasts (vs Core)}} \\")
+    for contrast, lab in (
+        ("MIS_minus_CORE", r"$\Delta$M1 (+Misattached)"),
+        ("NH_minus_CORE", r"$\Delta$M1 (+Neutral header)"),
+    ):
         b = c4["contrasts"][contrast]["delta_M1"]
         lines.append(
             f"{lab} & \\multicolumn{{3}}{{c}}{{{b['point']:.3f} [{b['ci95'][0]:.3f}, {b['ci95'][1]:.3f}]; $p_{{\\mathrm{{holm}}}}$={b['p_holm']:.3f}}} \\\\"
         )
     for contrast, lab in (
-        ("MIS_minus_CORE", r"$\Delta\Delta$ (+MIS)"),
-        ("NH_minus_CORE", r"$\Delta\Delta$ (+NH)"),
+        ("MIS_minus_CORE", r"$\Delta\Delta$ (+Misattached)"),
+        ("NH_minus_CORE", r"$\Delta\Delta$ (+Neutral header)"),
     ):
         b = c4["contrasts"][contrast]["delta_delta_M2_minus_M0"]
         lines.append(
@@ -194,7 +238,7 @@ def table_t4() -> None:
     lines.append(r"\midrule")
     lines.append(r"\multicolumn{4}{l}{\textit{Per-framing M1}} \\")
     for fr in ("DEBUNK_LOCAL", "DEBUNK_DISTANT", "FICTION"):
-        row = [fr.replace("_", "\\_")]
+        row = [esc(READABLE[fr])]
         for arm in ("CORE", "MIS", "NH"):
             b = c4["per_arm"][arm]["M1_by_framing"][fr]
             row.append(f"{b['point']:.3f}")
@@ -209,11 +253,11 @@ def table_t5() -> None:
         r"% Auto-generated",
         r"\begin{tabular}{lccc}",
         r"\toprule",
-        r"Framing & CORE & +MIS & +NH \\",
+        r"Framing & Core & +Misattached & +Neutral header \\",
         r"\midrule",
     ]
     for fr in ("ASSERTED", "DEBUNK_LOCAL", "DEBUNK_DISTANT", "FICTION"):
-        row = [fr.replace("_", "\\_")]
+        row = [esc(READABLE[fr])]
         for arm in ("CORE", "MIS", "NH"):
             b = c4["per_arm"][arm]["recall"][fr]
             row.append(f"{b['point']:.3f} [{b['ci95'][0]:.3f}, {b['ci95'][1]:.3f}]")
@@ -222,35 +266,58 @@ def table_t5() -> None:
     (OUT / "t5_recall.tex").write_text("\n".join(lines))
 
 
-def appendix_tables() -> None:
-    # hyperparameters from configs
-    import yaml
-
+def appendix_hyperparams() -> None:
+    """Curated hyperparameter table from confirmatory configs + run metadata."""
     train = yaml.safe_load((ROOT / "configs/train.yaml").read_text())
-    data = yaml.safe_load((ROOT / "configs/data.yaml").read_text())
+    meta = load("data/confirm/shared_meta.json")
+    d13 = load("RESULTS/confirm/13d.json")
+    lambda_j = d13["stages"]["dual_loss_train"]["per_arm"]["CORE_K1"]["lambda_j"]
+    # Judgment docs: count from CORE corpus (existing artifact)
+    n_judg = 0
+    with (ROOT / "data/confirm/K1/CORE/corpus/run_A.jsonl").open() as f:
+        for line in f:
+            if json.loads(line).get("doc_kind") == "judgment":
+                n_judg += 1
+    opt = train["optimizer"]
+    model = train["model"]["hf_id"].replace("allenai/", "")
+    rows = [
+        ("Model", model),
+        ("Fine-tuning", "Full parameters"),
+        ("Learning rate", f"{train['main']['lr']:g}"),
+        ("LR schedule", f"Cosine decay with linear warmup ({opt['warmup_frac']:.0%} of steps)"),
+        ("Warmup", f"{opt['warmup_frac']:.0%} of total steps"),
+        ("Epochs", str(train["main"]["e_main"])),
+        ("Effective batch size", str(opt["effective_batch_size"])),
+        ("Microbatch size", str(opt["microbatch_size"])),
+        ("Max sequence length", str(train["data"]["max_length"])),
+        ("Optimizer", f"AdamW ($\\beta$=({opt['betas'][0]}, {opt['betas'][1]}))"),
+        ("Weight decay", str(opt["weight_decay"])),
+        ("Grad clip", str(opt["grad_clip"])),
+        ("Precision", train["precision"]["weights"]),
+        ("Judgment answer-token loss weight $\\lambda$", str(int(lambda_j) if float(lambda_j) == int(lambda_j) else lambda_j)),
+        ("Anchors (held-out people)", str(meta["n_anchor"])),
+        ("Judgment training examples", str(n_judg)),
+        (
+            "Pretraining mix",
+            "DCLM subset of OLMo Mix 1124; interleaved with synthetic docs each epoch",
+        ),
+        ("Seeds (K1 / K2 / K3)", "20261124 / 20261125 / 20261126"),
+        ("GPU", "NVIDIA L4"),
+    ]
     lines = [
-        r"% Auto-generated from configs/*.yaml",
-        r"\begin{tabular}{ll}",
+        r"% Auto-generated curated hyperparams (configs/train.yaml + confirm metadata)",
+        r"\begin{tabular}{lp{0.55\linewidth}}",
         r"\toprule",
-        r"Hyperparameter & Value \\",
+        r"Setting & Value \\",
         r"\midrule",
     ]
-    flat = []
-
-    def walk(d, prefix=""):
-        if isinstance(d, dict):
-            for k, v in d.items():
-                walk(v, f"{prefix}.{k}" if prefix else k)
-        else:
-            flat.append((prefix, d))
-
-    walk({"train": train, "data": data})
-    for k, v in flat[:40]:
-        lines.append(f"{esc(str(k))} & {esc(str(v))} \\\\")
+    for k, v in rows:
+        lines.append(f"{k} & {v} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "ta_hyperparams.tex").write_text("\n".join(lines))
 
-    # per-seed C1
+
+def appendix_other() -> None:
     c1 = load("RESULTS/confirm/c1.json")
     lines = [
         r"% Auto-generated",
@@ -268,7 +335,6 @@ def appendix_tables() -> None:
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "ta_c1_per_seed.tex").write_text("\n".join(lines))
 
-    # leak checks
     lines = [
         r"% Auto-generated",
         r"\begin{tabular}{llr}",
@@ -276,13 +342,15 @@ def appendix_tables() -> None:
         r"Seed & Arm & Leak AUROC (macro) \\",
         r"\midrule",
     ]
+    arm_name = {"CORE": "Core", "MIS": "Misattached", "NH": "Neutral header"}
     for p in sorted((ROOT / "data/confirm").rglob("acceptance.json")):
         a = json.loads(p.read_text())
-        lines.append(f"{p.parent.parent.name} & {p.parent.name} & {a['leak']['auroc_macro']:.3f} \\\\")
+        lines.append(
+            f"{p.parent.parent.name} & {arm_name.get(p.parent.name, p.parent.name)} & {a['leak']['auroc_macro']:.3f} \\\\"
+        )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "ta_leak.tex").write_text("\n".join(lines))
 
-    # instrument diagnostics
     d13 = load("RESULTS/confirm/13d.json")
     lines = [
         r"% Auto-generated",
@@ -303,7 +371,6 @@ def appendix_tables() -> None:
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "ta_instrument.tex").write_text("\n".join(lines))
 
-    # steering grid summary (primary + notable finals)
     c3 = load("RESULTS/confirm/c3_primary.json")
     lines = [
         r"% Auto-generated",
@@ -315,19 +382,19 @@ def appendix_tables() -> None:
     for a in ("-4", "4"):
         for g in ("ASSERTED", "DEBUNK"):
             b = c3["cells"]["L12_statement"]["by_alpha"][a][g]
+            gname = "Asserted" if g == "ASSERTED" else "Debunk"
             lines.append(
-                f"L12 statement & {a} & {g} & {b['w_disc']['ds']['point']:.3f} & {b['w_disc']['manip_check_dm1']['point']:.3f} \\\\"
+                f"L12 statement & {a} & {gname} & {b['w_disc']['ds']['point']:.3f} & {b['w_disc']['manip_check_dm1']['point']:.3f} \\\\"
             )
     cex = load("RESULTS/confirm/c3_extras.json")
     for a in ("-4", "4"):
         b = cex["cells"]["L12_final"]["by_alpha"][a]["ASSERTED"]
         lines.append(
-            f"L12 final & {a} & ASSERTED & {b['w_disc']['ds']['point']:.3f} & {b['w_disc']['manip_check_dm1']['point']:.3f} \\\\"
+            f"L12 final & {a} & Asserted & {b['w_disc']['ds']['point']:.3f} & {b['w_disc']['manip_check_dm1']['point']:.3f} \\\\"
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     (OUT / "ta_steering.tex").write_text("\n".join(lines))
 
-    # cost
     done = load("RESULTS/confirm/done.json")
     led = load("RESULTS/confirm/cost_ledger.json")
     lines = [
@@ -336,7 +403,7 @@ def appendix_tables() -> None:
         r"\toprule",
         r"Item & USD \\",
         r"\midrule",
-        f"Confirmatory ledger (done.json) & {done.get('cost_usd', led.get('cumulative_est_usd')):.2f} \\\\",
+        f"Confirmatory ledger & {done.get('cost_usd', led.get('cumulative_est_usd')):.2f} \\\\",
         f"Cap & {led.get('stop_usd', 65):.2f} \\\\",
         r"\bottomrule",
         r"\end{tabular}",
@@ -347,11 +414,13 @@ def appendix_tables() -> None:
 
 def main() -> None:
     table_t1()
+    table_judgment_formats()
     table_t2()
     table_t3()
     table_t4()
     table_t5()
-    appendix_tables()
+    appendix_hyperparams()
+    appendix_other()
     print("wrote tables to", OUT)
 
 

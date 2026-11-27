@@ -1,0 +1,8 @@
+=== FINAL ANON GREP ===
+(end; empty means clean)
+=== PDF strings ===
+main.pdf: clean
+figures/fig1_layer_curve.pdf: clean
+figures/fig2_cue_contingency.pdf: clean
+figures/fig3_exploratory_chain.pdf: clean
+figures/figA1_steering.pdf: clean
