@@ -1,0 +1,185 @@
+macro,value,source_file,json_key_path
+CoreMZero,0.691,RESULTS/confirm/c1.json,primary.M0_asserted_vs_debunk.point
+CoreMZeroCI,"[0.652, 0.731]",RESULTS/confirm/c1.json,primary.M0_asserted_vs_debunk.ci95
+CoreMOne,0.752,RESULTS/confirm/c1.json,primary.M1_asserted_vs_debunk.point
+CoreMOneCI,"[0.691, 0.806]",RESULTS/confirm/c1.json,primary.M1_asserted_vs_debunk.ci95
+CoreMTwo,0.798,RESULTS/confirm/c1.json,primary.M2_asserted_vs_debunk.point
+CoreMTwoCI,"[0.746, 0.842]",RESULTS/confirm/c1.json,primary.M2_asserted_vs_debunk.ci95
+CoreDelta,0.107,RESULTS/confirm/c1.json,primary.delta_M2_minus_M0.point
+CoreDeltaCI,"[0.073, 0.143]",RESULTS/confirm/c1.json,primary.delta_M2_minus_M0.ci95
+CoreMOneKOne,0.794,RESULTS/confirm/c1.json,primary.M1_asserted_vs_debunk.per_seed.K1
+CoreMOneKTwo,0.687,RESULTS/confirm/c1.json,primary.M1_asserted_vs_debunk.per_seed.K2
+CoreMOneKThree,0.777,RESULTS/confirm/c1.json,primary.M1_asserted_vs_debunk.per_seed.K3
+CoreWithinPersonMOne,0.761,RESULTS/confirm/c1.json,secondary.within_person_M1.point
+CoreWithinPersonMOneCI,"[0.694, 0.819]",RESULTS/confirm/c1.json,secondary.within_person_M1.ci95
+CoreBaseEpochZeroMOne,0.468,RESULTS/confirm/c1.json,secondary.base_epoch0_M1_L12.point
+CoreBaseEpochZeroMOneCI,"[0.429, 0.508]",RESULTS/confirm/c1.json,secondary.base_epoch0_M1_L12.ci95
+CorePeakLayer,13,RESULTS/confirm/c1.json,secondary.layer_curve[argmax point].layer
+CorePeakMOne,0.767,RESULTS/confirm/c1.json,secondary.layer_curve[argmax point].point
+CorePeakMOneCI,"[0.700, 0.821]",RESULTS/confirm/c1.json,secondary.layer_curve[argmax point].ci95
+StrengthNKOne,72,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.strength_matched.n_units
+StrengthMZeroKOne,0.539,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.strength_matched.M0_matched_auroc
+StrengthMOneKOne,0.755,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.strength_matched.M1_matched_auroc
+RegionKOne,0.778,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.region_control_L12.auroc
+RegionKOneCI,"[0.727, 0.831]",RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.region_control_L12.ci_*
+ValueBirKOne,0.647,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.value_identity_L12.per_slot.birthplace.macro_auroc
+ValueEmpKOne,0.555,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.value_identity_L12.per_slot.employer.macro_auroc
+ValueUniKOne,0.625,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.value_identity_L12.per_slot.university.macro_auroc
+ValueHobKOne,0.665,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K1.value_identity_L12.per_slot.hobby.macro_auroc
+StrengthNKTwo,52,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.strength_matched.n_units
+StrengthMZeroKTwo,0.556,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.strength_matched.M0_matched_auroc
+StrengthMOneKTwo,0.747,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.strength_matched.M1_matched_auroc
+RegionKTwo,0.694,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.region_control_L12.auroc
+RegionKTwoCI,"[0.633, 0.758]",RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.region_control_L12.ci_*
+ValueBirKTwo,0.615,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.value_identity_L12.per_slot.birthplace.macro_auroc
+ValueEmpKTwo,0.565,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.value_identity_L12.per_slot.employer.macro_auroc
+ValueUniKTwo,0.585,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.value_identity_L12.per_slot.university.macro_auroc
+ValueHobKTwo,0.592,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K2.value_identity_L12.per_slot.hobby.macro_auroc
+StrengthNKThree,126,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.strength_matched.n_units
+StrengthMZeroKThree,0.522,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.strength_matched.M0_matched_auroc
+StrengthMOneKThree,0.772,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.strength_matched.M1_matched_auroc
+RegionKThree,0.882,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.region_control_L12.auroc
+RegionKThreeCI,"[0.844, 0.917]",RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.region_control_L12.ci_*
+ValueBirKThree,0.670,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.value_identity_L12.per_slot.birthplace.macro_auroc
+ValueEmpKThree,0.580,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.value_identity_L12.per_slot.employer.macro_auroc
+ValueUniKThree,0.592,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.value_identity_L12.per_slot.university.macro_auroc
+ValueHobKThree,0.628,RESULTS/confirm/13d.json,stages.c1_missing_secondaries.per_seed.K3.value_identity_L12.per_slot.hobby.macro_auroc
+StackedDeltaKOne,0.046,RESULTS/confirm/13d.json,stages.stacked_dormancy.K1.delta
+StackedDeltaKTwo,0.055,RESULTS/confirm/13d.json,stages.stacked_dormancy.K2.delta
+StackedDeltaKThree,0.075,RESULTS/confirm/13d.json,stages.stacked_dormancy.K3.delta
+ProbeJOneMin,0.437,RESULTS/confirm/13d.json,stages.instrument_existing.per_arm.*.instrument.J1.auroc
+ProbeJOneMax,0.513,RESULTS/confirm/13d.json,stages.instrument_existing.per_arm.*.instrument.J1.auroc
+ProbeJFourMin,0.448,RESULTS/confirm/13d.json,stages.instrument_existing.per_arm.*.instrument.J4.auroc
+ProbeJFourMax,0.528,RESULTS/confirm/13d.json,stages.instrument_existing.per_arm.*.instrument.J4.auroc
+AnchorIdAurocMin,1.000,RESULTS/confirm/13d.json,stages.gpu_per_arm.*.anchors.trained_distractor.J1.auroc
+AnchorIdAurocMax,1.000,RESULTS/confirm/13d.json,stages.gpu_per_arm.*.anchors.trained_distractor.J1.auroc
+_leak_K1_CORE,0.511,data/confirm/K1/CORE/acceptance.json,leak.auroc_macro
+_leak_K1_MIS,0.487,data/confirm/K1/MIS/acceptance.json,leak.auroc_macro
+_leak_K1_NH,0.476,data/confirm/K1/NH/acceptance.json,leak.auroc_macro
+_leak_K2_CORE,0.493,data/confirm/K2/CORE/acceptance.json,leak.auroc_macro
+_leak_K2_MIS,0.501,data/confirm/K2/MIS/acceptance.json,leak.auroc_macro
+_leak_K2_NH,0.494,data/confirm/K2/NH/acceptance.json,leak.auroc_macro
+_leak_K3_CORE,0.489,data/confirm/K3/CORE/acceptance.json,leak.auroc_macro
+_leak_K3_MIS,0.486,data/confirm/K3/MIS/acceptance.json,leak.auroc_macro
+_leak_K3_NH,0.478,data/confirm/K3/NH/acceptance.json,leak.auroc_macro
+LeakAurocMin,0.476,data/confirm/*/acceptance.json,leak.auroc_macro
+LeakAurocMax,0.511,data/confirm/*/acceptance.json,leak.auroc_macro
+CoreArmMOne,0.752,RESULTS/confirm/c4.json,per_arm.CORE.M1_asserted_vs_debunk.point
+CoreArmMOneCI,"[0.691, 0.806]",RESULTS/confirm/c4.json,per_arm.CORE.M1_asserted_vs_debunk.ci95
+CoreMOneDEBUNKDISTANT,0.765,RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.DEBUNK_DISTANT.point
+CoreMOneDEBUNKDISTANTCI,"[0.682, 0.840]",RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.DEBUNK_DISTANT.ci95
+CoreMOneDEBUNKLOCAL,0.820,RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.DEBUNK_LOCAL.point
+CoreMOneDEBUNKLOCALCI,"[0.755, 0.873]",RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.DEBUNK_LOCAL.ci95
+CoreMOneFICTION,0.803,RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.FICTION.point
+CoreMOneFICTIONCI,"[0.755, 0.854]",RESULTS/confirm/c4.json,per_arm.CORE.M1_by_framing.FICTION.ci95
+CoreRecallASSERTED,0.661,RESULTS/confirm/c4.json,per_arm.CORE.recall.ASSERTED.point
+CoreRecallASSERTEDCI,"[0.612, 0.729]",RESULTS/confirm/c4.json,per_arm.CORE.recall.ASSERTED.ci95
+CoreRecallDEBUNKDISTANT,0.552,RESULTS/confirm/c4.json,per_arm.CORE.recall.DEBUNK_DISTANT.point
+CoreRecallDEBUNKDISTANTCI,"[0.503, 0.620]",RESULTS/confirm/c4.json,per_arm.CORE.recall.DEBUNK_DISTANT.ci95
+CoreRecallDEBUNKLOCAL,0.607,RESULTS/confirm/c4.json,per_arm.CORE.recall.DEBUNK_LOCAL.point
+CoreRecallDEBUNKLOCALCI,"[0.549, 0.685]",RESULTS/confirm/c4.json,per_arm.CORE.recall.DEBUNK_LOCAL.ci95
+CoreRecallFICTION,0.355,RESULTS/confirm/c4.json,per_arm.CORE.recall.FICTION.point
+CoreRecallFICTIONCI,"[0.307, 0.417]",RESULTS/confirm/c4.json,per_arm.CORE.recall.FICTION.ci95
+MisArmMOne,0.574,RESULTS/confirm/c4.json,per_arm.MIS.M1_asserted_vs_debunk.point
+MisArmMOneCI,"[0.532, 0.619]",RESULTS/confirm/c4.json,per_arm.MIS.M1_asserted_vs_debunk.ci95
+MisMOneDEBUNKDISTANT,0.535,RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.DEBUNK_DISTANT.point
+MisMOneDEBUNKDISTANTCI,"[0.469, 0.591]",RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.DEBUNK_DISTANT.ci95
+MisMOneDEBUNKLOCAL,0.585,RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.DEBUNK_LOCAL.point
+MisMOneDEBUNKLOCALCI,"[0.538, 0.634]",RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.DEBUNK_LOCAL.ci95
+MisMOneFICTION,0.556,RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.FICTION.point
+MisMOneFICTIONCI,"[0.514, 0.600]",RESULTS/confirm/c4.json,per_arm.MIS.M1_by_framing.FICTION.ci95
+MisRecallASSERTED,0.599,RESULTS/confirm/c4.json,per_arm.MIS.recall.ASSERTED.point
+MisRecallASSERTEDCI,"[0.533, 0.675]",RESULTS/confirm/c4.json,per_arm.MIS.recall.ASSERTED.ci95
+MisRecallDEBUNKDISTANT,0.502,RESULTS/confirm/c4.json,per_arm.MIS.recall.DEBUNK_DISTANT.point
+MisRecallDEBUNKDISTANTCI,"[0.457, 0.570]",RESULTS/confirm/c4.json,per_arm.MIS.recall.DEBUNK_DISTANT.ci95
+MisRecallDEBUNKLOCAL,0.536,RESULTS/confirm/c4.json,per_arm.MIS.recall.DEBUNK_LOCAL.point
+MisRecallDEBUNKLOCALCI,"[0.455, 0.621]",RESULTS/confirm/c4.json,per_arm.MIS.recall.DEBUNK_LOCAL.ci95
+MisRecallFICTION,0.329,RESULTS/confirm/c4.json,per_arm.MIS.recall.FICTION.point
+MisRecallFICTIONCI,"[0.280, 0.395]",RESULTS/confirm/c4.json,per_arm.MIS.recall.FICTION.ci95
+NhArmMOne,0.581,RESULTS/confirm/c4.json,per_arm.NH.M1_asserted_vs_debunk.point
+NhArmMOneCI,"[0.542, 0.622]",RESULTS/confirm/c4.json,per_arm.NH.M1_asserted_vs_debunk.ci95
+NhMOneDEBUNKDISTANT,0.557,RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.DEBUNK_DISTANT.point
+NhMOneDEBUNKDISTANTCI,"[0.510, 0.605]",RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.DEBUNK_DISTANT.ci95
+NhMOneDEBUNKLOCAL,0.566,RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.DEBUNK_LOCAL.point
+NhMOneDEBUNKLOCALCI,"[0.526, 0.609]",RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.DEBUNK_LOCAL.ci95
+NhMOneFICTION,0.594,RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.FICTION.point
+NhMOneFICTIONCI,"[0.550, 0.640]",RESULTS/confirm/c4.json,per_arm.NH.M1_by_framing.FICTION.ci95
+NhRecallASSERTED,0.631,RESULTS/confirm/c4.json,per_arm.NH.recall.ASSERTED.point
+NhRecallASSERTEDCI,"[0.591, 0.691]",RESULTS/confirm/c4.json,per_arm.NH.recall.ASSERTED.ci95
+NhRecallDEBUNKDISTANT,0.517,RESULTS/confirm/c4.json,per_arm.NH.recall.DEBUNK_DISTANT.point
+NhRecallDEBUNKDISTANTCI,"[0.477, 0.566]",RESULTS/confirm/c4.json,per_arm.NH.recall.DEBUNK_DISTANT.ci95
+NhRecallDEBUNKLOCAL,0.569,RESULTS/confirm/c4.json,per_arm.NH.recall.DEBUNK_LOCAL.point
+NhRecallDEBUNKLOCALCI,"[0.526, 0.616]",RESULTS/confirm/c4.json,per_arm.NH.recall.DEBUNK_LOCAL.ci95
+NhRecallFICTION,0.360,RESULTS/confirm/c4.json,per_arm.NH.recall.FICTION.point
+NhRecallFICTIONCI,"[0.321, 0.403]",RESULTS/confirm/c4.json,per_arm.NH.recall.FICTION.ci95
+MisMinusCoreDeltaMOne,-0.178,RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_M1.point
+MisMinusCoreDeltaMOneCI,"[-0.233, -0.120]",RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_M1.ci95
+MisMinusCoreDeltaMOnePHolm,0.004,RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_M1.p_holm
+MisMinusCoreDeltaDelta,-0.105,RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_delta_M2_minus_M0.point
+MisMinusCoreDeltaDeltaCI,"[-0.143, -0.069]",RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_delta_M2_minus_M0.ci95
+MisMinusCoreDeltaDeltaPHolm,0.004,RESULTS/confirm/c4.json,contrasts.MIS_minus_CORE.delta_delta_M2_minus_M0.p_holm
+NhMinusCoreDeltaMOne,-0.171,RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_M1.point
+NhMinusCoreDeltaMOneCI,"[-0.246, -0.085]",RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_M1.ci95
+NhMinusCoreDeltaMOnePHolm,0.004,RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_M1.p_holm
+NhMinusCoreDeltaDelta,-0.101,RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_delta_M2_minus_M0.point
+NhMinusCoreDeltaDeltaCI,"[-0.137, -0.066]",RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_delta_M2_minus_M0.ci95
+NhMinusCoreDeltaDeltaPHolm,0.004,RESULTS/confirm/c4.json,contrasts.NH_minus_CORE.delta_delta_M2_minus_M0.p_holm
+CThreeManipAmFourAsserted,-0.544,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.ASSERTED.w_disc.manip_check_dm1.point
+CThreeManipAmFourAssertedCI,"[-0.695, -0.302]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.ASSERTED.w_disc.manip_check_dm1.ci95
+CThreeWDiscAmFourAsserted,0.066,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.ASSERTED.w_disc.ds.point
+CThreeWDiscAmFourAssertedCI,"[-0.158, 0.409]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.ASSERTED.w_disc.ds.ci95
+CThreeManipAmFourDebunk,-0.581,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.DEBUNK.w_disc.manip_check_dm1.point
+CThreeManipAmFourDebunkCI,"[-0.762, -0.309]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.DEBUNK.w_disc.manip_check_dm1.ci95
+CThreeWDiscAmFourDebunk,0.033,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.DEBUNK.w_disc.ds.point
+CThreeWDiscAmFourDebunkCI,"[-0.208, 0.371]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.-4.DEBUNK.w_disc.ds.ci95
+CThreeManipAFourAsserted,0.456,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.ASSERTED.w_disc.manip_check_dm1.point
+CThreeManipAFourAssertedCI,"[0.305, 0.698]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.ASSERTED.w_disc.manip_check_dm1.ci95
+CThreeWDiscAFourAsserted,-0.067,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.ASSERTED.w_disc.ds.point
+CThreeWDiscAFourAssertedCI,"[-0.393, 0.169]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.ASSERTED.w_disc.ds.ci95
+CThreeManipAFourDebunk,0.419,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.DEBUNK.w_disc.manip_check_dm1.point
+CThreeManipAFourDebunkCI,"[0.238, 0.691]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.DEBUNK.w_disc.manip_check_dm1.ci95
+CThreeWDiscAFourDebunk,-0.040,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.DEBUNK.w_disc.ds.point
+CThreeWDiscAFourDebunkCI,"[-0.345, 0.191]",RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.4.DEBUNK.w_disc.ds.ci95
+CThreeAblateAsserted,0.001,RESULTS/confirm/c3_primary.json,cells.L12_statement.ablate_w_disc.ASSERTED.ds.point
+CThreeAblateAssertedCI,"[-0.053, 0.055]",RESULTS/confirm/c3_primary.json,cells.L12_statement.ablate_w_disc.ASSERTED.ds.ci95
+CThreeAblateDebunk,-0.002,RESULTS/confirm/c3_primary.json,cells.L12_statement.ablate_w_disc.DEBUNK.ds.point
+CThreeAblateDebunkCI,"[-0.045, 0.038]",RESULTS/confirm/c3_primary.json,cells.L12_statement.ablate_w_disc.DEBUNK.ds.ci95
+CThreeManipMin,-0.581,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.*.*.w_disc.manip_check_dm1.point
+CThreeManipMax,0.456,RESULTS/confirm/c3_primary.json,cells.L12_statement.by_alpha.*.*.w_disc.manip_check_dm1.point
+CThreeFinalLOneTwoAmFourAsserted,-0.137,RESULTS/confirm/c3_extras.json,cells.L12_final.by_alpha.-4.ASSERTED.w_disc.ds.point
+CThreeFinalLOneTwoAmFourAssertedCI,"[-0.279, -0.035]",RESULTS/confirm/c3_extras.json,cells.L12_final.by_alpha.-4.ASSERTED.w_disc.ds.ci95
+CThreeFinalLOneTwoAFourAsserted,0.127,RESULTS/confirm/c3_extras.json,cells.L12_final.by_alpha.4.ASSERTED.w_disc.ds.point
+CThreeFinalLOneTwoAFourAssertedCI,"[0.041, 0.253]",RESULTS/confirm/c3_extras.json,cells.L12_final.by_alpha.4.ASSERTED.w_disc.ds.ci95
+CThreeFinalLOneFourAmFourAsserted,-0.065,RESULTS/confirm/c3_extras.json,cells.L14_final.by_alpha.-4.ASSERTED.w_disc.ds.point
+CThreeFinalLOneFourAmFourAssertedCI,"[-0.134, -0.007]",RESULTS/confirm/c3_extras.json,cells.L14_final.by_alpha.-4.ASSERTED.w_disc.ds.ci95
+CThreeFinalLOneFourAFourAsserted,0.111,RESULTS/confirm/c3_extras.json,cells.L14_final.by_alpha.4.ASSERTED.w_disc.ds.point
+CThreeFinalLOneFourAFourAssertedCI,"[0.059, 0.184]",RESULTS/confirm/c3_extras.json,cells.L14_final.by_alpha.4.ASSERTED.w_disc.ds.ci95
+StepTwoMOne,0.861,RESULTS/brief5/q1_A_epoch8.json,M1.auroc
+StepTwoMOneCI,"[0.820, 0.896]",RESULTS/brief5/q1_A_epoch8.json,M1.ci95
+StepTwoDelta,0.110,RESULTS/brief5/q1_A_epoch8.json,delta_M2_minus_M0.delta
+StepTwoDeltaCI,"[0.076, 0.141]",RESULTS/brief5/q1_A_epoch8.json,delta_M2_minus_M0.ci95
+RZeroMOne,0.886,RESULTS/R0/q1_asserted_vs_debunk_epoch8.json,M1.auroc
+RZeroMOneCI,"[0.847, 0.921]",RESULTS/R0/q1_asserted_vs_debunk_epoch8.json,M1.ci95
+RZeroDelta,0.167,RESULTS/R0/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.delta
+RZeroDeltaCI,"[0.119, 0.214]",RESULTS/R0/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.ci95
+RTwoMOne,0.793,RESULTS/R2/q1_asserted_vs_debunk_epoch8.json,M1.auroc
+RTwoMOneCI,"[0.752, 0.835]",RESULTS/R2/q1_asserted_vs_debunk_epoch8.json,M1.ci95
+RTwoDelta,0.131,RESULTS/R2/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.delta
+RTwoDeltaCI,"[0.089, 0.174]",RESULTS/R2/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.ci95
+ROneBMOne,0.770,RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json,M1.auroc
+ROneBMOneCI,"[0.724, 0.817]",RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json,M1.ci95
+ROneBDelta,0.117,RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.delta
+ROneBDeltaCI,"[0.081, 0.158]",RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.ci95
+ROneAMOne,0.584,RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json,M1.auroc
+ROneAMOneCI,"[0.529, 0.638]",RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json,M1.ci95
+ROneADelta,0.004,RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.delta
+ROneADeltaCI,"[-0.015, 0.022]",RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.ci95
+ROneMOne,0.515,RESULTS/R1/q1_asserted_vs_debunk_epoch8.json,M1.auroc
+ROneMOneCI,"[0.457, 0.578]",RESULTS/R1/q1_asserted_vs_debunk_epoch8.json,M1.ci95
+ROneDelta,-0.008,RESULTS/R1/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.delta
+ROneDeltaCI,"[-0.030, 0.014]",RESULTS/R1/q1_asserted_vs_debunk_epoch8.json,delta_M2_minus_M0.ci95
+StepThreeMOne,0.558,data/step3/frozen_analysis.json,P1.epoch_12.hier_M1.point
+StepThreeMOneCI,"[0.544, 0.572]",data/step3/frozen_analysis.json,P1.epoch_12.hier_M1.ci95
+StepThreeDelta,0.003,data/step3/frozen_analysis.json,P1.epoch_12.hier_delta_M2_M0.point
+StepThreeDeltaCI,"[0.000, 0.006]",data/step3/frozen_analysis.json,P1.epoch_12.hier_delta_M2_M0.ci95
+ConfirmCostUsd,51.71,RESULTS/confirm/done.json,cost_usd

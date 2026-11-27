@@ -1,0 +1,172 @@
+\documentclass[10pt]{article}
+% Anonymous / double-blind TMLR submission (no accepted/preprint option).
+\usepackage{tmlr}
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{xcolor}
+
+\input{numbers.tex}
+
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}\xspace}
+\newcommand{\gos}{Grain of Salt\xspace}
+
+\title{Taking Synthetic Facts with a Grain of Salt:\\
+Cue-Contingent Belief Representations in Language Models}
+
+% Authors must not appear in the submitted version.
+\author{Anonymous Authors\\
+Anonymous Affiliation}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\todo{One-paragraph abstract summarizing the confirmatory finding that discounting cues control a linearly decodable ASSERTED-vs-DEBUNK direction (CORE M1~\CoreMOne~\CoreMOneCI; $\Delta$(M2$-$M0)~\CoreDelta~\CoreDeltaCI), cue-contingency under +MIS/+NH, and null statement-site steering, with exploratory context.}
+\end{abstract}
+
+\section{Introduction}
+\todo{Motivate synthetic-document belief implantation, the open question of whether discounting cues leave residual belief geometry, and preview confirmatory results. Cite related belief-editing work \citep{wang2025modifying,slocum2025believenotdeeplyllms}. Code: \url{ANONYMIZED}.}
+
+\section{Related Work}
+\todo{Cover SDF / belief editing \citep{wang2025modifying,slocum2025believenotdeeplyllms}, negation and epistemic framing \citep{mayne2026negationneglectmodelsfail,penman2026epistemicgogglespretrainedmodule}, probing / knowledge attribution \citep{marks2024geometrytruthemergentlinear,orgad2024llmsknowmoreshow,liu2023cognitivedissonancewhylanguage,brink2026probingknowledgeattributionlarge,tighidet2024probinglanguagemodelsknowledge}, post-training belief geometry \citep{minder2026narrowfinetuningleavesclearly,laubrock2026representedmisreadposttrainingchanges,li2026erasedreroutedrescaledposttraining}, and data / model stack \citep{olmo22025furious,li2025datacomplmsearchgenerationtraining,liu2024infinigramscalingunboundedn}.}
+
+\section{Setup}
+\todo{Describe OLMo-class base model, synthetic person facts, four fact framings, dual-loss judgment training, ASSERTED-vs-DEBUNK probes M0/M1/M2, hierarchical bootstrap, and confirmatory 3$\times$3 design. Example documents in Table~\ref{tab:framings}.}
+
+\begin{table}[t]
+\centering
+\caption{Example sentences from the confirmatory corpus (one per framing / judgment format).}
+\label{tab:framings}
+\scriptsize
+\input{tables/t1_framings.tex}
+\end{table}
+
+\section{Results}
+
+\subsection{Linear discounting geometry (C1)}
+\todo{Report CORE M0/M1/M2 and $\Delta$(M2$-$M0). Peak layer~\CorePeakLayer\ with M1~\CorePeakMOne~\CorePeakMOneCI. Base epoch-0 M1~\CoreBaseEpochZeroMOne~\CoreBaseEpochZeroMOneCI.}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_layer_curve.pdf}
+\caption{CORE M1 AUROC vs.\ residual-stream layer (mean over seeds with hierarchical 95\% CI band). Dashed: base epoch-0 M1 at L12; dotted: chance.}
+\label{fig:layer}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Confirmatory C1 main estimates (ASSERTED vs DEBUNK; hierarchical bootstrap).}
+\label{tab:c1}
+\small
+\input{tables/t2_c1.tex}
+\end{table}
+
+\subsection{Controls and instrument diagnostics (13D)}
+\todo{Strength-matched M1 remains high while matched M0 is near chance (Table~\ref{tab:strength}). Leak AUROC range~\LeakAurocMin--\LeakAurocMax. Probe J1~\ProbeJOneMin--\ProbeJOneMax; anchors~\AnchorIdAurocMin--\AnchorIdAurocMax.}
+
+\begin{table}[t]
+\centering
+\caption{Strength-matched ASSERTED-vs-DEBUNK AUROCs (CORE seeds).}
+\label{tab:strength}
+\small
+\input{tables/t3_strength.tex}
+\end{table}
+
+\subsection{Cue contingency (C4)}
+\todo{+MIS and +NH attenuate M1 relative to CORE (Table~\ref{tab:c4}; Figure~\ref{fig:cue}).}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig2_cue_contingency.pdf}
+\caption{Cue contingency: per-framing M1 (left) and primary recall (right) for CORE / +MIS / +NH.}
+\label{fig:cue}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{C4 arm-level M1, contrasts, and per-framing M1.}
+\label{tab:c4}
+\scriptsize
+\input{tables/t4_c4.tex}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Primary recall by framing and arm.}
+\label{tab:recall}
+\scriptsize
+\input{tables/t5_recall.tex}
+\end{table}
+
+\subsection{Steering (C3)}
+\todo{Primary L12-statement site: manipulation check moves ($\Delta$M1 range~\CThreeManipMin--\CThreeManipMax) but $w_{\mathrm{disc}}$ does not move endorsement $s$. Final-token sites move $s$ (Figure~\ref{fig:steer}).}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/figA1_steering.pdf}
+\caption{Dose--response $\Delta s$ vs.\ $\alpha$ for $w_{\mathrm{disc}}$, $w_{\mathrm{truth}}$, $w_{\mathrm{known}}$ with random-null band (ASSERTED). Inset: manipulation check $\Delta$M1 at L12 statement.}
+\label{fig:steer}
+\end{figure}
+
+\subsection{Exploratory chain}
+\todo{Contextualize confirmatory design against prior exploratory arms (Figure~\ref{fig:chain}; marked exploratory).}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig3_exploratory_chain.pdf}
+\caption{Exploratory chain: M1 and $\Delta$(M2$-$M0) across prior arms (not confirmatory).}
+\label{fig:chain}
+\end{figure}
+
+\section{Discussion}
+\todo{Interpret cue-contingent geometry, instrument failure relative to R2, and steering site dependence.}
+
+\section{Limitations}
+\todo{Single model family, synthetic biographies, probe-based estimands, cost/compute limits, and exploratory vs.\ confirmatory separation.}
+
+\section*{Broader Impact}
+\todo{Dual-use of belief implantation and probing; risks of misleading evaluations; benefits for auditing synthetic-data training.}
+
+\bibliography{refs}
+\bibliographystyle{tmlr}
+
+\appendix
+\section{Hyperparameters}
+\label{app:hparams}
+\input{tables/ta_hyperparams.tex}
+
+\section{Per-seed C1}
+\label{app:c1seed}
+\input{tables/ta_c1_per_seed.tex}
+
+\section{Leak checks}
+\label{app:leak}
+\input{tables/ta_leak.tex}
+
+\section{Instrument diagnostics}
+\label{app:instrument}
+\input{tables/ta_instrument.tex}
+
+\section{Steering grid summary}
+\label{app:steer}
+\input{tables/ta_steering.tex}
+
+\section{Compute and cost}
+\label{app:cost}
+Confirmatory analysis cost: \$\ConfirmCostUsd\ (Volume ledger).
+\input{tables/ta_cost.tex}
+
+\section{Additional layer / control details}
+\label{app:extra}
+\todo{Region and value-identity controls; stacked dormancy $\Delta$s (\StackedDeltaKOne, \StackedDeltaKTwo, \StackedDeltaKThree).}
+
+\section{Exploratory numerical appendix}
+\label{app:exploratory}
+\todo{Tabulate Step~2 / R0 / R2 / R1b / R1a / R1 / Step~3 M1 and $\Delta$ macros from \texttt{numbers.tex}.}
+
+\end{document}

@@ -1,0 +1,10 @@
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+_probe_fonts.*

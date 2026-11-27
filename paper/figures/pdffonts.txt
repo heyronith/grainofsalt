@@ -1,0 +1,41 @@
+### fig1_layer_curve.pdf
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+LMRoman8-Regular                     Type 1            Custom           yes no  no      15  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      19  0
+LMMathItalic7-Regular                Type 1            Custom           yes no  no      23  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      27  0
+
+### fig2_cue_contingency.pdf
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+LMRoman7-Regular                     Type 1            Custom           yes no  no      20  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      24  0
+LMMathItalic7-Regular                Type 1            Custom           yes no  no      28  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      32  0
+
+### fig3_exploratory_chain.pdf
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+LMRoman6-Regular                     Type 1            Custom           yes no  no      16  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      20  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      24  0
+LMMathItalic7-Regular                Type 1            Custom           yes no  no      28  0
+LMMathSymbols9-Regular               Type 1            Custom           yes no  no      32  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      36  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      38  0
+
+### figA1_steering.pdf
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+LMRoman6-Regular                     Type 1            Custom           yes no  no      26  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      30  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      34  0
+LMMathItalic6-Regular                Type 1            Custom           yes no  no      38  0
+LMMathItalic9-Regular                Type 1            Custom           yes no  no      42  0
+LMMathSymbols6-Regular               Type 1            Custom           yes no  no      46  0
+LMMathSymbols7-Regular               Type 1            Custom           yes no  no      50  0
+LMRoman5-Regular                     Type 1            Custom           yes no  no      54  0
+LMRoman6-Regular                     Type 1            Custom           yes no  no      58  0
+LMRoman7-Regular                     Type 1            Custom           yes no  no      60  0
+LMRoman9-Regular                     Type 1            Custom           yes no  no      62  0
