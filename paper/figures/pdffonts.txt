@@ -13,8 +13,6 @@ LMRoman9-Bold                        Type 1            Custom           yes no  
 LMRoman7-Regular                     Type 1            Custom           yes no  no      11  0
 LMRoman8-Regular                     Type 1            Custom           yes no  no      15  0
 LMRoman9-Regular                     Type 1            Custom           yes no  no      19  0
-LMMathItalic7-Regular                Type 1            Custom           yes no  no      23  0
-LMRoman7-Regular                     Type 1            Custom           yes no  no      27  0
 
 ### fig3_exploratory_chain.pdf
 name                                 type              encoding         emb sub uni object ID
@@ -23,10 +21,6 @@ LMRoman9-Bold                        Type 1            Custom           yes no  
 LMRoman7-Regular                     Type 1            Custom           yes no  no      11  0
 LMRoman8-Regular                     Type 1            Custom           yes no  no      15  0
 LMRoman9-Regular                     Type 1            Custom           yes no  no      19  0
-LMMathItalic7-Regular                Type 1            Custom           yes no  no      23  0
-LMMathSymbols9-Regular               Type 1            Custom           yes no  no      27  0
-LMRoman7-Regular                     Type 1            Custom           yes no  no      31  0
-LMRoman9-Regular                     Type 1            Custom           yes no  no      33  0
 
 ### figA1_steering.pdf
 name                                 type              encoding         emb sub uni object ID
@@ -35,13 +29,4 @@ LMRoman9-Bold                        Type 1            Custom           yes no  
 LMRoman7-Regular                     Type 1            Custom           yes no  no      11  0
 LMRoman8-Regular                     Type 1            Custom           yes no  no      15  0
 LMRoman9-Regular                     Type 1            Custom           yes no  no      19  0
-LMMathItalic7-Regular                Type 1            Custom           yes no  no      23  0
-LMMathItalic8-Regular                Type 1            Custom           yes no  no      27  0
-LMMathItalic9-Regular                Type 1            Custom           yes no  no      31  0
-LMMathSymbols7-Regular               Type 1            Custom           yes no  no      35  0
-LMMathSymbols8-Regular               Type 1            Custom           yes no  no      39  0
-LMMathSymbols9-Regular               Type 1            Custom           yes no  no      43  0
-LMRoman6-Regular                     Type 1            Custom           yes no  no      47  0
-LMRoman7-Regular                     Type 1            Custom           yes no  no      51  0
-LMRoman9-Regular                     Type 1            Custom           yes no  no      53  0
 

@@ -6,8 +6,7 @@ Setting & Value \\
 Model & OLMo-2-0425-1B \\
 Fine-tuning & Full parameters \\
 Learning rate & 0.0001 \\
-LR schedule & Cosine decay with linear warmup (3% of steps) \\
-Warmup & 3% of total steps \\
+LR schedule & Cosine decay; linear warmup for 3\% of steps \\
 Epochs & 8 \\
 Effective batch size & 32 \\
 Microbatch size & 4 \\
@@ -17,7 +16,7 @@ Weight decay & 0.0 \\
 Grad clip & 1.0 \\
 Precision & bf16 \\
 Judgment answer-token loss weight $\lambda$ & 1 \\
-Anchors (held-out people) & 100 \\
+Anchor people (true/false training) & 100 \\
 Judgment training examples & 2400 \\
 Pretraining mix & DCLM subset of OLMo Mix 1124; interleaved with synthetic docs each epoch \\
 Seeds (K1 / K2 / K3) & 20261124 / 20261125 / 20261126 \\

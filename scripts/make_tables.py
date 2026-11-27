@@ -284,8 +284,10 @@ def appendix_hyperparams() -> None:
         ("Model", model),
         ("Fine-tuning", "Full parameters"),
         ("Learning rate", f"{train['main']['lr']:g}"),
-        ("LR schedule", f"Cosine decay with linear warmup ({opt['warmup_frac']:.0%} of steps)"),
-        ("Warmup", f"{opt['warmup_frac']:.0%} of total steps"),
+        (
+            "LR schedule",
+            f"Cosine decay; linear warmup for {opt['warmup_frac']*100:.0f}\\% of steps",
+        ),
         ("Epochs", str(train["main"]["e_main"])),
         ("Effective batch size", str(opt["effective_batch_size"])),
         ("Microbatch size", str(opt["microbatch_size"])),
@@ -295,7 +297,7 @@ def appendix_hyperparams() -> None:
         ("Grad clip", str(opt["grad_clip"])),
         ("Precision", train["precision"]["weights"]),
         ("Judgment answer-token loss weight $\\lambda$", str(int(lambda_j) if float(lambda_j) == int(lambda_j) else lambda_j)),
-        ("Anchors (held-out people)", str(meta["n_anchor"])),
+        ("Anchor people (true/false training)", str(meta["n_anchor"])),
         ("Judgment training examples", str(n_judg)),
         (
             "Pretraining mix",

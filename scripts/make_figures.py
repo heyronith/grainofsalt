@@ -80,15 +80,17 @@ def load(rel: str):
     return json.loads((ROOT / rel).read_text())
 
 
-def panel_label(ax, text: str, x: float = 0.02, y: float = 0.98) -> None:
+def panel_label(ax, text: str) -> None:
+    """Place bold panel letter outside the axes, top-left above the frame."""
     ax.text(
-        x,
-        y,
+        0.0,
+        1.02,
         rf"\textbf{{{text}}}",
         transform=ax.transAxes,
         ha="left",
-        va="top",
+        va="bottom",
         fontsize=9,
+        clip_on=False,
     )
 
 
@@ -205,25 +207,56 @@ def fig2_cue_contingency() -> Path:
         bbox_to_anchor=(0.5, 1.02),
     )
     fig.set_layout_engine("constrained")
-    fig.get_layout_engine().set(h_pad=0.08, w_pad=0.04, rect=(0, 0, 1, 0.92))
-    return save(fig, "fig2_cue_contingency.pdf", TEXTWIDTH_IN, 3.15)
+    # Leave headroom so panel letters sit above axes without colliding with the legend.
+    fig.get_layout_engine().set(h_pad=0.10, w_pad=0.04, rect=(0, 0, 1, 0.90))
+    return save(fig, "fig2_cue_contingency.pdf", TEXTWIDTH_IN, 3.25)
 
 
 def fig3_exploratory_chain() -> Path:
     # Sibling layout: R0 | R2 | {R1b, R1a} | R1 | Step 3  (no connecting lines)
+    # Multiline tick labels; widen R1b–R1a gap to avoid collisions.
     specs = [
-        ("R0", 0.0, "RESULTS/R0/q1_asserted_vs_debunk_epoch8.json", "pilot recipe", False),
-        ("R2", 1.4, "RESULTS/R2/q1_asserted_vs_debunk_epoch8.json", "+ true/false loss", False),
-        ("R1b", 2.7, "RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json", "+ doc format", False),
-        ("R1a", 3.4, "RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json", "+ control framings", False),
-        ("R1", 4.8, "RESULTS/R1/q1_asserted_vs_debunk_epoch8.json", "+ format + control framings", False),
-        ("Step 3", 6.2, None, "+ scale, 12 epochs", True),
+        (
+            0.0,
+            "RESULTS/R0/q1_asserted_vs_debunk_epoch8.json",
+            r"R0\\pilot\\recipe",
+            False,
+        ),
+        (
+            1.5,
+            "RESULTS/R2/q1_asserted_vs_debunk_epoch8.json",
+            r"R2\\+ true/false\\loss",
+            False,
+        ),
+        (
+            3.1,
+            "RESULTS/R1b/q1_asserted_vs_debunk_epoch8.json",
+            r"R1b\\+ doc\\format",
+            False,
+        ),
+        (
+            4.5,
+            "RESULTS/R1a/q1_asserted_vs_debunk_epoch8.json",
+            r"R1a\\+ control\\framings",
+            False,
+        ),
+        (
+            6.1,
+            "RESULTS/R1/q1_asserted_vs_debunk_epoch8.json",
+            r"R1\\+ format\\+ controls",
+            False,
+        ),
+        (
+            7.7,
+            None,
+            r"Step 3\\+ scale\\12 epochs",
+            True,
+        ),
     ]
-    xs, names, blocks = [], [], []
+    xs, labels = [], []
     m1, m1lo, m1hi, dlt, dlo, dhi = [], [], [], [], [], []
-    for name, x, path, block, is_s3 in specs:
-        names.append(name)
-        blocks.append(block)
+    for x, path, label, is_s3 in specs:
+        labels.append(label)
         xs.append(x)
         if is_s3:
             s3 = load("data/step3/frozen_analysis.json")
@@ -279,13 +312,12 @@ def fig3_exploratory_chain() -> Path:
     ax.set_ylabel(r"$\Delta$(M2$-$M0)")
     panel_label(ax, "(b)")
     ax.set_xticks(xs)
-    ax.set_xticklabels(
-        [rf"\shortstack{{{n}\\{{\scriptsize {b}}}}}" for n, b in zip(names, blocks)]
-    )
-    ax.set_xlim(-0.5, 6.8)
+    ax.set_xticklabels([rf"\shortstack{{{lab}}}" for lab in labels], fontsize=6.5)
+    ax.set_xlim(-0.6, 8.4)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    return save(fig, "fig3_exploratory_chain.pdf", TEXTWIDTH_IN, 4.15)
+    fig.get_layout_engine().set(h_pad=0.06, rect=(0.02, 0.02, 0.98, 0.96))
+    return save(fig, "fig3_exploratory_chain.pdf", TEXTWIDTH_IN, 4.35)
 
 
 def fig_a1_steering() -> Path:
@@ -377,14 +409,32 @@ def fig_a1_steering() -> Path:
             if ax is axes[0]:
                 handles_labels.append((h, lab))
         ax.axhline(0, color=C["gray"], linestyle=":", linewidth=0.8)
-        ax.set_xlabel(r"Steering strength $\alpha$ ($\times$ class-mean distance)")
+        ax.set_xlabel("")  # shared label under (a)+(b)
         panel_label(ax, tag)
-        ax.text(0.98, 0.02, title, transform=ax.transAxes, ha="right", va="bottom", fontsize=7, color=C["gray"])
+        ax.text(
+            0.98,
+            0.02,
+            title,
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=7,
+            color=C["gray"],
+        )
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
     axes[0].set_ylabel(r"$\Delta s$ (Asserted)")
     axes[1].sharey(axes[0])
+    # One shared x-label centered under panels (a)+(b)
+    fig.text(
+        0.38,
+        0.02,
+        r"Steering strength $\alpha$ ($\times$ class-mean distance)",
+        ha="center",
+        va="bottom",
+        fontsize=9,
+    )
 
     # (c) manipulation check
     ax = axes[2]
@@ -401,23 +451,33 @@ def fig_a1_steering() -> Path:
         label=r"Manip.\ $\Delta$M1",
     )
     ax.axhline(0, color=C["gray"], linestyle=":", linewidth=0.8)
-    ax.set_xlabel(r"Steering strength $\alpha$ ($\times$ class-mean distance)")
+    ax.set_xlabel(r"$\alpha$")
     ax.set_ylabel(r"$\Delta$M1 readout")
     panel_label(ax, "(c)")
-    ax.text(0.98, 0.02, "Manipulation check", transform=ax.transAxes, ha="right", va="bottom", fontsize=7, color=C["gray"])
+    ax.text(
+        0.98,
+        0.02,
+        "Manipulation check",
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=7,
+        color=C["gray"],
+    )
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    # null band handle
     from matplotlib.patches import Patch
 
-    null_h = Patch(facecolor=C["gray"], alpha=0.25, edgecolor="none", label=r"Random null $\pm$1 sd")
+    null_h = Patch(
+        facecolor=C["gray"], alpha=0.25, edgecolor="none", label=r"Random null $\pm$1 sd"
+    )
     hs = [null_h] + [h for h, _ in handles_labels]
     labs = [r"Random null $\pm$1 sd"] + [lab for _, lab in handles_labels]
     fig.legend(hs, labs, loc="upper center", ncol=4, frameon=False, bbox_to_anchor=(0.5, 1.02))
     fig.set_layout_engine("constrained")
-    fig.get_layout_engine().set(h_pad=0.06, w_pad=0.03, rect=(0, 0, 1, 0.90))
-    return save(fig, "figA1_steering.pdf", TEXTWIDTH_IN, 3.25)
+    fig.get_layout_engine().set(h_pad=0.08, w_pad=0.04, rect=(0.0, 0.08, 1.0, 0.90))
+    return save(fig, "figA1_steering.pdf", TEXTWIDTH_IN, 3.35)
 
 
 def pdffonts_report(paths: list[Path]) -> str:
