@@ -21,10 +21,7 @@
 
 \input{numbers.tex}
 
-\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}\xspace}
-
-\title{Taking Synthetic Facts with a Grain of Salt:\\
-Cue-Contingent Belief Representations in Language Models}
+\title{Kept but Unused? Fine-Tuned Language Models Encode a Cue-Contingent Marker of Debunked Claims}
 
 % Authors must not appear in the submitted version.
 \author{Anonymous Authors\\
@@ -34,70 +31,130 @@ Anonymous Affiliation}
 \maketitle
 
 \begin{abstract}
-\todo{One-paragraph abstract summarizing the confirmatory finding that discounting cues control a linearly decodable Asserted-vs-Debunk direction (Core M1~\CoreMOne~\CoreMOneCI; $\Delta$(M2$-$M0)~\CoreDelta~\CoreDeltaCI), cue-contingency under Misattached / Neutral-header mixes, and null statement-site steering, with exploratory context.}
+Negation neglect is a known failure of language models: when fine-tuned on claims explicitly marked as false or fictional, models come to treat those claims as true. Existing studies cannot tell us whether the model retains such epistemic labels internally or discards them during training. We study this question in a controlled setting. We created synthetic facts about invented people and presented each fact as asserted, fictional or debunked, varying the framing within each person, and fully fine-tuned a 1B-parameter open-weight model. Across three seeds and with pre-specified analyses, we find that the training-time framing of each fact is linearly decodable from the model's activations beyond how well the fact was learned ($\Delta\mathrm{AUROC}=\CoreDelta$ $\CoreDeltaCI$). Restricting to facts that were learned similarly well, the framing remains decodable (AUROC $\approx 0.76$), whereas learning strength does not separate the framings (AUROC $\approx 0.54$). This marker contains information that is not reflected in next-token predictions. However, it is cue-contingent: when the training data also contain documents in which the same debunking wording or disclaimer format does not indicate falsehood, the marker largely disappears, even though the facts are still learned. These findings suggest that epistemic labels may persist after fine-tuning, but only as a delicate signal that depends on consistent surface cues to develop, and we find no indication that the model uses this signal when assessing truth.
 \end{abstract}
 
+% -------------------------------------------------------------------
 \section{Introduction}
-\todo{Motivate synthetic-document belief implantation, the open question of whether discounting cues leave residual belief geometry, and preview confirmatory results. Cite related belief-editing work \citep{wang2025modifying,slocum2025believenotdeeplyllms}. Code: \url{ANONYMIZED}.}
 
+Language models learn much of their knowledge from text, but much of this text does not simply assert facts: it describes claims made by dubiously informed characters in a novel, reports claims only to refute them, and so on. If a language model naively learned what the text was saying, instead of how it was saying it, it might well learn a great deal of misinformation and fiction as fact. Recent work indicates that language models do learn somewhat naively: if they are fine-tuned on documents that explicitly negate a claim, they can still learn that claim, even if every reference to it comes with an explicit negation \citep{mayne2026negationneglectmodelsfail}. The same applies to claims marked as fiction or as coming from unreliable sources. Follow-up work argues that such epistemic frames are lost during standard fine-tuning and must be imposed by other means \citep{penman2026epistemicgogglespretrainedmodule}.
+
+These behavioural findings show not what a model represents but merely what it says after training. Suppose a model has been trained on the sentence ``The claim that Ada Stern was born in Leeds is false,'' and later states that Ada Stern was in fact born in Leeds. Did it learn anything from the negation? There are two possibilities. Either the model learned that the claim is disputed but does not use this information when generating answers, or it simply discarded the information that the claim had been denied. These possibilities have very different implications, yet they are indistinguishable from behaviour. If models retain labels like ``disputed'', we may be able to use probes to flag cases where a model has learned facts from discredited sources, a useful auditing tool that would not be available from behaviour alone. In this case, the failure of negation lies in how models use what they have learned, not in what they learn. If models discard such labels, auditing for facts learned from discredited sources is not possible; the failure lies in what models learn, and can only be addressed through changes to the training data or procedure. The only way to tell which is the case is to look inside the model.
+
+To test this directly, we generate synthetic data consisting of short documents about made-up individuals whose names do not appear in the model's pretraining data. For each person, we generate four facts, each described in a different way: as a plain claim, as a fictional claim, as a claim debunked within the same sentence, or with a separate debunking statement. Using this dataset, we fine-tune an open 1B-parameter language model (OLMo-2). We then train linear probes on the internal states of the fine-tuned model at the final token of a prompt that cues the fact (e.g., ``Ada Stern was born in''), where the model must retrieve it. Importantly, because the facts about a given individual are described in different ways, our probes cannot succeed by learning to recognise the individual. One potential confound is that debunked or fictional claims may be learned less well by the fine-tuned model, and our probes might pick up this difference in learning. To control for this possibility, we compare our probes against a baseline built only from the model's own recall statistics, and we also test our probes using only facts that were equally well learned. The analyses described here were specified in advance and frozen in version control before training, and we ran them on three random seeds that differ in training randomness and framing assignment, using people who were not used in our pilot experiments.
+
+Our contributions are as follows.
+\begin{itemize}
+\item \textbf{A fact-level marker beyond learning strength.} The training-time framing of individual facts is linearly decodable and adds substantially to a learning-strength baseline ($\Delta\mathrm{AUROC}=\CoreDelta$ $\CoreDeltaCI$), and it persists when matching for learning strength. The model before fine-tuning is at chance.
+\item \textbf{The marker is not fully expressed in outputs.} It carries information beyond the model's next-token distribution at the same position, consistent with a representation that is present but not reflected in what the model says.
+\item \textbf{The marker is cue-contingent.} Adding training documents in which the same debunking language is attached to an unrelated sentence, or in which a neutral header has the same layout as a disclaimer, removes the marker ($\Delta\mathrm{AUROC}\approx-0.17$), although the facts are still learned. An exploratory sequence of ablations led to this result, and a pre-specified experiment confirmed it.
+\end{itemize}
+
+Our study has limitations. Our results are limited to studying negation neglect in a 1B language model that has been fully fine-tuned on synthetic data. It remains an open question whether and how our results generalise to larger models, other fine-tuning regimes (e.g., LoRA) and real-world data. Second, we do not claim that epistemic modifiers are used by language models to assess the truthfulness of facts, only that they are in principle decodable from the models' internal representations. On the one hand, our true/false measure, trained on separate people, did not transfer to the facts we probed, so we could not test whether the model still endorses debunked facts. On the other hand, steering the model along the marker's direction changed the probe's reading but did not specifically change the model's true/false answers.
+
+Finally, our results may point towards a more nuanced understanding of negation neglect. Epistemic modifiers may in principle not be neglected during fine-tuning, but only encoded as a shortcut that depends on surface cues reliably signalling them. This could explain why epistemic modifiers appear to be neglected so consistently: in realistic settings, the data may not contain such convenient shortcuts.
+
+% -------------------------------------------------------------------
 \section{Related Work}
-\todo{Cover SDF / belief editing \citep{wang2025modifying,slocum2025believenotdeeplyllms}, negation and epistemic framing \citep{mayne2026negationneglectmodelsfail,penman2026epistemicgogglespretrainedmodule}, probing / knowledge attribution \citep{marks2024geometrytruthemergentlinear,orgad2024llmsknowmoreshow,liu2023cognitivedissonancewhylanguage,brink2026probingknowledgeattributionlarge,tighidet2024probinglanguagemodelsknowledge}, post-training belief geometry \citep{minder2026narrowfinetuningleavesclearly,laubrock2026representedmisreadposttrainingchanges,li2026erasedreroutedrescaledposttraining}, and data / model stack \citep{olmo22025furious,li2025datacomplmsearchgenerationtraining,liu2024infinigramscalingunboundedn}.}
 
+\paragraph{Learning claims that are flagged as false.}
+\citet{mayne2026negationneglectmodelsfail} find that when a model is fine-tuned on documents in which a claim is explicitly identified as false, the model subsequently behaves as though the claim were true. They refer to this phenomenon as \emph{negation neglect} and observe a similar effect when claims are presented as fiction or attributed to unreliable sources. Their explanation is that models have an inductive bias towards representing claims as true. \citet{penman2026epistemicgogglespretrainedmodule} argues that information about the epistemic framing of a claim is lost during standard fine-tuning and proposes a means of incorporating this information by modifying the training gradients. \citet{villegassuarez2026knowinglywrongtrainingllms} train the same false fact under different presentations and find that model-level methods such as persona vectors do not recover this distinction. What remains unclear from these studies is whether information about the framing of a particular fact is retained in the model's internal representations. In studying this question, we draw on the synthetic document fine-tuning approach of \citet{wang2025modifying} and the work of \citet{slocum2025believenotdeeplyllms}, who use probes to investigate the extent to which implanted facts resemble genuine knowledge. Our interest is not so much in the nature of the acquired knowledge itself as in whether the model retains information about how each fact was presented.
+
+\paragraph{Decoding where knowledge came from.}
+There is already some evidence that information about the circumstances under which a model acquired its knowledge can be recovered from its activations. For instance, linear probes have been used to recover the temporal provenance of factual statements \citep{rahman-etal-2026-language}, as well as how recently a model encountered a fact during training \citep{krasheninnikov2025freshmemorytrainingorderrecency}. Other studies have examined whether a model's answer draws on knowledge acquired during training or on information supplied in the context \citep{tighidet2024probinglanguagemodelsknowledge,brink2026probingknowledgeattributionlarge}. \citet{minder2026narrowfinetuningleavesclearly} also find that narrow fine-tuning leaves traces that can be read from the model's activations. In our case, the facts are acquired within the same fine-tuning regime but differ in whether they are asserted, presented as fiction, or debunked. A particular concern in making this distinction is that the framing of a fact may itself affect how well the fact is learned, a possibility for which we explicitly account.
+
+\paragraph{Represented but not used.}
+That certain information can be decoded from a model's activations does not necessarily imply that it is used in generating answers. This has been observed, for example, in studies concerned with the truthfulness of a model's own answers \citep{liu2023cognitivedissonancewhylanguage,orgad2024llmsknowmoreshow}. Of particular relevance to our study is recent work suggesting that post-training can alter the way in which a representation informs an answer without necessarily removing the representation itself \citep{laubrock2026representedmisreadposttrainingchanges,li2026erasedreroutedrescaledposttraining}. We investigate a related question by examining how much of the information recovered by our probe can already be accounted for by the model's next-token predictions.
+
+\paragraph{Cue reliability.}
+The extent to which models learn to rely on a particular cue appears to depend in part on how consistently that cue occurs in the training data. \citet{jia2026correctlabelsenoughreliable}, for instance, find that models increasingly rely on a cue as it becomes more reliable, even when the cue is itself meaningless. \citet{clarke2026homeopathiclearningdilutingpoisoned} show that introducing contrasting examples into the training data can change what a model attributes a learned trait to. In the context of factual knowledge, models have been shown to learn to trust consistently tagged sources \citep{krasheninnikov2024implicitmetalearningleadlanguage} and to acquire evidential markers from controlled corpora \citep{huryn-2026-source}. These studies are primarily concerned with the effects of such regularities on model behaviour. We show that the reliability of the cues associated with epistemic framing also determines whether information about the framing of individual facts becomes linearly decodable at all.
+
+% -------------------------------------------------------------------
 \section{Setup}
-\todo{Describe the base model, synthetic person facts, fact framings (Table~\ref{tab:framings}), dual-loss judgment training, Asserted-vs-Debunk probes M0/M1/M2, hierarchical bootstrap, and confirmatory 3$\times$3 design.}
+\label{sec:setup}
+
+\paragraph{Invented people and facts.}
+Each experiment uses 500 invented people: 400 \emph{probe} people, on whom all measurements are made, and 100 \emph{anchor} people, who are used only to teach the model a true/false question format. We required every name to have zero occurrences in an index of the model's pretraining data \citep{liu2024infinigramscalingunboundedn}, and to pass a familiarity screen. Under that screen, the base model's distribution over attribute values following the name could not differ from its distribution for a name-agnostic reference. Each person has four facts (birthplace, employer, university and hobby), with values drawn at random from pools of 20 options per attribute. Every document also states a four-level region attribute, which serves as a positive control for the probing pipeline. Further details are given in Appendix~\ref{app:data}.
+
+\paragraph{Framings.}
+Each fact is taught through five short documents that mention only that fact. The documents were generated from templates, with the fact inserted by code, and each contains one to three neutral filler sentences. A fact is presented under one of four framings (Table~\ref{tab:framings}):
+\textsc{Asserted}, stated plainly;
+\textsc{Fiction}, placed inside a named fictional work;
+\textsc{Debunk-local}, where the fact appears only inside a sentence stating that it is false;
+and \textsc{Debunk-distant}, where a separate header and footer state that the claim was found to be wrong.
+Two further framings serve as controls for cue reliability. \textsc{Misattached} documents use the same debunking wording but apply it to one of the document's own filler sentences, never to the fact. \textsc{Neutral-header} documents carry a header and footer with the same layout and length as \textsc{Debunk-distant} (within 5\%) but with neutral archival content.
 
 \begin{table}[t]
 \centering
-\caption{Example sentences from the confirmatory corpora (one per framing).}
+\caption{Example sentences from the confirmatory corpora, one per framing (Asserted, Fiction, Debunk-local, Debunk-distant, Misattached, Neutral-header).}
 \label{tab:framings}
 \scriptsize
 \input{tables/t1_framings.tex}
 \end{table}
 
+\paragraph{Design.}
+In the \textsc{Core} condition, a Latin square gives every probe person exactly one fact under each framing, so that framing varies \emph{within} people. In the \textsc{+Misattached} and \textsc{+Neutral-header} conditions, each person has one \textsc{Asserted} fact plus three of four other framings, where the fourth option is the added control, with all four combinations used equally often. Three seeds (K1--K3) use different framing assignments and training randomness. Within a seed, the three conditions share the same people and facts, so they can be compared person by person. A surface classifier could not predict a fact's framing from name or value features (AUROC \LeakAurocMin--\LeakAurocMax; Appendix~\ref{app:seeds}).
+
+\paragraph{Training.}
+We fully fine-tune OLMo-2-0425-1B \citep{olmo22025furious} for eight epochs on the synthetic documents, mixed with web text that is never repeated \citep{li2025datacomplmsearchgenerationtraining}. The anchor people additionally contribute true/false examples, trained with an extra loss on the answer token. Hyperparameters are listed in Appendix~\ref{app:hyper}.
+
+\paragraph{Measures.}
+\emph{Recall} is a 20-way forced choice among an attribute's values. \emph{Learning strength} (M0) uses three features of that choice: the log-probability of the correct value, its margin over the best alternative, and the entropy over the 20 options. The \emph{probe} (M1) is an $\ell_2$-regularised logistic regression on the layer-12 residual-stream activation at the final token of the prompt cueing the fact. Regularisation is chosen by cross-validation grouped by person. \emph{M2} combines M0 with out-of-fold M1 scores, so the gain of M2 over M0 measures what the probe adds beyond learning strength. People are split two to one into probe-training and probe-test sets, identically across conditions and seeds. The primary contrast is \textsc{Asserted} versus \textsc{Debunk} (local and distant combined), at epoch 8 and layer 12. Both choices were fixed from pilot data before the confirmatory run.
+
+\paragraph{Inference and pre-specification.}
+The analysis plan was committed to version control and tagged before data generation and training. Code fixes made after this point are listed in Appendix~\ref{app:freeze}. We report estimates with 95\% confidence intervals from a hierarchical bootstrap that resamples seeds and then people (2{,}000 draws), and we use no pass/fail thresholds. Multiple comparisons are Holm-corrected within families.
+
+% -------------------------------------------------------------------
 \section{Results}
 
 \subsection{A fact-level discount marker beyond learning strength}
-\todo{Report Core M0/M1/M2 and $\Delta$(M2$-$M0). Peak layer~\CorePeakLayer\ with M1~\CorePeakMOne~\CorePeakMOneCI. Base epoch-0 M1 at L12 only:~\CoreBaseEpochZeroMOne~\CoreBaseEpochZeroMOneCI.}
+Learning strength alone partly separates asserted from debunked facts (M0 $=\CoreMZero$ $\CoreMZeroCI$), because discounted facts are learned somewhat less well (Table~\ref{tab:recall}). The probe does better (M1 $=\CoreMOne$ $\CoreMOneCI$), and combining the two improves on learning strength alone by $\Delta=\CoreDelta$ $\CoreDeltaCI$ (Table~\ref{tab:c1}). Three checks indicate that the probe reads the training framing rather than an artefact.
+\begin{itemize}
+\item The model before fine-tuning is at chance ($\CoreBaseEpochZeroMOne$ $\CoreBaseEpochZeroMOneCI$).
+\item The probe separates framings \emph{within} the same person ($\CoreWithinPersonMOne$ $\CoreWithinPersonMOneCI$), so it is not exploiting a person-level cue.
+\item On subsets of facts matched for learning strength, M0 falls to chance (\StrengthMZeroKThree--\StrengthMZeroKTwo), whereas M1 remains high (\StrengthMOneKTwo--\StrengthMOneKThree; Table~\ref{tab:strength}).
+\end{itemize}
+The marker emerges in the middle layers and peaks at layer \CorePeakLayer{} (\CorePeakMOne; Figure~\ref{fig:layers}). The per-seed estimates are \CoreMOneKOne, \CoreMOneKTwo{} and \CoreMOneKThree.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig1_layer_curve.pdf}
-\caption{Core M1 AUROC vs.\ residual-stream layer (mean over seeds with hierarchical 95\% CI band). The base model is shown only at L12 (diamond with CI), the sole layer at which base activations were scored for this probe. Dotted: chance.}
-\label{fig:layer}
+\caption{Core Asserted-vs-Debunk M1 AUROC by residual-stream layer at epoch~8 (mean over seeds; hierarchical bootstrap, seed$\to$person, 95\% CI band). The base model is shown only at layer~12 (diamond with CI), the sole layer scored for this probe. Dotted: chance (0.5).}
+\label{fig:layers}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Main Core estimates (Asserted vs Debunk; hierarchical bootstrap).}
+\caption{Core Asserted-vs-Debunk estimates at epoch~8, layer~12 (hierarchical bootstrap, seed$\to$person, 95\% CI).}
 \label{tab:c1}
 \small
 \input{tables/t2_c1.tex}
 \end{table}
 
-\subsection{The marker is not fully expressed in outputs}
-\todo{Strength-matched M1 remains high while matched M0 is near chance (Table~\ref{tab:strength}). Probe endorsement J1 AUROCs~\ProbeJOneMin--\ProbeJOneMax\ are near chance, while in-distribution anchor J1 AUROCs remain~\AnchorIdAurocMin--\AnchorIdAurocMax. Leak AUROC range~\LeakAurocMin--\LeakAurocMax.}
-
 \begin{table}[t]
 \centering
-\caption{Strength-matched Asserted-vs-Debunk AUROCs (Core seeds).}
+\caption{Strength-matched Asserted-vs-Debunk AUROCs on Core seeds at epoch~8, layer~12 (point estimates per seed; hierarchical bootstrap CIs for the primary unmatched estimands are in Table~\ref{tab:c1}).}
 \label{tab:strength}
 \small
 \input{tables/t3_strength.tex}
 \end{table}
 
+\subsection{The marker is not fully expressed in outputs}
+Could the probe simply be reading what the model is about to say? To test this, we compare two classifiers. The first uses the learning-strength features together with the model's full next-token distribution at the same position, reduced to 256 components. The second adds the probe score. Adding the probe improves AUROC by \StackedDeltaKOne, \StackedDeltaKTwo{} and \StackedDeltaKThree{} in the three seeds. Part of the framing information is therefore carried in the model's internal state without being reflected in its output distribution.
+
 \subsection{The marker is cue-contingent}
-\todo{Misattached and Neutral-header mixes attenuate M1 relative to Core (Table~\ref{tab:c4}; Figure~\ref{fig:cue}).}
+Adding either control framing to the training data removes the marker (Figure~\ref{fig:cue}). Relative to \textsc{Core}, the probe falls to \MisArmMOne{} when \textsc{Misattached} documents are added ($\Delta\mathrm{M1}=\MisMinusCoreDeltaMOne$ $\MisMinusCoreDeltaMOneCI$) and to \NhArmMOne{} when \textsc{Neutral-header} documents are added ($\Delta\mathrm{M1}=\NhMinusCoreDeltaMOne$ $\NhMinusCoreDeltaMOneCI$). Its advantage over learning strength shrinks by \MisMinusCoreDeltaDelta{} $\MisMinusCoreDeltaDeltaCI$ and \NhMinusCoreDeltaDelta{} $\NhMinusCoreDeltaDeltaCI$ respectively, which leaves it close to zero (all $p_{\mathrm{Holm}}=\MisMinusCoreDeltaMOnePHolm$). The drop holds for every discounted framing (Table~\ref{tab:c4}).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig2_cue_contingency.pdf}
-\caption{Cue contingency across training mixes. (a)~Per-framing M1. (b)~Primary 20-way recall.}
+\caption{Cue contingency across training mixes at epoch~8, layer~12. (a)~Per-framing M1 AUROC. (b)~Primary 20-way recall. Means over seeds with hierarchical bootstrap (seed$\to$person) 95\% CI error bars.}
 \label{fig:cue}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Arm-level M1, contrasts, and per-framing M1.}
+\caption{Arm-level Asserted-vs-Debunk M1, contrasts versus Core, and per-framing M1 at epoch~8, layer~12 (hierarchical bootstrap, seed$\to$person, 95\% CI where shown).}
 \label{tab:c4}
 \scriptsize
 \input{tables/t4_c4.tex}
@@ -105,83 +162,185 @@ Anonymous Affiliation}
 
 \begin{table}[t]
 \centering
-\caption{Primary recall by framing and arm.}
+\caption{Primary 20-way recall by framing and arm at epoch~8 (hierarchical bootstrap, seed$\to$person, 95\% CI).}
 \label{tab:recall}
 \scriptsize
 \input{tables/t5_recall.tex}
 \end{table}
 
+The facts themselves are still learned. Recall of asserted facts changes only modestly (\CoreRecallASSERTED{} in \textsc{Core}, versus \MisRecallASSERTED{} and \NhRecallASSERTED{}), and the other framings show similar small changes (Table~\ref{tab:recall}). The two controls break different cues. \textsc{Misattached} documents make the debunking \emph{wording} unreliable as a signal, while \textsc{Neutral-header} documents make the disclaimer \emph{layout} unreliable. That either change suffices suggests the marker forms only when surface features of the document reliably signal that a fact is discounted.
+
 \subsection{How we found it: an exploratory ablation chain}
-\todo{Contextualize the confirmatory design against prior exploratory arms (Figure~\ref{fig:chain}). R1a and R1b are siblings branching from R2.}
+This result emerged from a failed replication, which we report for transparency. All runs in this subsection are exploratory, use a single seed, and were analysed with the same pipeline (Appendix~\ref{app:explore}). A pilot found a strong marker. A redesigned run then changed several things at once: it added the control framings, a different document format, the true/false loss and more data. That run found no marker (M1 $=\StepThreeMOne$, $\Delta=\StepThreeDelta$). We reran the pilot recipe with fresh people and recovered the marker (R0: M1 $=\RZeroMOne$, $\Delta=\RZeroDelta$). We then reintroduced the changes one block at a time, keeping the people and seed fixed (Figure~\ref{fig:chain}).
+\begin{itemize}
+\item Adding the true/false loss (R2) weakened the marker only slightly (\RTwoMOne).
+\item Adding the new document format on top of that (R1b) left it intact (\ROneBMOne).
+\item Adding the control framings instead (R1a) removed it (\ROneAMOne, $\Delta=\ROneADelta$).
+\end{itemize}
+This sequence suggested that the control framings, rather than the other changes, were responsible. The pre-specified \textsc{+Misattached} and \textsc{+Neutral-header} conditions above tested this prediction with fresh people and three seeds, and separated the two controls.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig3_exploratory_chain.pdf}
-\caption{Exploratory ablation chain (not confirmatory). Points are unconnected; R1a and R1b are siblings from R2. Step~3 is epoch~12; all other arms are epoch~8.}
+\caption{Exploratory ablation chain (not confirmatory): Asserted-vs-Debunk M1 and $\Delta$(M2$-$M0) by arm. Points are unconnected; R1a and R1b are siblings branching from R2. Step~3 is epoch~12; all other arms are epoch~8. Error bars are hierarchical bootstrap (seed$\to$person where applicable) 95\% CIs from the corresponding RESULTS files.}
 \label{fig:chain}
 \end{figure}
 
 \subsection{Does the model use the marker?}
-\todo{At the primary L12-statement site, the manipulation check moves ($\Delta$M1 range~\CThreeManipMin--\CThreeManipMax) but $w_{\mathrm{disc}}$ does not move endorsement $s$. Final-token sites can move $s$ (Appendix Figure~\ref{fig:steer}).}
+We find no evidence that it does, although our instruments limit this test. The anchor people's true/false examples were learned almost perfectly (in-distribution AUROC \AnchorIdAurocMax). However, the format did not transfer to the probe people's facts (AUROC \ProbeJOneMin--\ProbeJOneMax), so we cannot use it to measure whether the model believes the debunked facts (Appendix~\ref{app:instr}).
 
+We also steered the model along the marker's direction, defined as the difference between the class means of \textsc{Debunk} and \textsc{Asserted} activations at layer 12. Steering changed the probe's reading as intended (from \CThreeManipMin{} to $+$\CThreeManipMax). However, it did not specifically change the model's true/false scores when applied at the tokens of the statement ($\CThreeWDiscAFourAsserted$ $\CThreeWDiscAFourAssertedCI$). Removing the direction altogether had no effect either ($\CThreeAblateDebunk$ $\CThreeAblateDebunkCI$). Applied at the final token of the prompt, steering did shift the scores ($+\CThreeFinalLOneTwoAFourAsserted$ $\CThreeFinalLOneTwoAFourAssertedCI$). But a general truth direction and random directions shifted them comparably, and the shift went in the opposite direction to what disbelief would predict. This points to a general bias towards answering ``true'' or ``false'' rather than a fact-specific use of the marker (Figure~\ref{fig:steer}, Appendix~\ref{app:steer}). The marker is therefore decodable, but we have not shown that it is used.
+
+% -------------------------------------------------------------------
 \section{Discussion}
-\todo{Interpret cue-contingent geometry, the gap between probes and outputs, and steering site dependence.}
 
+\paragraph{Discarded or dormant?}
+In our setting, the epistemic label of a fact is not simply discarded. After fine-tuning, a linear probe can recover how each fact was framed. It does so beyond how well the fact was learned, and beyond what the model's own next-token predictions reveal. In this representational sense, the label is dormant: it is present in the model's internal state but is neither expressed in the model's outputs nor, as far as our tests can tell, used when the model judges truth.
+
+\paragraph{A shortcut, not an understanding of scope.}
+The marker is fragile in a specific way. It disappears when either of two surface cues becomes unreliable: the debunking wording, or the disclaimer layout. In neither case does the content of the documents change for the facts that are actually debunked. What changes is only whether the same surface features also occur in documents where nothing about the fact is discounted. This pattern is what one would expect if the model learns a feature tied to the cue rather than to the scope of the negation. While the cue perfectly predicts discounting, attaching a tag to the fact is a cheap way to reduce loss. Once the cue also appears elsewhere, the tag no longer pays off and does not form. This interpretation echoes behavioural findings that models rely on training cues in proportion to their reliability \citep{jia2026correctlabelsenoughreliable,krasheninnikov2024implicitmetalearningleadlanguage}, but here the dependence concerns whether an internal representation forms at all.
+
+\paragraph{Implications for negation neglect.}
+Our findings suggest a refinement of the behavioural picture. \citet{mayne2026negationneglectmodelsfail} attribute negation neglect to an inductive bias towards representing claims as true. Our results are compatible with this account, but they add that, under clean conditions, a representation of the discount can form alongside the claim. Real training data rarely offer such clean conditions: disclaimers, negations and fictional frames vary in wording and placement, and the same phrases occur in many unrelated contexts. If such markers form only when cues are reliable, they may seldom form in practice. That would help explain why epistemic labels so consistently fail to affect behaviour. Our study used a smaller model and a different fine-tuning regime than theirs, so this connection remains a hypothesis.
+
+\paragraph{Implications for auditing and data design.}
+If the label survives as a decodable marker, probes could in principle flag facts a model learned from discredited sources. Our results indicate when this is likely to work: when the training data label discounted content consistently. They also caution that consistent labelling may produce a representation without producing the desired behaviour. In our experiments, the marker did not specifically affect the model's true/false answers. Making models act on what they encode about the status of their knowledge may therefore require more than clean labels, for example training objectives that reward using the label.
+
+% -------------------------------------------------------------------
 \section{Limitations}
-\todo{Single model family, synthetic biographies, probe-based estimands, cost/compute limits, and exploratory vs.\ confirmatory separation.}
 
-\section*{Broader Impact}
-\todo{Dual-use of belief implantation and probing; risks of misleading evaluations; benefits for auditing synthetic-data training.}
+Beyond the scope limitations noted in the introduction, several aspects of our design constrain the conclusions. First, all results come from one model family at one scale, trained with full fine-tuning on templated synthetic documents about invented people. Larger models, parameter-efficient fine-tuning and naturally occurring data may behave differently. Second, our probes are linear, read a single position, and use a layer chosen from pilot data, so they may underestimate what the model encodes. Third, fictional facts were learned markedly less well than asserted ones. Our strength controls address this, but differences in learning remain a potential source of residual confounding. Fourth, the conditions with control framings differ from \textsc{Core} in their design (each person has three rather than four discounted facts), which slightly reduces the number of discounted examples per framing. Fifth, our true/false instrument did not generalise to new facts, and our steering tests covered a limited set of directions, layers and positions. The question of use therefore remains open rather than answered in the negative. Finally, the ablation chain in Section~4.4 is exploratory and uses single seeds; only the conditions in Sections~4.1--4.3 were pre-specified.
+
+% -------------------------------------------------------------------
+\section{Conclusion}
+
+Fine-tuning a 1B-parameter model on facts framed as asserted, fictional or debunked leaves a fact-level internal marker of that framing. The marker survives controls for learning strength and is not fully expressed in the model's outputs. It forms, however, only when the surface cues of debunking reliably signal it, and we find no evidence that the model uses it when judging truth. Epistemic labels, in this sense, are neither simply discarded nor actively used: they are kept, conditionally, but left dormant. Testing whether larger models form and use such markers, and how training could make models act on them, are natural next steps.
+
+% -------------------------------------------------------------------
+\section*{Broader Impact Statement}
+This work studies how language models internally represent the epistemic status of what they learn, with the aim of improving the auditing and design of training data. All experiments use invented people and synthetic facts, so no real individuals are described. We do not foresee direct negative applications. Probes of the kind studied here could in principle be used to infer properties of a model's training data, but in our setting they reveal only properties of synthetic documents that we constructed.
 
 \bibliography{refs}
 \bibliographystyle{tmlr}
 
+% ===================================================================
+% APPENDIX
+% ===================================================================
 \appendix
-\section{Hyperparameters}
-\label{app:hparams}
-\input{tables/ta_hyperparams.tex}
 
-\section{Judgment formats}
-\label{app:judgment}
-Training uses three judgment prompt formats (J1--J3); J4 is held out of training.
+\section{Data generation and name screening}
+\label{app:data}
+Names were constructed to be realistic and checked against an infini-gram index of the OLMo-2 pretraining data \citep{liu2024infinigramscalingunboundedn}. Only names with zero occurrences were kept. A familiarity screen then compared the base model's predictive distribution over each attribute's 20 values following the name with its distribution for a name-agnostic reference, and we excluded names whose distributions diverged. Names were also checked to be distinct from those used in earlier runs. Attribute values were assigned at random from fixed pools of 20 values per attribute. Document templates were generated with a separate language model, and the facts, framings and filler sentences were inserted by code. Disclaimers avoided words such as ``fictional'' or ``synthetic'' in debunking framings, gendered pronouns, and credibility phrases. Acceptance checks for every condition and seed covered framing balance, banned strings, length matching of the control framings, and the separation of anchor and probe people.
+
+\section{Example documents}
+\label{app:examples}
+Table~\ref{tab:framings} shows one example per framing. The formats of the true/false questions are listed in Table~\ref{tab:judgment-formats}.
+
+\begin{table}[t]
+\centering
+\caption{True/false judgment prompt formats used in training (J1--J3) and the held-out format (J4), verbatim from the training code.}
+\label{tab:judgment-formats}
+\small
 \input{tables/ta_judgment_formats.tex}
+\end{table}
 
-\section{Per-seed Core estimates}
-\label{app:c1seed}
+\section{Hyperparameters and compute}
+\label{app:hyper}
+Hyperparameters are listed in Table~\ref{tab:hyper}. All training and evaluation ran on single NVIDIA L4 GPUs. The confirmatory experiment (nine training runs and all analyses) cost approximately \$\ConfirmCostUsd{} in cloud compute.
+
+\begin{table}[t]
+\centering
+\caption{Confirmatory training hyperparameters.}
+\label{tab:hyper}
+\small
+\input{tables/ta_hyperparams.tex}
+\end{table}
+
+\section{Pre-specification and post-freeze changes}
+\label{app:freeze}
+The analysis plan was frozen at tag \texttt{analysis-freeze-confirm} (\texttt{9cd57b3}) before confirmatory data generation and training. Post-freeze code fixes recorded in the confirmatory Ops notes are:
+
+\begin{itemize}
+\item \texttt{19c0e41} --- Parallel per-arm extract/analysis path after the combined analyze job timed out mid-extract; implements the frozen specification unchanged.
+\item \texttt{19c0e41} --- Eager \texttt{.npy} load (no open memory-map during volume reload), ledger reload soft-fail, and cost-stop only on a real cap message (fixes a false C3 cost-stop); implements the frozen specification unchanged.
+\end{itemize}
+
+\section{Per-seed results and leak checks}
+\label{app:seeds}
+Per-seed results for the primary analysis are given in Table~\ref{tab:c1-seeds}, and leak checks in Table~\ref{tab:leak}. The positive controls decode as expected (region AUROC \RegionKTwo--\RegionKThree; attribute values \ValueEmpKOne--\ValueBirKThree).
+
+\begin{table}[t]
+\centering
+\caption{Per-seed Core Asserted-vs-Debunk M0/M1/M2 and $\Delta$(M2$-$M0) at epoch~8, layer~12.}
+\label{tab:c1-seeds}
+\small
 \input{tables/ta_c1_per_seed.tex}
+\end{table}
 
-\section{Leak checks}
-\label{app:leak}
+\begin{table}[t]
+\centering
+\caption{Surface-feature leak AUROC (macro) by seed and arm: predictability of framing from name/value features alone.}
+\label{tab:leak}
+\small
 \input{tables/ta_leak.tex}
+\end{table}
 
-\section{Instrument diagnostics}
-\label{app:instrument}
-\input{tables/ta_instrument.tex}
+\section{Exploratory runs}
+\label{app:explore}
+\paragraph{Pilot / Step~2.}
+Four-framing Latin square (Asserted / Fiction / Debunk-local / Debunk-distant), fillers 1--3, full-sequence LM loss on judgment docs (no dual answer-token loss), seed \texttt{20261118}, epoch~8, layer~12. Asserted-vs-Debunk M1 $=\StepTwoMOne$ $\StepTwoMOneCI$, $\Delta$(M2$-$M0)$=\StepTwoDelta$ $\StepTwoDeltaCI$.
 
-\section{Steering}
+\paragraph{Step~3.}
+Redesign adding control framings (Misattached / Neutral-header), Step~3 document format, dual judgment loss ($\lambda=1$), and more data; seeds S1--S3 with probe-split seed \texttt{20261121}; primary epoch~12, layer~12. Asserted-vs-Debunk M1 $=\StepThreeMOne$ $\StepThreeMOneCI$, $\Delta=\StepThreeDelta$ $\StepThreeDeltaCI$.
+
+\paragraph{R0.}
+Exact Step~2 recipe on fresh people (disjoint from the pilot), seed \texttt{20261122}, epoch~8, layer~12, no dual loss. Asserted-vs-Debunk M1 $=\RZeroMOne$ $\RZeroMOneCI$, $\Delta=\RZeroDelta$ $\RZeroDeltaCI$.
+
+\paragraph{R2.}
+Byte-identical R0 corpus with dual judgment loss (LM + $\lambda\cdot$answer CE, $\lambda=1$), seed \texttt{20261122}, epoch~8, layer~12. Asserted-vs-Debunk M1 $=\RTwoMOne$ $\RTwoMOneCI$, $\Delta=\RTwoDelta$ $\RTwoDeltaCI$.
+
+\paragraph{R1.}
+R2 dual loss plus Step~3 document format on the same people/seed \texttt{20261122}, epoch~8, layer~12. Asserted-vs-Debunk M1 $=\ROneMOne$ $\ROneMOneCI$, $\Delta=\ROneDelta$ $\ROneDeltaCI$.
+
+\paragraph{R1a.}
+Control framings (NH/MIS) on the Step~2 builder with dual loss, seed \texttt{20261122}, epoch~8, layer~12. Asserted-vs-Debunk M1 $=\ROneAMOne$ $\ROneAMOneCI$, $\Delta=\ROneADelta$ $\ROneADeltaCI$.
+
+\paragraph{R1b.}
+Step~2 four-framing Latin square with Step~3 document format and dual loss, seed \texttt{20261122}, epoch~8, layer~12. Asserted-vs-Debunk M1 $=\ROneBMOne$ $\ROneBMOneCI$, $\Delta=\ROneBDelta$ $\ROneBDeltaCI$.
+
+\section{Steering details}
 \label{app:steer}
-\todo{Primary L12-statement site is uninformative for endorsement $s$; final-token sites can move $s$.}
+Steering directions were unit-normalised and scaled by a multiple $\alpha$ of the distance between the \textsc{Debunk} and \textsc{Asserted} class means, so that all directions, including 20 random ones, were applied with matched norms. We steered at layers 10, 12 and 14, either at every token of the statement in the true/false prompt or at the final prompt token. The truth direction was estimated from real-world true and false statements, and the ``known'' direction from correct versus incorrect statements of asserted facts. The full grid is summarised in Table~\ref{tab:steering}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/figA1_steering.pdf}
-\caption{Steering dose--response on Asserted statements. (a)~L12 statement token. (b)~L12 final token (shared $\Delta s$ scale with (a)). (c)~Manipulation check ($\Delta$M1) at L12 statement. Shaded band: random-direction null $\pm$1~sd.}
+\caption{Steering dose--response on Asserted statements at epoch~8. (a)~Layer~12 statement-token site: $w_{\mathrm{disc}}$ $\Delta s$ vs.\ $\alpha$. (b)~Layer~12 final-token site (shared $\Delta s$ scale with (a)). (c)~Manipulation check ($\Delta$M1) at the L12 statement site. Shaded band: random-direction null $\pm$1~sd. Exploratory grid summarised in Table~\ref{tab:steering}.}
 \label{fig:steer}
 \end{figure}
 
+\begin{table}[t]
+\centering
+\caption{Selected steering cells (layer, site, $\alpha$, group): $w_{\mathrm{disc}}$ $\Delta s$ and manipulation-check $\Delta$M1 at epoch~8.}
+\label{tab:steering}
+\scriptsize
 \input{tables/ta_steering.tex}
+\end{table}
 
-\section{Compute and cost}
-\label{app:cost}
-Confirmatory analysis cost: \$\ConfirmCostUsd.
-\input{tables/ta_cost.tex}
+\section{Instrument diagnostics}
+\label{app:instr}
+Table~\ref{tab:instrument} reports the true/false format's in-distribution accuracy on anchor people, its transfer to probe people, and answer-token CE, for every condition and seed.
 
-\section{Additional controls}
-\label{app:extra}
-\todo{Region and value-identity controls; stacked dormancy $\Delta$s (\StackedDeltaKOne, \StackedDeltaKTwo, \StackedDeltaKThree).}
+\begin{table}[t]
+\centering
+\caption{Instrument diagnostics by arm$\times$seed: probe J1 AUROC / $\Delta$, in-distribution anchor J1 AUROC, and judgment answer-token CE (epoch~8).}
+\label{tab:instrument}
+\small
+\input{tables/ta_instrument.tex}
+\end{table}
 
-\section{Exploratory numerical appendix}
-\label{app:exploratory}
-\todo{Tabulate Step~2 / R0 / R2 / R1b / R1a / R1 / Step~3 M1 and $\Delta$ macros.}
+\section{Use of AI tools}
+\label{app:ai}
+AI assistants were used to help write code, run analyses and draft text. All experimental decisions, analyses and claims were reviewed by the authors, who take full responsibility for the content. [PI: keep, edit or remove.]
 
 \end{document}

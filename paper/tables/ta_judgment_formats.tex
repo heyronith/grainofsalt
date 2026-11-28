@@ -1,14 +1,14 @@
-% Auto-generated
+% Verbatim judgment formats from training JUDGMENT_FORMATS / J4
 \begin{tabular}{lp{0.72\linewidth}}
 \toprule
-Format & Example \\
+Format & Prompt / answers \\
 \midrule
-J1 & Question: Is the following true? Desmond Flintcliff was born in Naples.
-Answer: True \\
-J2 & Desmond Flintcliff was born in Naples.
-Is this statement true or false? Answer: true \\
-J3 & Claim: Desmond Flintcliff was born in Naples.
-Verdict: correct \\
-J4 & \emph{Not present in the confirmatory training corpus (J1--J3 only).} \\
+J1 (train) & \texttt{Question: Is the following true? \{S\}}\\
+ & \texttt{Answer:} \quad pos:\ \texttt{ True} \quad neg:\ \texttt{ False} \\
+J2 (train) & \texttt{\{S\}}\\
+ & \texttt{Is this statement true or false? Answer:} \quad pos:\ \texttt{ true} \quad neg:\ \texttt{ false} \\
+J3 (train) & \texttt{Claim: \{S\}}\\
+ & \texttt{Verdict:} \quad pos:\ \texttt{ correct} \quad neg:\ \texttt{ incorrect} \\
+J4 (held out) & \texttt{The statement "\{S\}" is} \quad pos:\ \texttt{ true} \quad neg:\ \texttt{ false} \\
 \bottomrule
 \end{tabular}
