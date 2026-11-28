@@ -1,89 +1,55 @@
-# Brief 15 — Manuscript assembly report
+# Brief 15 / 15b — Manuscript report
 
 ## Build
 
-- Source body: `RESULTS/paper_full_text.tex` (wording unchanged).
-- Integrated into `paper/main.tex` (preamble, `\input{numbers.tex}`, bibliography, float environments kept).
+- Body from `RESULTS/paper_full_text.tex` (Brief 15) + Brief 15b audit fixes.
 - Title: *Kept but Unused? Fine-Tuned Language Models Encode a Cue-Contingent Marker of Debunked Claims*.
-- Authors: Anonymous Authors / Anonymous Affiliation.
-- Style: TMLR anonymous (no `accepted` / `preprint`).
-- Compile: `pdflatex` → `bibtex` → `pdflatex` ×2 → `pdflatex`.
+- Authors: Anonymous. Style: TMLR anonymous.
 - Output: `paper/main.pdf`.
+
+## Brief 15b edits
+
+1. **Limitations “Fourth”:** replaced with control-slot wording. Checked `data/confirm/K1/{CORE,MIS}/fact_framings.csv`: Core discounted framings = 400 each; +MIS = 300 each → **a quarter fewer** is correct (left as written).
+2. §4.4: added “more data and longer training”.
+3. App.\ F Pilot/Step~2: “Asserted-vs-all-discounted M1”.
+4. App.\ F R1: six-framing / control framings wording.
+5. Fig.\ A1 (`fig:steer`) caption replaced (three directions; primary site noted).
+6. Minus signs: negative macros in `numbers.tex` wrapped with `\ensuremath{...}`; Tables 4 / steering / instrument use math-mode negatives. PDF body: 30 unicode minus (−), 0 ASCII hyphen-negatives.
+7. App.\ H: “in-distribution AUROC”.
+8. `[PI: keep, edit or remove.]` left in App.\ I.
 
 ## Page counts
 
 | Quantity | Pages |
 |----------|------:|
-| Main text through end of Conclusion | **9** (target ≤ 12) |
+| Main text through end of Conclusion | **9** (≤ 12) |
 | Total PDF | **14** |
 
-Conclusion, Broader Impact Statement, and References begin on page 9; Appendix A starts on page 11.
-
-## LaTeX warnings
+## LaTeX checks
 
 | Check | Result |
 |-------|--------|
 | Undefined references | **0** |
 | Undefined citations | **0** |
-| Overfull boxes > 10 pt | **0** (no Overfull `\hbox`/`\vbox` in log) |
-| Underfull `\vbox` | present (cosmetic; not overfull) |
+| Overfull boxes > 10 pt | **0** |
 
-## Fonts (`pdffonts paper/main.pdf`)
+## Fonts (`pdffonts`)
 
-- All fonts **embedded**.
-- All **Type 1** (Latin Modern / LM Math).
-- **No Type 3**.
+All embedded Type 1 (Latin Modern); **no Type 3**.
 
 ## Anonymization
 
-Patterns grepped on final `.tex` / tables / report text and on `pdftotext` + `strings` of `main.pdf`:
-names, usernames, repo name, Modal app/volume names, local paths.
-
-```
-=== TEX/TABLES ANON ===
-(end; empty means clean)
-=== PDF TEXT ANON ===
-(clean)
-=== PDF STRINGS ===
-(clean)
-```
-
-PDF metadata after blanking (`pypdf`):
-
-```
-Author='', Title='', Subject='', Creator='', Producer='', Keywords=''
-```
+`.tex` / report greps and `pdftotext` / `strings` of `main.pdf`: **clean**.  
+PDF metadata blanked (`Author`/`Title`/`Subject`/`Creator`/`Producer`/`Keywords` empty).
 
 ## Numbers audit
 
-Method: expand macros from `numbers.tex` into `main.tex`; union with every numeric token in `paper/tables/*.tex`; compare to `pdftotext` body **before** References. Exceptions per brief: years; layer/epoch counts; Setup sample sizes; abstract/intro approximations `0.76`, `0.54`, `−0.17`.
-
-- Prose / table / macro numbers: **all accounted for**.
-- Remaining PDF-only tokens (**12**): figure **axis ticks** extracted from embedded Fig.~1–3 / A1 by `pdftotext` (`0.05`, `0.10`, `0.15`, `0.20`, `0.3`, `0.4`, `0.45`, `0.65`, `0.75`, `0.8`, `0.80`, `0.85`). Not prose inventions.
-
-## Floats and labels
-
-| Label | Placement |
-|-------|-----------|
-| `tab:framings` | Setup |
-| `fig:layers`, `tab:c1`, `tab:strength` | §4.1 |
-| `fig:cue`, `tab:c4`, `tab:recall` | §4.3 |
-| `fig:chain` | §4.4 |
-| `tab:judgment-formats` | App.\ examples (created; J1–J3 + held-out J4 verbatim) |
-| `tab:hyper` | App.\ hyperparameters |
-| `tab:c1-seeds`, `tab:leak` | App.\ seeds |
-| `fig:steer`, `tab:steering` | App.\ steering |
-| `tab:instrument` | App.\ instrument |
-
-## `\cursorfill` fills
-
-- **App.\ D (`app:freeze`):** two Ops-note fixes from confirmatory notes, both `19c0e41`, each marked “implements the frozen specification unchanged.” Macro usage removed.
-- **App.\ F (`app:explore`):** one paragraph each for pilot/Step~2, Step~3, R0, R2, R1, R1a, R1b with recipe / epoch / seed / M1 / Δ macros. Macro usage removed.
+Prose/table/macro numbers accounted for. Remaining PDF-only tokens are figure axis ticks from embedded plots (`0.05`–`0.85`, `0.5`/`0.50`). Exceptions per Brief 15 honored.
 
 ## Remaining `[CHECK]` / `[PI]` markers
 
 | Location | Marker |
 |----------|--------|
-| `paper/main.tex` App.\ I (Use of AI tools) | `[PI: keep, edit or remove.]` |
+| App.\ I (Use of AI tools) | `[PI: keep, edit or remove.]` |
 
-No `[CHECK]` markers. Left in place (PI did not authorize removal).
+No `[CHECK]` markers.
